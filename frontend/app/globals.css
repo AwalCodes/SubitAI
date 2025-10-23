@@ -1,0 +1,118 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #ffffff;
+    color: #111827;
+    line-height: 1.6;
+    font-weight: 400;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  /* Button styles matching Figma */
+  .btn-primary {
+    @apply bg-primary-700 hover:bg-primary-800 text-white font-medium px-6 py-3 rounded-button transition-all duration-200 shadow-card hover:shadow-card-hover transform hover:-translate-y-0.5;
+  }
+  
+  .btn-secondary {
+    @apply bg-white border-2 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-primary-300 font-medium px-6 py-3 rounded-button transition-all duration-200 shadow-card hover:shadow-card-hover;
+  }
+  
+  .btn-outline {
+    @apply border-2 border-primary-700 text-primary-700 hover:bg-primary-700 hover:text-white font-medium px-6 py-3 rounded-button transition-all duration-200;
+  }
+
+  /* Card styles matching Figma */
+  .card {
+    @apply bg-white rounded-card shadow-card border border-gray-100 p-6;
+  }
+
+  .card-hover {
+    @apply card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-1;
+  }
+
+  /* Input styles matching Figma */
+  .input-primary {
+    @apply w-full px-4 py-3 border border-gray-200 rounded-button focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 bg-white placeholder-gray-400;
+  }
+
+  /* Form container matching Figma */
+  .form-container {
+    @apply bg-white rounded-card shadow-card border border-gray-100 p-8 max-w-md mx-auto;
+  }
+
+  /* Header styles matching Figma */
+  .header-container {
+    @apply bg-white border-b border-gray-200 sticky top-0 z-50;
+  }
+
+  /* Footer styles matching Figma */
+  .footer-container {
+    @apply bg-gray-50 border-t border-gray-200 py-12;
+  }
+
+  /* Logo styles matching Figma */
+  .logo-container {
+    @apply flex items-center space-x-2;
+  }
+
+  .logo-icon {
+    @apply w-8 h-8 bg-primary-700 rounded-lg flex items-center justify-center;
+  }
+
+  .logo-text {
+    @apply text-xl font-bold text-gray-900;
+  }
+
+  /* Navigation styles */
+  .nav-link {
+    @apply text-gray-600 hover:text-primary-700 font-medium transition-colors duration-200;
+  }
+
+  .nav-link.active {
+    @apply text-primary-700;
+  }
+
+  /* Status indicators matching Figma */
+  .status-success {
+    @apply bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  .status-warning {
+    @apply bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  .status-error {
+    @apply bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  /* Progress indicators matching Figma */
+  .progress-bar {
+    @apply w-full bg-gray-200 rounded-full h-2;
+  }
+
+  .progress-fill {
+    @apply bg-primary-700 h-2 rounded-full transition-all duration-300;
+  }
+
+  /* Loading spinner matching Figma */
+  .spinner {
+    @apply w-6 h-6 border-2 border-gray-300 border-t-primary-700 rounded-full animate-spin;
+  }
+}
