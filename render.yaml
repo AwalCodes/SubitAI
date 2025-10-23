@@ -2,7 +2,7 @@ services:
   - type: web
     name: subitai-backend
     env: python
-    rootDirectory: backend
+    rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     autoDeploy: true
@@ -23,7 +23,7 @@ services:
   - type: worker
     name: subitai-celery-worker
     env: python
-    rootDirectory: backend
+    rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: celery -A workers.celery worker --loglevel=info
     autoDeploy: true
