@@ -250,3 +250,4 @@ This project is licensed under the MIT License.
 ## 🆘 Support
 
 For support, email support@subit.ai or join our Discord community.
+# SubitAI
