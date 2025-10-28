@@ -44,3 +44,7 @@ build/
 *.tmp
 temp/
 tmp/
+
+# Documentation files (deployment guides)
+*.md
+!README.md
