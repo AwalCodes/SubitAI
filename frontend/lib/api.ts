@@ -1,5 +1,4 @@
 import axios from 'axios'
-import { createClient } from './supabase'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
@@ -13,15 +12,10 @@ export const api = axios.create({
 
 // Request interceptor to add auth token
 api.interceptors.request.use(
-  async (config) => {
-    try {
-      const supabase = createClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.access_token) {
-        config.headers.Authorization = `Bearer ${session.access_token}`
-      }
-    } catch (error) {
-      console.error('Failed to get auth token:', error)
+  (config) => {
+    const token = localStorage.getItem('access_token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
     }
     return config
   },
@@ -35,12 +29,9 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Handle unauthorized access - don't redirect automatically to prevent loops
-      console.log('Unauthorized access detected')
-      // Only redirect if not already on login page
-      if (!window.location.pathname.includes('/auth/login')) {
-        window.location.href = '/auth/login'
-      }
+      // Handle unauthorized access
+      localStorage.removeItem('access_token')
+      window.location.href = '/auth/login'
     }
     return Promise.reject(error)
   }
@@ -58,7 +49,7 @@ export const apiClient = {
   // Projects
   projects: {
     getProjects: (params?: { limit?: number; offset?: number }) => 
-      api.get('/projects/', { params }),
+      api.get('/projects', { params }),
     getProject: (id: string) => api.get(`/projects/${id}`),
     updateProject: (id: string, data: any) => api.put(`/projects/${id}`, data),
     deleteProject: (id: string) => api.delete(`/projects/${id}`),

@@ -9,7 +9,8 @@ from typing import Dict, Any, Optional
 import logging
 from fastapi import HTTPException
 import aiofiles
-import ffmpeg
+# from moviepy.editor import VideoFileClip
+# import ffmpeg
 from services.supabase_client import get_supabase_client
 
 logger = logging.getLogger(__name__)
@@ -38,24 +39,22 @@ class VideoService:
                 file_options={"content-type": "video/mp4"}
             )
             
-            # Check if upload was successful
-            # The result object from supabase-py doesn't have a .get() method
-            # If there's an error, it will raise an exception
-            logger.info(f"Video uploaded successfully to {file_path}")
+            if result.get("error"):
+                raise HTTPException(status_code=400, detail="Failed to upload video")
             
-            # Generate signed URL (valid for 1 hour) since bucket is private
-            signed_url = self.supabase.storage.from_("videos").create_signed_url(file_path, 3600)
+            # Get public URL
+            public_url = self.supabase.storage.from_("videos").get_public_url(file_path)
             
             return {
                 "filename": unique_filename,
                 "path": file_path,
-                "url": signed_url['signedURL'] if isinstance(signed_url, dict) else signed_url,
+                "url": public_url,
                 "size": len(file)
             }
             
         except Exception as e:
             logger.error(f"Video upload failed: {e}")
-            raise HTTPException(status_code=500, detail=f"Failed to upload video: {str(e)}")
+            raise HTTPException(status_code=500, detail="Failed to upload video")
     
     async def get_video_metadata(self, file_path: str) -> Dict[str, Any]:
         """Extract video metadata using FFmpeg"""
@@ -105,24 +104,19 @@ class VideoService:
     async def download_video(self, file_path: str) -> bytes:
         """Download video from Supabase Storage"""
         try:
-            # Download from Supabase Storage
-            data = self.supabase.storage.from_("videos").download(file_path)
-            return data
+            video_data = self.supabase.storage.from_("videos").download(file_path)
+            return video_data
         except Exception as e:
-            logger.error(f"Failed to download video: {e}")
+            logger.error(f"Video download failed: {e}")
             raise HTTPException(status_code=500, detail="Failed to download video")
     
     async def delete_video(self, file_path: str) -> bool:
         """Delete video from Supabase Storage"""
         try:
-            logger.info(f"Deleting video: {file_path}")
-            # Delete from Supabase Storage
             result = self.supabase.storage.from_("videos").remove([file_path])
-            logger.info(f"Video deleted successfully: {file_path}")
             return not result.get("error")
         except Exception as e:
-            logger.error(f"Failed to delete video {file_path}: {e}")
-            # Don't raise exception, just log - deletion can fail if file doesn't exist
+            logger.error(f"Video deletion failed: {e}")
             return False
     
     def validate_video_file(self, filename: str, file_size: int) -> bool:

@@ -3,20 +3,21 @@ SUBIT.AI - FastAPI Backend
 Main application entry point for the AI subtitle generation platform
 """
 
-# Load environment variables FIRST before any other imports
-import os
-from dotenv import load_dotenv
-load_dotenv()
-
 from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from contextlib import asynccontextmanager
+import os
+from dotenv import load_dotenv
 import logging
 
-from routes import auth, projects, subtitles, billing, export
+from routes import auth, projects, subtitles, billing
+# from routes import export
 from services.supabase_client import get_supabase_client
-from workers.celery import celery_app
+# from workers.celery import celery_app
+
+# Load environment variables
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -42,15 +43,10 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS middleware
+# CORS middleware - Allow all origins for testing (restrict in production)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "https://subit-ai.vercel.app",
-        os.getenv("FRONTEND_URL", "http://localhost:3000")
-    ],
+    allow_origins=["*"],  # Allow all origins - update with specific domains for production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -60,7 +56,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
 app.include_router(projects.router, prefix="/api/projects", tags=["projects"])
 app.include_router(subtitles.router, prefix="/api/subtitles", tags=["subtitles"])
-app.include_router(export.router, prefix="/api/export", tags=["export"])
+# app.include_router(export.router, prefix="/api/export", tags=["export"])
 app.include_router(billing.router, prefix="/api/billing", tags=["billing"])
 
 @app.get("/")
@@ -80,17 +76,13 @@ async def health_check():
         supabase = get_supabase_client()
         supabase.table("users").select("id").limit(1).execute()
         
-        # Check Celery worker
-        try:
-            celery_stats = celery_app.control.inspect().stats()
-            celery_status = "connected" if celery_stats else "no workers"
-        except Exception:
-            celery_status = "disconnected"
+        # Check Celery worker (commented out for testing)
+        # celery_app.control.inspect().stats()
         
         return {
             "status": "healthy",
             "database": "connected",
-            "celery": celery_status
+            "celery": "disabled"
         }
     except Exception as e:
         logger.error(f"Health check failed: {e}")

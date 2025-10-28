@@ -9,22 +9,34 @@ import json
 from typing import Dict, List, Any, Optional
 import logging
 from fastapi import HTTPException
-from groq import Groq
+import whisper
+import torch
 from services.video_service import video_service
 
 logger = logging.getLogger(__name__)
 
 class WhisperService:
-    """Service for AI-powered transcription using Groq's FREE Whisper API"""
+    """Service for Whisper AI transcription"""
     
     def __init__(self):
-        groq_api_key = os.getenv("GROQ_API_KEY")
-        if not groq_api_key:
-            logger.error("GROQ_API_KEY not found in environment variables!")
-            raise ValueError("GROQ_API_KEY is required")
-        self.client = Groq(api_key=groq_api_key)
+        self.model = None
         self.temp_dir = tempfile.gettempdir()
-        logger.info("Whisper service initialized with Groq FREE API")
+        self._load_model()
+    
+    def _load_model(self):
+        """Load Whisper model"""
+        try:
+            # Use GPU if available, otherwise CPU
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            logger.info(f"Loading Whisper model on {device}")
+            
+            # Load the large-v3 model for best accuracy
+            self.model = whisper.load_model("large-v3", device=device)
+            logger.info("Whisper model loaded successfully")
+            
+        except Exception as e:
+            logger.error(f"Failed to load Whisper model: {e}")
+            raise HTTPException(status_code=500, detail="Failed to initialize AI model")
     
     async def transcribe_video(self, file_path: str, language: str = "en") -> Dict[str, Any]:
         """Transcribe video using Whisper AI"""
@@ -39,77 +51,43 @@ class WhisperService:
             with open(temp_file, "wb") as f:
                 f.write(video_data)
             
-            # Transcribe with Groq's FREE Whisper API
-            logger.info(f"Starting transcription with Groq Whisper for {file_path}")
-            
-            with open(temp_file, "rb") as audio_file:
-                transcript = self.client.audio.transcriptions.create(
-                    model="whisper-large-v3",  # Groq's free Whisper model
-                    file=audio_file,
-                    response_format="verbose_json"
-                )
+            # Transcribe with Whisper
+            logger.info(f"Starting transcription for {file_path}")
+            result = self.model.transcribe(
+                temp_file,
+                language=language if language != "auto" else None,
+                verbose=True,
+                word_timestamps=True
+            )
             
             # Clean up temporary file
             os.unlink(temp_file)
             
-            # Log the transcript structure for debugging
-            logger.info(f"Transcript type: {type(transcript)}")
-            logger.info(f"Transcript attributes: {dir(transcript)}")
-            
-            # Convert transcript to dict if it's an object
-            if hasattr(transcript, 'model_dump'):
-                transcript_dict = transcript.model_dump()
-            elif hasattr(transcript, 'dict'):
-                transcript_dict = transcript.dict()
-            elif isinstance(transcript, dict):
-                transcript_dict = transcript
-            else:
-                # Convert object attributes to dict
-                transcript_dict = {
-                    'text': getattr(transcript, 'text', ''),
-                    'language': getattr(transcript, 'language', language),
-                    'segments': getattr(transcript, 'segments', [])
-                }
-            
-            logger.info(f"Transcript dict keys: {transcript_dict.keys()}")
-            
-            # Process segments
+            # Process results
             segments = []
-            raw_segments = transcript_dict.get('segments', [])
-            
-            for idx, segment in enumerate(raw_segments):
-                # Ensure segment is a dict
-                if not isinstance(segment, dict):
-                    segment = {
-                        'start': getattr(segment, 'start', 0),
-                        'end': getattr(segment, 'end', 0),
-                        'text': getattr(segment, 'text', '')
-                    }
-                
+            for segment in result["segments"]:
                 segments.append({
-                    "id": idx,
-                    "start": float(segment.get('start', 0)),
-                    "end": float(segment.get('end', 0)),
-                    "text": str(segment.get('text', '')).strip(),
-                    "words": []
+                    "id": segment["id"],
+                    "start": segment["start"],
+                    "end": segment["end"],
+                    "text": segment["text"].strip(),
+                    "words": segment.get("words", [])
                 })
-            
-            logger.info(f"Processed {len(segments)} segments")
             
             # Generate SRT content
             srt_content = self._generate_srt(segments)
             
             return {
-                "text": transcript_dict.get('text', ''),
-                "language": transcript_dict.get('language', language),
+                "text": result["text"],
+                "language": result["language"],
                 "segments": segments,
                 "srt_content": srt_content,
-                "duration": segments[-1]["end"] if segments else 0
+                "duration": result.get("duration", 0)
             }
             
         except Exception as e:
-            logger.error(f"Transcription failed: {e}", exc_info=True)
-            raise HTTPException(status_code=500, detail=f"Failed to transcribe video: {str(e)}")
+            logger.error(f"Transcription failed: {e}")
+            raise HTTPException(status_code=500, detail="Failed to transcribe video")
     
     def _generate_srt(self, segments: List[Dict]) -> str:
         """Generate SRT format from segments"""

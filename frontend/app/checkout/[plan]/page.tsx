@@ -6,6 +6,9 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import Link from 'next/link'
 import { Check, CreditCard, Bitcoin } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { motion } from 'framer-motion'
+import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 
 const PLAN_DETAILS: Record<string, { title: string; price: string; features: string[] }>= {
   pro: {
@@ -42,23 +45,44 @@ export default function SubscribePlanPage() {
   const plan = useMemo(() => PLAN_DETAILS[planKey] || PLAN_DETAILS['pro'], [planKey])
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white">
       <Header />
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center">Subscribe to {planKey === 'premium' ? 'Premium' : 'Pro'} Plan</h1>
-        <p className="text-gray-600 text-center mt-2">Get {planKey === 'premium' ? 'unlimited' : '300'} energy and unlock advanced features</p>
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          className="text-center mb-10"
+        >
+          <motion.h1 variants={staggerItem} className="text-3xl sm:text-4xl font-bold text-neutral-900">
+            Subscribe to {planKey === 'premium' ? 'Premium' : 'Pro'} Plan
+          </motion.h1>
+          <motion.p variants={staggerItem} className="text-neutral-600 mt-3 text-lg">
+            Get {planKey === 'premium' ? 'unlimited' : '300'} energy and unlock advanced features
+          </motion.p>
+        </motion.div>
 
-        <div className="max-w-3xl mx-auto mt-8 space-y-6">
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          className="max-w-3xl mx-auto space-y-6"
+        >
           {/* Plan card */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="bg-blue-50 text-blue-700 font-medium px-6 py-3">{plan.title} <span className="ml-2 text-sm text-blue-600">{plan.price}</span></div>
+          <div className="bg-white rounded-2xl border border-neutral-200 shadow-glass overflow-hidden">
+            <div className="bg-gradient-to-r from-subit-500 to-subit-600 text-white font-semibold px-6 py-4 flex items-center justify-between">
+              <span>{plan.title}</span>
+              <span className="text-2xl">{plan.price}</span>
+            </div>
             <div className="p-6">
-              <h3 className="font-semibold text-gray-900 mb-3">What's included:</h3>
-              <ul className="space-y-2">
+              <h3 className="font-semibold text-neutral-900 mb-4 text-lg">What's included:</h3>
+              <ul className="space-y-3">
                 {plan.features.map((f, i) => (
-                  <li key={i} className="flex items-start space-x-2">
-                    <Check className="w-5 h-5 text-green-500 mt-0.5" />
-                    <span className="text-gray-700">{f}</span>
+                  <li key={i} className="flex items-start space-x-3">
+                    <div className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-success-100 flex items-center justify-center">
+                      <Check className="w-3 h-3 text-success-600" />
+                    </div>
+                    <span className="text-neutral-700">{f}</span>
                   </li>
                 ))}
               </ul>
@@ -66,37 +90,83 @@ export default function SubscribePlanPage() {
           </div>
 
           {/* Payment method */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-            <div className="p-6 border-b border-gray-200">
-              <h3 className="font-semibold text-gray-900">Payment Method</h3>
+          <div className="bg-white rounded-2xl border border-neutral-200 shadow-glass">
+            <div className="p-6 border-b border-neutral-200">
+              <h3 className="font-semibold text-neutral-900 text-lg">Choose Payment Method</h3>
             </div>
             <div className="p-6 space-y-4">
-              <button onClick={() => setMethod('card')} className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border ${method==='card'?'border-blue-600 bg-blue-50':'border-gray-200 hover:bg-gray-50'}`}>
-                <div className="flex items-center space-x-3">
-                  <CreditCard className="w-5 h-5 text-gray-700" />
-                  <div className="text-left">
-                    <div className="font-medium text-gray-900">Pay with Card</div>
-                    <div className="text-sm text-gray-500">Pay with Credit/Debit Card, Apple Pay, Google pay, etc.</div>
-                  </div>
+              <button
+                onClick={() => setMethod('card')}
+                className={`w-full flex items-center px-5 py-4 rounded-xl border-2 transition-all duration-200 ${
+                  method === 'card'
+                    ? 'border-subit-500 bg-subit-50 shadow-md'
+                    : 'border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
+                }`}
+              >
+                <div className={`w-12 h-12 rounded-lg flex items-center justify-center mr-4 ${
+                  method === 'card' ? 'bg-subit-500' : 'bg-neutral-100'
+                }`}>
+                  <CreditCard className={`w-6 h-6 ${method === 'card' ? 'text-white' : 'text-neutral-600'}`} />
                 </div>
-              </button>
-              <button onClick={() => setMethod('crypto')} className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border ${method==='crypto'?'border-blue-600 bg-blue-50':'border-gray-200 hover:bg-gray-50'}`}>
-                <div className="flex items-center space-x-3">
-                  <Bitcoin className="w-5 h-5 text-gray-700" />
-                  <div className="text-left">
-                    <div className="font-medium text-gray-900">Pay with Cryptocurrencies</div>
-                    <div className="text-sm text-gray-500">Pay with supported cryptocurrencies (BTC, ETH, USDT, etc.)</div>
-                  </div>
+                <div className="text-left flex-1">
+                  <div className="font-semibold text-neutral-900">Pay with Card</div>
+                  <div className="text-sm text-neutral-600">Credit/Debit Card, Apple Pay, Google Pay</div>
                 </div>
+                {method === 'card' && (
+                  <div className="w-5 h-5 rounded-full bg-subit-500 flex items-center justify-center">
+                    <Check className="w-3 h-3 text-white" />
+                  </div>
+                )}
               </button>
-              <button onClick={() => router.push(`/checkout/pay/${planKey}?method=${method}`)} className="w-full mt-2 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">
+
+              <button
+                onClick={() => setMethod('crypto')}
+                className={`w-full flex items-center px-5 py-4 rounded-xl border-2 transition-all duration-200 ${
+                  method === 'crypto'
+                    ? 'border-subit-500 bg-subit-50 shadow-md'
+                    : 'border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
+                }`}
+              >
+                <div className={`w-12 h-12 rounded-lg flex items-center justify-center mr-4 ${
+                  method === 'crypto' ? 'bg-subit-500' : 'bg-neutral-100'
+                }`}>
+                  <Bitcoin className={`w-6 h-6 ${method === 'crypto' ? 'text-white' : 'text-neutral-600'}`} />
+                </div>
+                <div className="text-left flex-1">
+                  <div className="font-semibold text-neutral-900">Pay with Crypto</div>
+                  <div className="text-sm text-neutral-600">BTC, ETH, USDT, and more</div>
+                </div>
+                {method === 'crypto' && (
+                  <div className="w-5 h-5 rounded-full bg-subit-500 flex items-center justify-center">
+                    <Check className="w-3 h-3 text-white" />
+                  </div>
+                )}
+              </button>
+
+              <Button
+                onClick={() => router.push(`/checkout/pay/${planKey}?method=${method}`)}
+                size="lg"
+                variant="premium"
+                className="w-full mt-6"
+              >
                 Continue to Payment
-              </button>
-              <div className="text-xs text-gray-500 text-center">By proceeding, you agree to our <Link href="/terms" className="underline">Terms of Service</Link> and <Link href="/privacy" className="underline">Privacy Policy</Link></div>
-              <div className="text-center mt-4"><Link href="/pricing" className="text-blue-700">Back to Pricing</Link></div>
+              </Button>
+
+              <p className="text-xs text-neutral-500 text-center pt-2">
+                By proceeding, you agree to our{' '}
+                <Link href="/terms" className="text-subit-600 hover:text-subit-700 underline">Terms of Service</Link>
+                {' '}and{' '}
+                <Link href="/privacy" className="text-subit-600 hover:text-subit-700 underline">Privacy Policy</Link>
+              </p>
+
+              <div className="text-center pt-4">
+                <Link href="/pricing" className="text-subit-600 hover:text-subit-700 font-medium">
+                  ← Back to Pricing
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </main>
       <Footer />
     </div>

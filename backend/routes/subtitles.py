@@ -7,8 +7,9 @@ from typing import List, Optional
 import logging
 from services.supabase_client import get_supabase_client
 from services.auth_service import get_current_user, check_subscription_tier
-from services.whisper_service import whisper_service
-from workers.celery import transcribe_video_task
+# from services.whisper_service import whisper_service
+# from services.export_service import export_service
+# from workers.celery import transcribe_video_task
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -22,40 +23,28 @@ async def generate_subtitles(
 ):
     """Generate subtitles for a project using Whisper AI"""
     try:
-        logger.info(f"=== Starting subtitle generation for project {project_id} ===")
-        logger.info(f"User: {user.get('id')}, Language: {language}")
-        
         supabase = get_supabase_client()
         
         # Get project details
-        logger.info(f"Fetching project {project_id} from database...")
         project_result = supabase.table("projects")\
             .select("*")\
             .eq("id", project_id)\
             .eq("user_id", user["id"])\
-            .single()\
             .execute()
         
         if not project_result.data:
-            logger.error(f"Project {project_id} not found")
             raise HTTPException(status_code=404, detail="Project not found")
         
-        project = project_result.data
-        logger.info(f"Project found: {project['title']}, video: {project.get('video_filename')}")
+        project = project_result.data[0]
         
-        # Check if subtitles already exist and delete them to allow regeneration
-        logger.info(f"Checking if subtitles already exist for project {project_id}...")
+        # Check if subtitles already exist
         existing_subtitles = supabase.table("subtitles")\
             .select("*")\
             .eq("project_id", project_id)\
             .execute()
         
         if existing_subtitles.data:
-            logger.info(f"Deleting existing subtitles to allow regeneration...")
-            supabase.table("subtitles")\
-                .delete()\
-                .eq("project_id", project_id)\
-                .execute()
+            raise HTTPException(status_code=400, detail="Subtitles already exist for this project")
         
         # Update project status
         supabase.table("projects")\
@@ -63,21 +52,20 @@ async def generate_subtitles(
             .eq("id", project_id)\
             .execute()
         
-        # Start transcription in background using Celery
-        video_path = f"{user['id']}/{project['video_filename']}"
-        logger.info(f"Dispatching Celery task for video_path: {video_path}")
-        
-        try:
-            task = transcribe_video_task.delay(project_id, video_path)
-            logger.info(f"Celery task dispatched with ID: {task.id}")
-        except Exception as celery_error:
-            logger.error(f"Failed to dispatch Celery task: {celery_error}", exc_info=True)
-            raise HTTPException(status_code=500, detail=f"Failed to dispatch task: {str(celery_error)}")
+        # Start transcription in background
+        if background_tasks:
+            background_tasks.add_task(
+                transcribe_video_task,
+                project_id,
+                project["video_filename"]
+            )
+        else:
+            # For testing, run synchronously
+            transcribe_video_task.delay(project_id, project["video_filename"])
         
         return {
             "message": "Subtitle generation started",
             "project_id": project_id,
-            "task_id": task.id,
             "status": "processing"
         }
         

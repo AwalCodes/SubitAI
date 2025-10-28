@@ -7,7 +7,7 @@ import { ArrowRight, Zap, Star } from 'lucide-react'
 
 export default function CTA() {
   return (
-    <section className="py-20 bg-gradient-to-br from-primary-600 to-primary-800 relative overflow-hidden">
+    <section className="py-20 bg-gradient-to-br from-subit-600 to-subit-800 relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 bg-grid-pattern opacity-10" />
       <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full mix-blend-overlay filter blur-xl opacity-10" />
@@ -24,7 +24,7 @@ export default function CTA() {
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6">
             Ready to create professional subtitles?
           </h2>
-          <p className="text-xl text-primary-100 mb-8 max-w-3xl mx-auto">
+          <p className="text-xl text-subit-100 mb-8 max-w-3xl mx-auto">
             Join thousands of content creators who trust SUBIT.AI for their subtitle needs.
           </p>
 
@@ -32,7 +32,7 @@ export default function CTA() {
             <Link href="/auth/signup">
               <Button 
                 size="lg" 
-                className="bg-white text-primary-600 hover:bg-primary-50 font-semibold px-8 py-4 text-lg"
+                className="bg-white text-subit-600 hover:bg-subit-50 font-semibold px-8 py-4 text-lg"
               >
                 Get Started for Free
                 <ArrowRight className="w-5 h-5 ml-2" />
@@ -42,7 +42,7 @@ export default function CTA() {
               <Button 
                 variant="outline" 
                 size="lg"
-                className="border-white text-white hover:bg-white hover:text-primary-600 font-semibold px-8 py-4 text-lg"
+                className="border-white text-white hover:bg-white hover:text-subit-600 font-semibold px-8 py-4 text-lg"
               >
                 View Pricing Plans
               </Button>
@@ -59,19 +59,19 @@ export default function CTA() {
           >
             <div className="text-center">
               <div className="text-3xl font-bold text-white mb-2">10K+</div>
-              <div className="text-primary-200 text-sm">Active Users</div>
+              <div className="text-subit-200 text-sm">Active Users</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-white mb-2">95%</div>
-              <div className="text-primary-200 text-sm">Accuracy Rate</div>
+              <div className="text-subit-200 text-sm">Accuracy Rate</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-white mb-2">2min</div>
-              <div className="text-primary-200 text-sm">Avg Processing</div>
+              <div className="text-subit-200 text-sm">Avg Processing</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-white mb-2">50+</div>
-              <div className="text-primary-200 text-sm">Languages</div>
+              <div className="text-subit-200 text-sm">Languages</div>
             </div>
           </motion.div>
 
@@ -83,7 +83,7 @@ export default function CTA() {
             viewport={{ once: true }}
             className="mt-12"
           >
-            <p className="text-primary-200 text-sm mb-6">
+            <p className="text-subit-200 text-sm mb-6">
               Trusted by creators and businesses worldwide
             </p>
             <div className="flex items-center justify-center space-x-8 opacity-60">
@@ -100,7 +100,6 @@ export default function CTA() {
     </section>
   )
 }
-
 
 
 

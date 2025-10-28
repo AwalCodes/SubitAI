@@ -1,38 +1,26 @@
 services:
-  # FastAPI Backend
   - type: web
-    name: subitai-backend
+    name: subit-ai-backend
     env: python
+    region: oregon
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
-      - key: GROQ_API_KEY
-        sync: false
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
-      - key: REDIS_URL
+      - key: OPENAI_API_KEY
         sync: false
-      - key: BACKEND_CORS_ORIGINS
+      - key: STRIPE_SECRET_KEY
         sync: false
-      - key: LOG_LEVEL
-        value: info
-
-  # Celery Worker (for background transcription tasks)
-  - type: worker
-    name: subitai-celery-worker
-    env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: celery -A workers.celery worker --loglevel=info
-    envVars:
-      - key: GROQ_API_KEY
+      - key: STRIPE_WEBHOOK_SECRET
         sync: false
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_SERVICE_ROLE_KEY
+      - key: FRONTEND_URL
         sync: false
       - key: REDIS_URL
+        value: redis://localhost:6379/0
         sync: false
-      - key: LOG_LEVEL
-        value: info
+      - key: PORT
+        value: 10000
+        sync: false

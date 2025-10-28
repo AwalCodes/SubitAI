@@ -4,9 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
-import toast from 'react-hot-toast'
-import Header from '@/components/layout/Header'
-import Footer from '@/components/layout/Footer'
+import { toast } from 'react-hot-toast'
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -85,16 +83,14 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 flex items-start justify-center">
-        <div className="max-w-md w-full">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-8">
           <Link href="/" className="logo-container justify-center mb-6">
-            <div className="logo-icon bg-blue-500">
-              <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+            <div className="logo-icon">
+              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
             </div>
             <span className="logo-text">SUBIT</span>
@@ -108,8 +104,8 @@ export default function SignupPage() {
           </p>
         </div>
 
-        {/* Card */}
-        <div className="form-container shadow-md">
+        {/* Form Container matching Figma */}
+        <div className="form-container">
           <form className="space-y-6" onSubmit={handleSignup}>
             {/* Full Name */}
             <div>
@@ -235,7 +231,7 @@ export default function SignupPage() {
           </form>
         </div>
 
-        {/* Inline helper */}
+        {/* Footer */}
         <div className="text-center mt-8">
           <p className="text-gray-600 text-sm">
             By creating an account, you agree to our{' '}
@@ -248,9 +244,7 @@ export default function SignupPage() {
             </Link>
           </p>
         </div>
-        </div>
-      </main>
-      <Footer />
+      </div>
     </div>
   )
 }

@@ -1,5 +1,4 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
-import type { SupabaseClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -8,24 +7,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
 }
 
-// Singleton instance to prevent multiple GoTrueClient instances
-let supabaseInstance: SupabaseClient | null = null
-
-// Client-side Supabase client (singleton)
+// Client-side Supabase client
 export const createClient = () => {
-  if (supabaseInstance) {
-    return supabaseInstance
-  }
-  
-  supabaseInstance = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true
-    }
-  })
-  
-  return supabaseInstance
+  return createSupabaseClient(supabaseUrl, supabaseAnonKey)
 }
 
 // Supabase configuration

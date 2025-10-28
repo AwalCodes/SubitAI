@@ -9,7 +9,7 @@ from typing import Dict, Any, List
 import logging
 from fastapi import HTTPException
 import ffmpeg
-# from moviepy.editor import VideoFileClip, TextClip, CompositeVideoClip
+from moviepy.editor import VideoFileClip, TextClip, CompositeVideoClip
 from services.supabase_client import get_supabase_client
 from services.video_service import video_service
 

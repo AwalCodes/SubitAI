@@ -31,7 +31,6 @@ CREATE TABLE public.projects (
     video_filename TEXT,
     video_size BIGINT,
     video_duration INTEGER, -- in seconds
-    export_url TEXT,
     status project_status DEFAULT 'uploading',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

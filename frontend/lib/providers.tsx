@@ -21,14 +21,31 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   const fetchUser = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      console.log('Fetched session:', session?.user)
-      setUser(session?.user ?? null)
-      setSubscription(null) // Skip subscription for now
+      const { data: { user } } = await supabase.auth.getUser()
+      console.log('Fetched user:', user)
+      setUser(user)
+      
+      if (user) {
+        // Fetch user subscription (optional)
+        try {
+          const response = await fetch('/api/billing/subscription', {
+            headers: {
+              'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+            }
+          })
+          
+          if (response.ok) {
+            const data = await response.json()
+            setSubscription(data.subscription)
+          }
+        } catch (error) {
+          console.log('No subscription endpoint available')
+        }
+      } else {
+        setSubscription(null)
+      }
     } catch (error) {
       console.error('Error fetching user:', error)
-      setUser(null)
-      setSubscription(null)
     } finally {
       setLoading(false)
     }
@@ -38,18 +55,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
     fetchUser()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth state change:', event, session?.user?.email)
-        
-        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+      async (event, session) => {
+        console.log('Auth state change:', event, session?.user)
+        if (event === 'SIGNED_IN') {
           setUser(session?.user ?? null)
-          setLoading(false)
+          await fetchUser()
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
           setSubscription(null)
-          setLoading(false)
-        } else if (event === 'TOKEN_REFRESHED') {
-          setUser(session?.user ?? null)
         }
       }
     )

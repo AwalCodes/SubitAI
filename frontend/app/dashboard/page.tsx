@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useUser } from '@/lib/providers'
 import { useRouter } from 'next/navigation'
-import { Plus, Video, Clock, CheckCircle, AlertCircle, Zap, Trash2 } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { Plus, Video, Clock, CheckCircle, AlertCircle, Zap } from 'lucide-react'
 import { apiClient } from '@/lib/api'
 import Link from 'next/link'
 
@@ -22,19 +21,6 @@ export default function Dashboard() {
   const router = useRouter()
   const [projects, setProjects] = useState<Project[]>([])
   const [projectsLoading, setProjectsLoading] = useState(true)
-  const [loadingTimeout, setLoadingTimeout] = useState(false)
-
-  // Add timeout to prevent infinite loading
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (loading) {
-        console.log('Loading timeout reached')
-        setLoadingTimeout(true)
-      }
-    }, 10000) // 10 second timeout
-
-    return () => clearTimeout(timer)
-  }, [loading])
 
   useEffect(() => {
     if (!loading && !user) {
@@ -43,51 +29,20 @@ export default function Dashboard() {
   }, [user, loading, router])
 
   useEffect(() => {
-    console.log('Dashboard: user state:', { user: user?.email, loading, projectsLoading })
     if (user) {
       fetchProjects()
     }
-  }, [user]) // Only depend on user, not projectsLoading
+  }, [user])
 
   const fetchProjects = async () => {
-    console.log('fetchProjects called, current projectsLoading:', projectsLoading)
-    
     try {
       setProjectsLoading(true)
-      console.log('Fetching projects from API...')
       const response = await apiClient.projects.getProjects({ limit: 10 })
-      console.log('Projects response:', response.data)
       setProjects(response.data.projects || [])
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to fetch projects:', error)
-      console.error('Error details:', error.response?.data, error.response?.status)
-      // If it's an auth error, redirect to login
-      if (error.response?.status === 401 || error.response?.status === 403) {
-        console.log('Auth error, redirecting to login')
-        router.push('/auth/login')
-        return
-      }
-      // Set empty projects on error
-      setProjects([])
     } finally {
-      console.log('Setting projectsLoading to false')
       setProjectsLoading(false)
-    }
-  }
-
-  const handleDeleteProject = async (projectId: string, projectTitle: string) => {
-    if (!confirm(`Are you sure you want to delete "${projectTitle}"? This action cannot be undone.`)) {
-      return
-    }
-
-    try {
-      await apiClient.projects.deleteProject(projectId)
-      toast.success('Project deleted successfully')
-      // Refresh the projects list
-      fetchProjects()
-    } catch (error: any) {
-      console.error('Delete error:', error)
-      toast.error(error.response?.data?.detail || 'Failed to delete project')
     }
   }
 
@@ -129,29 +84,12 @@ export default function Dashboard() {
     })
   }
 
-  if ((loading && !loadingTimeout) || projectsLoading) {
+  if (loading || projectsLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-gray-600">Loading dashboard...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (loadingTimeout) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading timeout - redirecting to login...</p>
-          <button 
-            onClick={() => router.push('/auth/login')}
-            className="mt-4 btn-primary"
-          >
-            Go to Login
-          </button>
         </div>
       </div>
     )
@@ -294,13 +232,6 @@ export default function Dashboard() {
                           View
                         </button>
                       </Link>
-                      <button 
-                        onClick={() => handleDeleteProject(project.id, project.title)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                        title="Delete project"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
                     </div>
                   </div>
                 </div>

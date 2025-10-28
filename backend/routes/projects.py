@@ -76,11 +76,12 @@ async def upload_video(
         
         project = result.data[0]
         
-        # Mark project as uploaded
-        supabase.table("projects")\
-            .update({"status": "completed"})\
-            .eq("id", project["id"])\
-            .execute()
+        # Start transcription in background (commented out for testing)
+        # background_tasks.add_task(
+        #     transcribe_video_task,
+        #     project["id"],
+        #     upload_result["path"]
+        # )
         
         return {
             "project": project,
@@ -128,7 +129,7 @@ async def get_project(
     project_id: str,
     user: dict = Depends(get_current_user)
 ):
-    """Get project details"""
+    """Get specific project details"""
     try:
         supabase = get_supabase_client()
         
@@ -136,25 +137,13 @@ async def get_project(
             .select("*, subtitles(*)")\
             .eq("id", project_id)\
             .eq("user_id", user["id"])\
-            .single()\
             .execute()
         
         if not result.data:
             raise HTTPException(status_code=404, detail="Project not found")
         
-        project = result.data
-        
-        # Generate signed URL for video if it exists
-        if project.get("video_filename") and user.get("id"):
-            video_path = f"{user['id']}/{project['video_filename']}"
-            try:
-                signed_url = supabase.storage.from_("videos").create_signed_url(video_path, 3600)
-                project["video_url"] = signed_url['signedURL'] if isinstance(signed_url, dict) else signed_url
-            except Exception as e:
-                logger.warning(f"Failed to generate signed URL: {e}")
-        
         return {
-            "project": project,
+            "project": result.data[0],
             "message": "Project retrieved successfully"
         }
         

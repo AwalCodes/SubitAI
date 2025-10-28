@@ -2,12 +2,7 @@
 Celery configuration and background tasks for SUBIT.AI
 """
 
-# Load environment variables first
 import os
-from dotenv import load_dotenv
-load_dotenv()
-
-import asyncio
 from celery import Celery
 import logging
 from services.supabase_client import get_supabase_client
@@ -38,14 +33,10 @@ celery_app.conf.update(
     worker_max_tasks_per_child=1000,
 )
 
-@celery_app.task(bind=True, name='transcribe_video', max_retries=3)
+@celery_app.task(bind=True, name='transcribe_video')
 def transcribe_video_task(self, project_id: str, video_path: str):
     """Background task for video transcription using Whisper"""
     try:
-        logger.info(f"====== CELERY TASK RECEIVED ======")
-        logger.info(f"Task ID: {self.request.id}")
-        logger.info(f"Project ID: {project_id}")
-        logger.info(f"Video Path: {video_path}")
         logger.info(f"Starting transcription for project {project_id}")
         
         supabase = get_supabase_client()
@@ -56,8 +47,8 @@ def transcribe_video_task(self, project_id: str, video_path: str):
             .eq("id", project_id)\
             .execute()
         
-        # Transcribe video (run async function in sync context)
-        transcription_result = asyncio.run(whisper_service.transcribe_video(video_path))
+        # Transcribe video
+        transcription_result = whisper_service.transcribe_video(video_path)
         
         # Save subtitles to database
         subtitle_data = {
@@ -133,14 +124,13 @@ def export_video_task(self, project_id: str, user_id: str, export_options: dict)
         
         subtitle = project["subtitles"][0]
         
-        # Export video with subtitles (run async function in sync context)
-        video_path = f"{user_id}/{project['video_filename']}"
-        export_result = asyncio.run(export_service.export_video_with_subtitles(
-            video_path,
+        # Export video with subtitles
+        export_result = export_service.export_video_with_subtitles(
+            project["video_filename"],
             subtitle["json_data"]["segments"],
             user_id,
             export_options
-        ))
+        )
         
         # Update project with export URL
         supabase.table("projects")\

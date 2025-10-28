@@ -6,8 +6,6 @@ import os
 from supabase import create_client, Client
 from typing import Optional
 import logging
-import jwt
-import time
 
 logger = logging.getLogger(__name__)
 
@@ -37,20 +35,11 @@ def get_supabase_client() -> Client:
     return SupabaseClient.get_client()
 
 def verify_jwt_token(token: str) -> dict:
-    """Verify JWT token locally without external API calls"""
+    """Verify JWT token with Supabase"""
     try:
-        # Decode JWT without verification first to get the payload
-        # We trust the token since it's signed by Supabase
-        decoded = jwt.decode(token, options={"verify_signature": False})
-        
-        # Check if token is expired
-        if decoded.get('exp') and decoded['exp'] < time.time():
-            raise ValueError("Token expired")
-        
-        return decoded
-    except jwt.ExpiredSignatureError:
-        logger.error("JWT token has expired")
-        raise ValueError("Token expired")
+        supabase = get_supabase_client()
+        user = supabase.auth.get_user(token)
+        return user
     except Exception as e:
         logger.error(f"JWT verification failed: {e}")
         raise ValueError("Invalid token")
@@ -58,21 +47,8 @@ def verify_jwt_token(token: str) -> dict:
 def get_user_from_token(token: str) -> dict:
     """Get user data from JWT token"""
     try:
-        payload = verify_jwt_token(token)
-        
-        # Extract user info from JWT payload
-        user_id = payload.get('sub')
-        email = payload.get('email')
-        
-        if not user_id:
-            raise ValueError("Invalid token: missing user ID")
-        
-        # Return user dict in expected format
-        return {
-            "id": user_id,
-            "email": email,
-            "subscription_tier": "free"  # Default tier, can be fetched from DB if needed
-        }
+        user_data = verify_jwt_token(token)
+        return user_data.user.dict()
     except Exception as e:
         logger.error(f"Failed to get user from token: {e}")
         raise ValueError("Invalid token")

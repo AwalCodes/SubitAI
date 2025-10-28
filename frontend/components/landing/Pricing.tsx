@@ -66,7 +66,7 @@ const plans = [
     limitations: [],
     cta: 'Subscribe with Crypto',
     popular: false,
-    color: 'from-blue-500 to-blue-600'
+    color: 'from-purple-500 to-purple-600'
   }
 ]
 
@@ -173,9 +173,7 @@ export default function Pricing() {
                 </div>
 
                 {/* CTA */}
-                <Link href={
-                  plan.name === 'Free' ? '/auth/signup' : (plan.name === 'Pro' ? '/checkout/pro' : '/checkout/premium')
-                }>
+                <Link href={plan.price === 0 ? '/auth/signup' : '/pricing'}>
                   <Button 
                     className={`w-full ${
                       plan.popular 
@@ -185,7 +183,7 @@ export default function Pricing() {
                     size="lg"
                   >
                     {plan.cta}
-                    {plan.name === 'Free' && <ArrowRight className="w-4 h-4 ml-2" />}
+                    {plan.price === 0 && <ArrowRight className="w-4 h-4 ml-2" />}
                   </Button>
                 </Link>
               </div>
@@ -296,7 +294,6 @@ export default function Pricing() {
     </section>
   )
 }
-
 
 
 

@@ -14,7 +14,7 @@ const steps = [
     icon: Brain,
     title: 'AI Generates Subtitles',
     description: 'Our advanced AI transcribes your video with high accuracy using OpenAI Whisper technology.',
-    color: 'from-blue-500 to-blue-600'
+    color: 'from-purple-500 to-purple-600'
   },
   {
     icon: Download,
@@ -122,7 +122,6 @@ export default function HowItWorks() {
     </section>
   )
 }
-
 
 
 
