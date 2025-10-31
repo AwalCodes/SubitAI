@@ -3,9 +3,12 @@ Supabase client configuration and utilities
 """
 
 import os
-from supabase import create_client, Client
 from typing import Optional
 import logging
+import inspect
+
+import httpx
+from supabase import create_client, Client
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +28,7 @@ class SupabaseClient:
                 logger.warning("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY not set, using mock client")
                 return None
             
+            _ensure_httpx_proxy_compat()
             cls._instance = create_client(url, key)
             logger.info("Supabase client initialized")
         
@@ -33,6 +37,22 @@ class SupabaseClient:
 def get_supabase_client() -> Client:
     """Get Supabase client for dependency injection"""
     return SupabaseClient.get_client()
+
+
+def _ensure_httpx_proxy_compat() -> None:
+    """Patch httpx.Client to accept the legacy proxy keyword used by gotrue."""
+    signature = inspect.signature(httpx.Client.__init__)
+    if "proxy" in signature.parameters:
+        return
+
+    original_init = httpx.Client.__init__
+
+    def patched_init(self, *args, proxy=None, **kwargs):
+        if proxy is not None and "proxies" not in kwargs:
+            kwargs["proxies"] = proxy
+        return original_init(self, *args, **kwargs)
+
+    httpx.Client.__init__ = patched_init  # type: ignore[assignment]
 
 def verify_jwt_token(token: str) -> dict:
     """Verify JWT token with Supabase"""
