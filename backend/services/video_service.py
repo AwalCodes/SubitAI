@@ -12,6 +12,12 @@ import aiofiles
 # from moviepy.editor import VideoFileClip
 # import ffmpeg
 from services.supabase_client import get_supabase_client
+from storage3.utils import StorageException
+
+try:
+    from httpx import Response
+except ImportError:  # pragma: no cover
+    Response = None  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -33,15 +39,29 @@ class VideoService:
             file_path = f"{user_id}/{unique_filename}"
             
             # Upload to Supabase Storage
-            result = self.supabase.storage.from_("videos").upload(
-                path=file_path,
-                file=file,
-                file_options={"content-type": "video/mp4"}
-            )
-            
-            if result.get("error"):
+            try:
+                result = self.supabase.storage.from_("videos").upload(
+                    path=file_path,
+                    file=file,
+                    file_options={"content-type": "video/mp4"}
+                )
+            except StorageException as storage_error:
+                logger.error(f"Supabase storage error: {storage_error}")
                 raise HTTPException(status_code=400, detail="Failed to upload video")
-            
+
+            response_data = None
+            if Response is not None and isinstance(result, Response):
+                try:
+                    response_data = result.json()
+                except Exception:  # pragma: no cover
+                    response_data = None
+            elif isinstance(result, dict):
+                response_data = result
+
+            if isinstance(response_data, dict) and response_data.get("error"):
+                logger.error(f"Supabase storage responded with error: {response_data}")
+                raise HTTPException(status_code=400, detail="Failed to upload video")
+
             # Get public URL
             public_url = self.supabase.storage.from_("videos").get_public_url(file_path)
             
