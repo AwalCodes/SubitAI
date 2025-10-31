@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
+import { setAuthTokens } from '@/lib/api'
 import { User } from '@supabase/supabase-js'
 
 interface UserContextType {
@@ -21,16 +22,21 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   const fetchUser = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user }, error } = await supabase.auth.getUser()
+      if (error) {
+        console.error('Error getting Supabase user:', error)
+      }
       console.log('Fetched user:', user)
       setUser(user)
-      
+
       if (user) {
+        const { data: sessionData } = await supabase.auth.getSession()
+        setAuthTokens(sessionData.session?.access_token ?? null)
         // Fetch user subscription (optional)
         try {
           const response = await fetch('/api/billing/subscription', {
             headers: {
-              'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+              'Authorization': `Bearer ${sessionData.session?.access_token ?? ''}`
             }
           })
           
@@ -43,6 +49,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         }
       } else {
         setSubscription(null)
+        setAuthTokens(null)
       }
     } catch (error) {
       console.error('Error fetching user:', error)
@@ -59,10 +66,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
         console.log('Auth state change:', event, session?.user)
         if (event === 'SIGNED_IN') {
           setUser(session?.user ?? null)
+          setAuthTokens(session?.access_token ?? null)
           await fetchUser()
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
           setSubscription(null)
+          setAuthTokens(null)
         }
       }
     )

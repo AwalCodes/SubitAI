@@ -37,6 +37,14 @@ api.interceptors.response.use(
   }
 )
 
+export const setAuthTokens = (accessToken: string | null) => {
+  if (accessToken) {
+    localStorage.setItem('access_token', accessToken)
+  } else {
+    localStorage.removeItem('access_token')
+  }
+}
+
 // API functions
 export const apiClient = {
   // Auth

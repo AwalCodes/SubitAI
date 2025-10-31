@@ -21,10 +21,12 @@ export default function Dashboard() {
   const router = useRouter()
   const [projects, setProjects] = useState<Project[]>([])
   const [projectsLoading, setProjectsLoading] = useState(true)
+  const [initialLoad, setInitialLoad] = useState(true)
 
   useEffect(() => {
     if (!loading && !user) {
       router.push('/auth/login')
+      setInitialLoad(false)
     }
   }, [user, loading, router])
 
@@ -43,6 +45,7 @@ export default function Dashboard() {
       console.error('Failed to fetch projects:', error)
     } finally {
       setProjectsLoading(false)
+      setInitialLoad(false)
     }
   }
 
@@ -84,7 +87,7 @@ export default function Dashboard() {
     })
   }
 
-  if (loading || projectsLoading) {
+  if (loading || initialLoad) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
