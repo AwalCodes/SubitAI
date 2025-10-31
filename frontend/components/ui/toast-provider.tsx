@@ -1,6 +1,6 @@
 'use client'
 
-import { Toaster } from 'sonner'
+import { Toaster } from 'react-hot-toast'
 
 export function ToastProvider() {
   return (
@@ -16,7 +16,6 @@ export function ToastProvider() {
         className: 'font-sans',
         duration: 4000,
       }}
-      richColors
     />
   )
 }
