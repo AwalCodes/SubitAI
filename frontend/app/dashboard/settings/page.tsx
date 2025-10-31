@@ -23,7 +23,7 @@ export default function SettingsPage() {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Name</label>
-            <Input placeholder="Your name" defaultValue={user?.name || ''} />
+            <Input placeholder="Your name" defaultValue={user?.user_metadata?.name || user?.user_metadata?.full_name || ''} />
           </div>
           <Button className="mt-4">Update Profile</Button>
         </CardContent>

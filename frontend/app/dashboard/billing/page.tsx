@@ -7,8 +7,14 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
 export default function BillingPage() {
-  const { user } = useUser()
+  const { user, subscription } = useUser()
   const router = useRouter()
+
+  // Default to free plan
+  const planType = subscription?.plan || 'free'
+  const planName = planType === 'premium' ? 'Premium' : planType === 'pro' ? 'Pro' : 'Free'
+  const planPrice = planType === 'premium' ? '$50/month' : planType === 'pro' ? '$10/month' : 'Free'
+  const planEnergy = planType === 'premium' ? 'Unlimited energy' : planType === 'pro' ? '300 energy/day' : '30 energy/day'
 
   return (
     <div className="space-y-6">
@@ -27,20 +33,18 @@ export default function BillingPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-lg font-medium">
-                {user?.subscription_plan === 'premium' ? 'Premium' : user?.subscription_plan === 'pro' ? 'Pro' : 'Free'}
+                {planName}
               </p>
               <p className="text-sm text-gray-600">
-                {user?.subscription_plan === 'premium' ? 'Unlimited energy' : 
-                 user?.subscription_plan === 'pro' ? '300 energy/day' : '30 energy/day'}
+                {planEnergy}
               </p>
             </div>
             <div className="text-right">
               <p className="text-lg font-medium">
-                {user?.subscription_plan === 'premium' ? '$50/month' : 
-                 user?.subscription_plan === 'pro' ? '$10/month' : 'Free'}
+                {planPrice}
               </p>
-              {user?.subscription_plan !== 'free' && (
-                <p className="text-sm text-gray-600">Next billing: {user?.subscription_ends_at}</p>
+              {planType !== 'free' && subscription?.ends_at && (
+                <p className="text-sm text-gray-600">Next billing: {subscription.ends_at}</p>
               )}
             </div>
           </div>
@@ -54,11 +58,11 @@ export default function BillingPage() {
         <CardContent>
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              {user?.subscription_plan === 'free' 
+              {planType === 'free'
                 ? 'Upgrade to add payment methods' 
                 : 'Manage your payment methods'}
             </p>
-            {user?.subscription_plan !== 'free' && (
+            {planType !== 'free' && (
               <Link href="/dashboard/billing/payment-methods">
                 <Button>Manage Payment Methods</Button>
               </Link>
