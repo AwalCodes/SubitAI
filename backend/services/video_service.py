@@ -9,8 +9,7 @@ from typing import Dict, Any, Optional
 import logging
 from fastapi import HTTPException
 import aiofiles
-# from moviepy.editor import VideoFileClip
-# import ffmpeg
+import ffmpeg
 from services.supabase_client import get_supabase_client
 from storage3.utils import StorageException
 
