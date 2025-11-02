@@ -74,7 +74,6 @@ export default function LoginPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <Logo href="/" className="justify-center mb-6" imageClassName="h-12 w-12" />
-          <span className="logo-text">SUBIT</span>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Log in to your account</h2>
           <p className="text-gray-600">
             Or{' '}

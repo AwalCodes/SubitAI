@@ -1,20 +1,28 @@
 <svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-  <rect width="256" height="256" rx="48" fill="#308DFF" />
-  <path
-    d="M228 96C196 40 156 16 128 16C100 16 60 40 28 96"
-    stroke="white"
-    stroke-width="26"
-    fill="none"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-  />
-  <path
-    d="M220 96C188 144 152 168 128 168C104 168 68 144 36 96C68 48 104 24 128 24C152 24 188 48 220 96Z"
-    stroke="white"
-    stroke-width="26"
-    fill="none"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-  />
-  <circle cx="128" cy="96" r="34" fill="white" />
+  <!-- Rounded square with thin black border -->
+  <rect width="256" height="256" rx="48" fill="#308DFF" stroke="#000000" stroke-width="4"/>
+  
+  <!-- Abstract eye symbol in white -->
+  <g transform="translate(128, 128)">
+    <!-- Outer thick white line - eye contour -->
+    <path
+      d="M -70,-25 Q -80,-10 -80,0 Q -80,10 -70,25 Q -60,40 -40,45 Q -20,50 0,45 Q 20,50 40,45 Q 60,40 70,25 Q 80,10 80,0 Q 80,-10 70,-25 Q 60,-40 40,-45 Q 20,-50 0,-45 Q -20,-50 -40,-45 Q -60,-40 -70,-25 Z"
+      stroke="white"
+      stroke-width="28"
+      fill="none"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <!-- Inner white line - iris -->
+    <path
+      d="M -50,-15 Q -55,-5 -55,0 Q -55,5 -50,15 Q -45,25 -30,28 Q -15,30 0,28 Q 15,30 30,28 Q 45,25 50,15 Q 55,5 55,0 Q 55,-5 50,-15 Q 45,-25 30,-28 Q 15,-30 0,-28 Q -15,-30 -30,-28 Q -45,-25 -50,-15 Z"
+      stroke="white"
+      stroke-width="20"
+      fill="none"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <!-- Blue pupil in center -->
+    <circle cx="0" cy="0" r="24" fill="#308DFF"/>
+  </g>
 </svg>

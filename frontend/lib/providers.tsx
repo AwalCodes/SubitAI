@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { setAuthTokens } from '@/lib/api'
 import { User } from '@supabase/supabase-js'
 
 interface UserContextType {
@@ -31,7 +30,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
       if (user) {
         const { data: sessionData } = await supabase.auth.getSession()
-        setAuthTokens(sessionData.session?.access_token ?? null)
+        const accessToken = sessionData.session?.access_token
+        if (accessToken) {
+          localStorage.setItem('access_token', accessToken)
+        } else {
+          localStorage.removeItem('access_token')
+        }
         // Fetch user subscription (optional)
         try {
           const response = await fetch('/api/billing/subscription', {
@@ -49,7 +53,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         }
       } else {
         setSubscription(null)
-        setAuthTokens(null)
+        localStorage.removeItem('access_token')
       }
     } catch (error) {
       console.error('Error fetching user:', error)
@@ -66,12 +70,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
         console.log('Auth state change:', event, session?.user)
         if (event === 'SIGNED_IN') {
           setUser(session?.user ?? null)
-          setAuthTokens(session?.access_token ?? null)
+          if (session?.access_token) {
+            localStorage.setItem('access_token', session.access_token)
+          }
           await fetchUser()
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
           setSubscription(null)
-          setAuthTokens(null)
+          localStorage.removeItem('access_token')
         }
       }
     )
