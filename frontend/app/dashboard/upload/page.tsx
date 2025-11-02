@@ -3,11 +3,12 @@
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useDropzone } from 'react-dropzone'
-import { Upload, Video, X, CheckCircle, AlertCircle } from 'lucide-react'
+import { Upload, Video, X, CheckCircle, AlertCircle, Cloud, Zap, Sparkles, ArrowRight, Loader } from 'lucide-react'
 import { apiClient } from '@/lib/api'
 import { useUser } from '@/lib/providers'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
+import { AnimatedCard, fadeInUp, scaleIn } from '@/components/ui/animations'
 
 export default function UploadPage() {
   const { user } = useUser()
@@ -23,6 +24,7 @@ export default function UploadPage() {
       const selectedFile = acceptedFiles[0]
       setFile(selectedFile)
       setTitle(selectedFile.name.replace(/\.[^/.]+$/, ''))
+      toast.success('File selected!')
     }
   }, [])
 
@@ -62,9 +64,11 @@ export default function UploadPage() {
       clearInterval(progressInterval)
       setUploadProgress(100)
 
-      toast.success('Video uploaded successfully!')
+      toast.success('Video uploaded successfully!', {
+        icon: '🎉',
+        duration: 3000,
+      })
       
-      // Redirect to project page
       setTimeout(() => {
         router.push(`/dashboard/projects/${response.data.project.id}`)
       }, 1000)
@@ -72,6 +76,7 @@ export default function UploadPage() {
       console.error('Upload error:', error)
       toast.error(error.response?.data?.detail || 'Failed to upload video')
       setUploading(false)
+      setCurrentStep('upload')
       setUploadProgress(0)
     }
   }
@@ -90,18 +95,26 @@ export default function UploadPage() {
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
   }
 
+  const steps = [
+    { key: 'upload', label: 'Upload', icon: Upload },
+    { key: 'process', label: 'Process', icon: Video },
+    { key: 'result', label: 'Result', icon: CheckCircle },
+  ]
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Quick Subtitle Generator</h1>
-              <p className="text-gray-600">Upload your video and get AI-generated subtitles in seconds</p>
+    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-subit-50/20">
+      {/* Header with gradient */}
+      <div className="bg-gradient-to-r from-subit-600 via-subit-500 to-subit-400 border-b border-subit-300/20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="text-white">
+              <h1 className="text-3xl sm:text-4xl font-bold mb-2">
+                Quick Subtitle Generator
+              </h1>
+              <p className="text-subit-50 text-lg">Upload your video and get AI-generated subtitles in seconds</p>
             </div>
             <Link href="/dashboard">
-              <button className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+              <button className="px-6 py-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl text-white hover:bg-white/20 transition-all duration-200">
                 Cancel
               </button>
             </Link>
@@ -109,74 +122,114 @@ export default function UploadPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="max-w-3xl mx-auto">
-          {/* Stepper */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-            <div className="flex items-center justify-center space-x-10">
-              {[
-                { key: 'upload', label: 'Upload', icon: Upload },
-                { key: 'process', label: 'Process', icon: Video },
-                { key: 'result', label: 'Result', icon: CheckCircle },
-              ].map((step, idx) => {
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="max-w-4xl mx-auto">
+          {/* Enhanced Stepper */}
+          <AnimatedCard className="bg-white/80 backdrop-blur-sm rounded-2xl border border-neutral-200/50 shadow-glass p-8 mb-8">
+            <div className="flex items-center justify-center space-x-8 sm:space-x-12">
+              {steps.map((step, idx) => {
                 const isActive = currentStep === step.key
+                const isPast = steps.findIndex(s => s.key === currentStep) > idx
                 return (
-                  <div key={step.key} className="flex flex-col items-center">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 ${isActive ? 'border-blue-600 bg-blue-50 text-blue-600' : 'border-gray-200 text-gray-400'}`}>
-                      <step.icon className="w-6 h-6" />
+                  <div key={step.key} className="flex flex-col items-center flex-1 max-w-[120px]">
+                    <div className={`relative w-16 h-16 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
+                      isActive 
+                        ? 'border-subit-600 bg-subit-50 text-subit-600 scale-110 shadow-glow' 
+                        : isPast
+                        ? 'border-green-500 bg-green-50 text-green-600'
+                        : 'border-neutral-200 text-neutral-400'
+                    }`}>
+                      {isPast && !isActive ? (
+                        <CheckCircle className="w-8 h-8" />
+                      ) : uploading && step.key === 'process' ? (
+                        <Loader className="w-8 h-8 animate-spin" />
+                      ) : (
+                        <step.icon className="w-8 h-8" />
+                      )}
                     </div>
-                    <span className={`mt-2 text-sm ${isActive ? 'text-blue-700 font-medium' : 'text-gray-500'}`}>{step.label}</span>
+                    <span className={`mt-3 text-sm font-medium transition-colors ${
+                      isActive ? 'text-subit-700 font-semibold' : 
+                      isPast ? 'text-green-600' : 
+                      'text-neutral-500'
+                    }`}>
+                      {step.label}
+                    </span>
+                    {idx < steps.length - 1 && (
+                      <div className={`absolute left-[calc(50%+40px)] top-8 w-8 sm:w-16 h-0.5 transition-colors ${
+                        isPast ? 'bg-green-500' : 'bg-neutral-200'
+                      }`} />
+                    )}
                   </div>
                 )
               })}
             </div>
-          </div>
+          </AnimatedCard>
+
           {/* Upload Area */}
           {!file ? (
-            <div
+            <AnimatedCard
               {...getRootProps()}
-              className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors ${
+              className={`border-2 border-dashed rounded-2xl p-16 text-center cursor-pointer transition-all duration-300 ${
                 isDragActive
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-300 hover:border-gray-400 bg-white'
+                  ? 'border-subit-500 bg-gradient-to-br from-subit-50 to-blue-50 scale-[1.02] shadow-glow'
+                  : 'border-neutral-300 hover:border-subit-400 hover:bg-neutral-50/50 bg-white/80 backdrop-blur-sm'
               }`}
             >
               <input {...getInputProps()} />
-              <Upload className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {isDragActive ? 'Drop your video here' : 'Drag and drop your video here'}
+              <div className="relative inline-block mb-6">
+                <div className="absolute inset-0 bg-gradient-to-br from-subit-500 to-subit-600 rounded-full opacity-20 blur-xl scale-150 animate-pulse" />
+                <Cloud className={`relative w-20 h-20 ${isDragActive ? 'text-subit-600' : 'text-neutral-400'} transition-colors`} />
+              </div>
+              <h3 className="text-2xl font-bold text-neutral-900 mb-3">
+                {isDragActive ? '🎉 Drop your video here!' : 'Drag and drop your video here'}
               </h3>
-              <p className="text-gray-600 mb-4">or click to browse</p>
-              <p className="text-sm text-gray-500">
-                Supported formats: MP4, AVI, MOV, WMV, FLV, WEBM, MKV (Max 1GB)
+              <p className="text-lg text-neutral-600 mb-6">or click to browse</p>
+              <div className="inline-flex items-center space-x-2 px-6 py-3 bg-subit-50 border border-subit-200 rounded-xl text-subit-700 font-medium">
+                <Upload className="w-5 h-5" />
+                <span>Choose File</span>
+              </div>
+              <p className="text-sm text-neutral-500 mt-6">
+                Supported: MP4, AVI, MOV, WMV, FLV, WEBM, MKV (Max 1GB)
               </p>
-            </div>
+            </AnimatedCard>
           ) : (
-            <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-6">
+            <AnimatedCard className="bg-white/80 backdrop-blur-sm rounded-2xl border border-neutral-200/50 shadow-glass p-8 space-y-6">
               {/* File Info */}
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-4">
-                  <div className="p-3 bg-blue-100 rounded-lg">
-                    <Video className="w-6 h-6 text-blue-600" />
+              <div className="flex items-start justify-between p-6 bg-gradient-to-r from-subit-50 to-blue-50 rounded-xl border border-subit-100">
+                <div className="flex items-start space-x-4 flex-1">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-subit-500 rounded-xl opacity-20 blur-lg" />
+                    <div className="relative p-4 bg-subit-500 rounded-xl shadow-lg">
+                      <Video className="w-8 h-8 text-white" />
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-medium text-gray-900">{file.name}</h3>
-                    <p className="text-sm text-gray-600">{formatFileSize(file.size)}</p>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-neutral-900 text-lg mb-1 truncate">{file.name}</h3>
+                    <div className="flex items-center space-x-4 text-sm text-neutral-600">
+                      <span className="flex items-center">
+                        <Cloud className="w-4 h-4 mr-1" />
+                        {formatFileSize(file.size)}
+                      </span>
+                      <span className="flex items-center">
+                        <Video className="w-4 h-4 mr-1" />
+                        Video File
+                      </span>
+                    </div>
                   </div>
                 </div>
                 {!uploading && (
                   <button
                     onClick={handleRemoveFile}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 hover:bg-red-100 rounded-xl text-red-500 hover:text-red-600 transition-colors transition-transform hover:scale-110"
                   >
-                    <X className="w-5 h-5 text-gray-500" />
+                    <X className="w-5 h-5" />
                   </button>
                 )}
               </div>
 
               {/* Title Input */}
-              <div>
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="space-y-2">
+                <label htmlFor="title" className="block text-sm font-semibold text-neutral-700">
                   Project Title
                 </label>
                 <input
@@ -186,87 +239,117 @@ export default function UploadPage() {
                   onChange={(e) => setTitle(e.target.value)}
                   disabled={uploading}
                   placeholder="Enter a title for your project"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-subit-500 focus:border-subit-500 disabled:bg-neutral-100 disabled:cursor-not-allowed transition-all bg-white text-neutral-900 placeholder-neutral-400"
                 />
               </div>
 
               {/* Upload Progress */}
               {uploading && (
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">Uploading your video...</span>
-                    <span className="text-sm text-gray-600">{uploadProgress}%</span>
+                <AnimatedCard className="p-6 bg-gradient-to-r from-blue-50 to-subit-50 border border-blue-200 rounded-xl">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-2">
+                      <Loader className="w-5 h-5 text-subit-600 animate-spin" />
+                      <span className="text-base font-semibold text-neutral-900">Uploading your video...</span>
+                    </div>
+                    <span className="text-lg font-bold text-subit-600">{uploadProgress}%</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="relative w-full bg-neutral-200 rounded-full h-3 overflow-hidden">
                     <div
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      className="absolute inset-0 bg-gradient-to-r from-subit-500 to-blue-500 h-3 rounded-full transition-all duration-500 ease-out shadow-lg"
                       style={{ width: `${uploadProgress}%` }}
                     />
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" style={{ width: `${uploadProgress}%` }} />
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">Uploading your video file...</p>
-                </div>
+                </AnimatedCard>
               )}
 
               {/* Upload Button */}
               <button
                 onClick={handleUpload}
                 disabled={uploading || !title.trim()}
-                className="w-full py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                className="group w-full py-4 bg-gradient-to-r from-subit-500 to-subit-600 text-white rounded-xl font-bold text-lg hover:shadow-glow-lg disabled:from-neutral-400 disabled:to-neutral-500 disabled:cursor-not-allowed transition-all duration-200 transform hover:-translate-y-0.5 flex items-center justify-center space-x-2"
               >
-                {uploading ? 'Uploading...' : 'Upload Video'}
+                {uploading ? (
+                  <>
+                    <Loader className="w-5 h-5 animate-spin" />
+                    <span>Uploading...</span>
+                  </>
+                ) : (
+                  <>
+                    <Cloud className="w-5 h-5" />
+                    <span>Upload Video</span>
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
               </button>
 
               {/* Info */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-start space-x-3">
-                  <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-blue-800">
-                    <p className="font-medium mb-1">What happens next?</p>
-                    <ul className="space-y-1 text-blue-700">
-                      <li>• Your video will be uploaded to secure storage</li>
-                      <li>• AI will automatically analyze and transcribe the audio</li>
-                      <li>• You can then edit and customize the subtitles</li>
-                      <li>• Export your video with embedded subtitles</li>
+              <div className="bg-gradient-to-r from-blue-50 to-subit-50 border border-blue-200 rounded-xl p-6">
+                <div className="flex items-start space-x-4">
+                  <CheckCircle className="w-6 h-6 text-blue-600 flex-shrink-0" />
+                  <div className="text-base text-blue-900">
+                    <p className="font-bold mb-2">What happens next?</p>
+                    <ul className="space-y-2 text-blue-800">
+                      <li className="flex items-start">
+                        <span className="mr-2">✓</span>
+                        <span>Your video will be uploaded to secure cloud storage</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-2">✓</span>
+                        <span>AI will automatically analyze and transcribe the audio</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-2">✓</span>
+                        <span>You can edit and customize the subtitles</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-2">✓</span>
+                        <span>Export your video with embedded subtitles</span>
+                      </li>
                     </ul>
                   </div>
                 </div>
               </div>
-            </div>
+            </AnimatedCard>
           )}
 
           {/* Plan Limits */}
-          <div className="mt-8 bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="font-semibold text-gray-900 mb-4">Your Plan Limits</h3>
-            {(() => { const tier = (user as any)?.user_metadata?.subscription_tier || 'free'; return (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Max video length</span>
-                <span className="font-medium text-gray-900">
-                  {tier === 'team' ? 'Unlimited' : tier === 'pro' ? '30 minutes' : '5 minutes'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Max file size</span>
-                <span className="font-medium text-gray-900">
-                  {tier === 'team' ? '1 GB' : tier === 'pro' ? '500 MB' : '200 MB'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Watermark</span>
-                <span className="font-medium text-gray-900">
-                  {tier === 'pro' || tier === 'team' ? 'No watermark' : 'With watermark'}
-                </span>
-              </div>
+          <AnimatedCard delay={0.2} className="mt-8 bg-white/80 backdrop-blur-sm rounded-2xl border border-neutral-200/50 shadow-glass p-8">
+            <div className="flex items-center space-x-3 mb-6">
+              <Zap className="w-6 h-6 text-yellow-500" />
+              <h3 className="text-xl font-bold text-neutral-900">Your Plan Limits</h3>
             </div>
+            {(() => { const tier = (user as any)?.user_metadata?.subscription_tier || 'free'; return (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-xl">
+                  <span className="text-neutral-600 font-medium">Max video length</span>
+                  <span className="font-bold text-neutral-900 text-lg">
+                    {tier === 'team' ? 'Unlimited' : tier === 'pro' ? '30 minutes' : '5 minutes'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-xl">
+                  <span className="text-neutral-600 font-medium">Max file size</span>
+                  <span className="font-bold text-neutral-900 text-lg">
+                    {tier === 'team' ? '1 GB' : tier === 'pro' ? '500 MB' : '200 MB'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-xl">
+                  <span className="text-neutral-600 font-medium">Watermark</span>
+                  <span className="font-bold text-neutral-900 text-lg">
+                    {tier === 'pro' || tier === 'team' ? 'No watermark' : 'With watermark'}
+                  </span>
+                </div>
+              </div>
             )})()}
             {(!((user as any)?.user_metadata?.subscription_tier) || (user as any)?.user_metadata?.subscription_tier === 'free') && (
               <Link href="/pricing">
-                <button className="w-full mt-4 py-2 border border-blue-600 text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-colors">
+                <button className="w-full mt-6 py-4 border-2 border-subit-500 text-subit-600 rounded-xl font-bold hover:bg-subit-50 transition-all duration-200 transform hover:-translate-y-0.5">
                   Upgrade for More Features
+                  <ArrowRight className="inline-block w-5 h-5 ml-2" />
                 </button>
               </Link>
             )}
-          </div>
+          </AnimatedCard>
         </div>
       </div>
     </div>

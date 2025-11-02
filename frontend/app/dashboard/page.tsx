@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react'
 import { useUser } from '@/lib/providers'
 import { useRouter } from 'next/navigation'
-import { Plus, Video, Clock, CheckCircle, AlertCircle, Zap } from 'lucide-react'
+import { Plus, Video, Clock, CheckCircle, AlertCircle, Zap, ArrowRight, Sparkles } from 'lucide-react'
 import { apiClient } from '@/lib/api'
 import Link from 'next/link'
+import { AnimatedContainer, AnimatedCard, scaleIn, fadeInUp } from '@/components/ui/animations'
 
 interface Project {
   id: string
@@ -43,7 +44,6 @@ export default function Dashboard() {
       setProjects(response.data.projects || [])
     } catch (error) {
       console.error('Failed to fetch projects:', error)
-      // Set empty projects array to show empty state instead of infinite loading
       setProjects([])
     } finally {
       setProjectsLoading(false)
@@ -91,36 +91,77 @@ export default function Dashboard() {
 
   if (loading || initialLoad) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-white flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading dashboard...</p>
+          <div className="relative">
+            <div className="w-20 h-20 border-4 border-subit-500/20 border-t-subit-500 rounded-full animate-spin mx-auto mb-6" />
+            <Sparkles className="w-8 h-8 text-subit-500 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+          </div>
+          <p className="text-neutral-600 text-lg font-medium">Loading your dashboard...</p>
         </div>
       </div>
     )
   }
 
+  const stats = [
+    {
+      label: 'Total Projects',
+      value: projects.length,
+      icon: Video,
+      color: 'blue',
+      bgColor: 'bg-blue-50',
+      iconColor: 'text-blue-600'
+    },
+    {
+      label: 'Completed',
+      value: projects.filter(p => p.status === 'completed').length,
+      icon: CheckCircle,
+      color: 'green',
+      bgColor: 'bg-green-50',
+      iconColor: 'text-green-600'
+    },
+    {
+      label: 'Processing',
+      value: projects.filter(p => p.status === 'processing').length,
+      icon: Clock,
+      color: 'blue',
+      bgColor: 'bg-blue-50',
+      iconColor: 'text-blue-600'
+    },
+    {
+      label: 'Energy Remaining',
+      value: 30,
+      icon: Zap,
+      color: 'yellow',
+      bgColor: 'bg-yellow-50',
+      iconColor: 'text-yellow-600'
+    }
+  ]
+
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <div className="bg-white border-b">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-              <p className="text-gray-600">Manage your video projects and subtitles</p>
+    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-neutral-50">
+      {/* Header with gradient background */}
+      <div className="bg-gradient-to-r from-subit-600 via-subit-500 to-subit-400 border-b border-subit-300/20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="text-white">
+              <h1 className="text-3xl sm:text-4xl font-bold mb-2">
+                Welcome back! 👋
+              </h1>
+              <p className="text-subit-50 text-lg">Manage your video projects and subtitles</p>
             </div>
-            <div className="flex items-center space-x-4">
-              {/* Energy indicator */}
-              <div className="flex items-center space-x-2 px-4 py-2 bg-yellow-100 rounded-lg">
-                <Zap className="w-5 h-5 text-yellow-600" />
-                <span className="font-medium text-yellow-800">30</span>
-                <span className="text-yellow-700 text-sm">energy</span>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              {/* Energy indicator with glow */}
+              <div className="flex items-center space-x-2 px-5 py-3 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 shadow-lg">
+                <Zap className="w-5 h-5 text-yellow-300" />
+                <span className="font-bold text-white text-lg">30</span>
+                <span className="text-subit-100 text-sm">energy</span>
               </div>
               <Link href="/dashboard/upload">
-                <button className="flex items-center space-x-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors">
-                  <Plus className="w-4 h-4" />
+                <button className="group flex items-center space-x-2 px-6 py-3 bg-white text-subit-600 rounded-xl font-semibold hover:bg-subit-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 border border-white/20">
+                  <Plus className="w-5 h-5" />
                   <span>New Project</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
               </Link>
             </div>
@@ -129,121 +170,104 @@ export default function Dashboard() {
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Video className="w-6 h-6 text-blue-600" />
+        {/* Stats Cards with animations */}
+        <AnimatedContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {stats.map((stat, index) => (
+            <AnimatedCard
+              key={stat.label}
+              delay={index * 0.1}
+              className="group bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-glass border border-neutral-200/50 hover:border-subit-200 transition-all duration-300"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className={`p-3 ${stat.bgColor} rounded-xl group-hover:scale-110 transition-transform duration-300`}>
+                    <stat.icon className={`w-6 h-6 ${stat.iconColor}`} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-neutral-600">{stat.label}</p>
+                    <p className="text-3xl font-bold text-neutral-900">{stat.value}</p>
+                  </div>
+                </div>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Projects</p>
-                <p className="text-2xl font-bold text-gray-900">{projects.length}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CheckCircle className="w-6 h-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Completed</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {projects.filter(p => p.status === 'completed').length}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Clock className="w-6 h-6 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Processing</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {projects.filter(p => p.status === 'processing').length}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <Zap className="w-6 h-6 text-yellow-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Energy Used</p>
-                <p className="text-2xl font-bold text-gray-900">0</p>
-              </div>
-            </div>
-          </div>
-        </div>
+            </AnimatedCard>
+          ))}
+        </AnimatedContainer>
 
         {/* Projects List */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Projects</h2>
+        <AnimatedCard
+          delay={0.4}
+          className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-glass border border-neutral-200/50 overflow-hidden"
+        >
+          <div className="px-6 py-5 border-b border-neutral-200/50 bg-gradient-to-r from-neutral-50 to-transparent">
+            <h2 className="text-xl font-bold text-neutral-900">Recent Projects</h2>
           </div>
 
           {projects.length === 0 ? (
-            <div className="p-12 text-center">
-              <Video className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No projects yet</h3>
-              <p className="text-gray-600 mb-6">Get started by uploading your first video</p>
+            <div className="p-16 text-center">
+              <div className="relative w-24 h-24 mx-auto mb-6">
+                <div className="absolute inset-0 bg-gradient-to-br from-subit-500 to-subit-600 rounded-3xl rotate-12 opacity-20 blur-xl" />
+                <Video className="relative w-24 h-24 text-subit-500 mx-auto" />
+              </div>
+              <h3 className="text-2xl font-bold text-neutral-900 mb-3">No projects yet</h3>
+              <p className="text-neutral-600 mb-8 max-w-md mx-auto">
+                Get started by uploading your first video and let AI generate professional subtitles automatically
+              </p>
               <Link href="/dashboard/upload">
-                <button className="flex items-center space-x-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors mx-auto">
-                  <Plus className="w-4 h-4" />
+                <button className="group inline-flex items-center space-x-2 px-8 py-4 bg-gradient-to-r from-subit-500 to-subit-600 text-white rounded-xl font-semibold hover:shadow-glow-lg transition-all duration-200 transform hover:-translate-y-0.5">
+                  <Plus className="w-5 h-5" />
                   <span>Create Your First Project</span>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
               </Link>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200">
-              {projects.map((project) => (
-                <div key={project.id} className="p-6 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex-shrink-0">
-                        {getStatusIcon(project.status)}
+            <div className="divide-y divide-neutral-100">
+              {projects.map((project, index) => (
+                <Link key={project.id} href={`/dashboard/projects/${project.id}`}>
+                  <div className="group p-6 hover:bg-gradient-to-r hover:from-subit-50/50 hover:to-transparent transition-all duration-300 cursor-pointer">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+                          {getStatusIcon(project.status)}
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-neutral-900 group-hover:text-subit-600 transition-colors">
+                            {project.title}
+                          </h3>
+                          <div className="flex items-center space-x-4 text-sm text-neutral-600 mt-1">
+                            <span>Created {formatDate(project.created_at)}</span>
+                            {project.video_duration && (
+                              <span className="flex items-center">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {Math.round(project.video_duration / 60)}m
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="text-lg font-medium text-gray-900">
-                          {project.title}
-                        </h3>
-                        <div className="flex items-center space-x-4 text-sm text-gray-600">
-                          <span>Created {formatDate(project.created_at)}</span>
-                          {project.video_duration && (
-                            <span>Duration: {Math.round(project.video_duration / 60)}m</span>
-                          )}
+                      <div className="flex items-center space-x-4">
+                        <span className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
+                          project.status === 'completed' 
+                            ? 'bg-green-100 text-green-700 group-hover:bg-green-200' 
+                            : project.status === 'processing' 
+                            ? 'bg-blue-100 text-blue-700 group-hover:bg-blue-200' 
+                            : project.status === 'failed' 
+                            ? 'bg-red-100 text-red-700 group-hover:bg-red-200'
+                            : 'bg-neutral-100 text-neutral-700 group-hover:bg-neutral-200'
+                        }`}>
+                          {getStatusText(project.status)}
+                        </span>
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <ArrowRight className="w-5 h-5 text-subit-600 transform group-hover:translate-x-1 transition-transform" />
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-4">
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        project.status === 'completed' ? 'bg-green-100 text-green-800' :
-                        project.status === 'processing' ? 'bg-blue-100 text-blue-800' :
-                        project.status === 'failed' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {getStatusText(project.status)}
-                      </span>
-                      <Link href={`/dashboard/projects/${project.id}`}>
-                        <button className="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                          View
-                        </button>
-                      </Link>
-                    </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}
-        </div>
+        </AnimatedCard>
       </div>
     </div>
   )
