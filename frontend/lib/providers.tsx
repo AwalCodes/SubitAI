@@ -78,6 +78,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
           setUser(null)
           setSubscription(null)
           localStorage.removeItem('access_token')
+        } else if (event === 'INITIAL_SESSION') {
+          // Handle initial session on page load
+          if (session?.user) {
+            setUser(session.user)
+            if (session.access_token) {
+              localStorage.setItem('access_token', session.access_token)
+            }
+          }
         }
       }
     )

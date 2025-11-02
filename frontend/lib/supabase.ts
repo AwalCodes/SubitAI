@@ -7,8 +7,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
 }
 
-// Singleton client instance
-const supabaseClient = createSupabaseClient(supabaseUrl, supabaseAnonKey)
+// Create a client with localStorage for persistence
+const supabaseClient = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
+  }
+})
 
 // Client-side Supabase client accessor
 export const createClient = () => supabaseClient

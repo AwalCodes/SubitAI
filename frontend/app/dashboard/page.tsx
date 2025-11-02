@@ -43,6 +43,8 @@ export default function Dashboard() {
       setProjects(response.data.projects || [])
     } catch (error) {
       console.error('Failed to fetch projects:', error)
+      // Set empty projects array to show empty state instead of infinite loading
+      setProjects([])
     } finally {
       setProjectsLoading(false)
       setInitialLoad(false)
