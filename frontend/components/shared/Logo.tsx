@@ -18,7 +18,7 @@ export default function Logo({
   textClassName,
 }: LogoProps) {
   const containerClass = cn('inline-flex items-center gap-3', className)
-  const imageClasses = cn('h-10 w-10 rounded-2xl shadow-glow', imageClassName)
+  const imageClasses = cn('h-10 w-10', imageClassName)
 
   const content = (
     <>
