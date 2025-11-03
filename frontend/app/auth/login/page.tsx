@@ -6,7 +6,7 @@ import Link from 'next/link'
 import Logo from '@/components/shared/Logo'
 import { createClient } from '@/lib/supabase'
 import { toast } from 'react-hot-toast'
-import { AnimatedCard, fadeInUp, scaleIn } from '@/components/ui/animations'
+import { AnimatedCard, AnimatedContainer, AnimatedDiv } from '@/components/ui/animations'
 import { Loader, Eye, EyeOff, Mail, Lock, Sparkles, ArrowRight } from 'lucide-react'
 
 export default function LoginPage() {
@@ -73,8 +73,10 @@ export default function LoginPage() {
 
       <div className="max-w-md w-full relative z-10">
         {/* Header */}
-        <AnimatedCard 
-          variants={fadeInUp}
+        <AnimatedDiv
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
           className="text-center mb-8"
         >
           <div className="inline-flex items-center justify-center mb-6">
@@ -92,11 +94,11 @@ export default function LoginPage() {
               create a new account
             </Link>
           </p>
-        </AnimatedCard>
+        </AnimatedDiv>
 
         {/* Glassmorphism Form Container */}
-        <AnimatedCard 
-          variants={scaleIn}
+        <AnimatedCard
+          delay={0.1}
           className="bg-white/70 backdrop-blur-xl rounded-3xl border border-white/50 shadow-2xl p-8 sm:p-10 hover:bg-white/80 transition-all duration-300"
         >
           <form className="space-y-6" onSubmit={handleLogin}>
@@ -218,8 +220,10 @@ export default function LoginPage() {
         </AnimatedCard>
 
         {/* Footer */}
-        <AnimatedCard 
-          variants={fadeInUp}
+        <AnimatedDiv
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
           className="text-center mt-8"
         >
           <p className="text-neutral-600">
@@ -228,7 +232,7 @@ export default function LoginPage() {
               Sign up for free
             </Link>
           </p>
-        </AnimatedCard>
+        </AnimatedDiv>
       </div>
     </div>
   )
