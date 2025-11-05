@@ -64,7 +64,7 @@ async def upload_video(
             "video_filename": upload_result["filename"],
             "video_size": upload_result["size"],
             "video_duration": int(metadata["duration"]),
-            "status": "uploading"
+            "status": "completed"  # Changed from "uploading" to "completed" since transcription is done separately
         }
         
         result = supabase.table("projects").insert(project_data).execute()
@@ -76,18 +76,11 @@ async def upload_video(
         
         project = result.data[0]
         
-        # Start transcription in background (commented out for testing)
-        # background_tasks.add_task(
-        #     transcribe_video_task,
-        #     project["id"],
-        #     upload_result["path"]
-        # )
-        
         return {
             "project": project,
             "upload": upload_result,
             "metadata": metadata,
-            "message": "Video uploaded successfully, transcription started"
+            "message": "Video uploaded successfully"
         }
         
     except HTTPException:
@@ -142,8 +135,21 @@ async def get_project(
         if not result.data:
             raise HTTPException(status_code=404, detail="Project not found")
         
+        project = result.data[0]
+        
+        # Generate fresh signed URL for the video if video_filename exists
+        if project.get("video_filename"):
+            video_path = f"{user['id']}/{project['video_filename']}"
+            try:
+                # Get a fresh signed URL (expires in 1 hour)
+                signed_url = video_service.get_signed_video_url(video_path, expires_in=3600)
+                project["video_url"] = signed_url
+            except Exception as e:
+                logger.warning(f"Failed to generate signed URL for video: {e}")
+                # Keep existing URL if signed URL generation fails
+        
         return {
-            "project": result.data[0],
+            "project": project,
             "message": "Project retrieved successfully"
         }
         

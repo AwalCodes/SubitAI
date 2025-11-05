@@ -60,6 +60,7 @@ export default function ProjectDetailPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [generating, setGenerating] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const [editText, setEditText] = useState('')
   const videoRef = useRef<HTMLVideoElement | null>(null)
@@ -73,6 +74,95 @@ export default function ProjectDetailPage() {
     }
   }, [user, params.id])
 
+  // Auto-start polling if project is in processing state
+  useEffect(() => {
+    if (project && project.status === 'processing' && !generating && subtitles.length === 0) {
+      setGenerating(true)
+      // Start polling for subtitle completion
+      let pollCount = 0
+      const maxPolls = 240 // 20 minutes at 5 second intervals (model download can take time)
+      const projectId = project.id
+      
+      console.log('Starting subtitle polling for project:', projectId)
+      
+      const pollInterval = setInterval(async () => {
+        try {
+          pollCount++
+          console.log(`Polling attempt ${pollCount}/${maxPolls} for project ${projectId}`)
+          
+          const response = await apiClient.projects.getProject(projectId)
+          const updatedProject = response.data.project
+          
+          // Check if subtitles were generated
+          if (updatedProject.subtitles && updatedProject.subtitles.length > 0) {
+            const subtitleData = updatedProject.subtitles[0]
+            if (subtitleData.json_data?.segments && subtitleData.json_data.segments.length > 0) {
+              console.log('Subtitles found! Stopping polling.')
+              clearInterval(pollInterval)
+              setProject(updatedProject)
+              setSubtitles(subtitleData.json_data.segments)
+              setGenerating(false)
+              toast.success('Subtitles generated successfully!')
+              return
+            }
+          }
+          
+          // Check for failure status
+          if (updatedProject.status === 'failed') {
+            console.log('Subtitle generation failed')
+            clearInterval(pollInterval)
+            setGenerating(false)
+            toast.error('Subtitle generation failed')
+            return
+          }
+          
+          // Check if status changed to completed (even without subtitles in response yet)
+          if (updatedProject.status === 'completed') {
+            // Give it one more poll to get subtitles
+            if (pollCount >= 5) {
+              console.log('Project marked as completed, fetching subtitles...')
+              // Try fetching one more time
+              const finalResponse = await apiClient.projects.getProject(projectId)
+              const finalProject = finalResponse.data.project
+              if (finalProject.subtitles && finalProject.subtitles.length > 0) {
+                const subtitleData = finalProject.subtitles[0]
+                if (subtitleData.json_data?.segments && subtitleData.json_data.segments.length > 0) {
+                  clearInterval(pollInterval)
+                  setProject(finalProject)
+                  setSubtitles(subtitleData.json_data.segments)
+                  setGenerating(false)
+                  toast.success('Subtitles generated successfully!')
+                  return
+                }
+              }
+            }
+          }
+          
+          // Stop polling after max attempts
+          if (pollCount >= maxPolls) {
+            console.log('Max polling attempts reached')
+            clearInterval(pollInterval)
+            setGenerating(false)
+            toast.error('Subtitle generation is taking longer than expected. Please refresh the page.')
+          }
+        } catch (error) {
+          console.error('Polling error:', error)
+          pollCount++
+          if (pollCount >= maxPolls) {
+            clearInterval(pollInterval)
+            setGenerating(false)
+            toast.error('Error checking subtitle status. Please refresh the page.')
+          }
+        }
+      }, 5000) // Poll every 5 seconds
+      
+      return () => {
+        console.log('Cleaning up polling interval')
+        clearInterval(pollInterval)
+      }
+    }
+  }, [project?.id, project?.status, generating, subtitles.length])
+
   const fetchProject = async () => {
     try {
       setLoading(true)
@@ -84,6 +174,8 @@ export default function ProjectDetailPage() {
       if (projectData.subtitles && projectData.subtitles.length > 0) {
         const subtitleData = projectData.subtitles[0]
         if (subtitleData.json_data?.segments) {
+          console.log('Loaded subtitles:', subtitleData.json_data.segments)
+          console.log('First subtitle:', subtitleData.json_data.segments[0])
           setSubtitles(subtitleData.json_data.segments)
         }
       }
@@ -116,35 +208,52 @@ export default function ProjectDetailPage() {
       toast.success('Subtitle generation started! This may take a few minutes.')
       
       // Poll for completion
+      let pollCount = 0
+      const maxPolls = 120 // 10 minutes at 5 second intervals
+      
       const pollInterval = setInterval(async () => {
         try {
+          pollCount++
           const response = await apiClient.projects.getProject(project.id)
           const updatedProject = response.data.project
           
-          if (updatedProject.status === 'completed' && updatedProject.subtitles?.length > 0) {
-            clearInterval(pollInterval)
-            setProject(updatedProject)
+          // Check if subtitles were generated (status can be completed or processing, but subtitles exist)
+          if (updatedProject.subtitles && updatedProject.subtitles.length > 0) {
             const subtitleData = updatedProject.subtitles[0]
-            if (subtitleData.json_data?.segments) {
+            if (subtitleData.json_data?.segments && subtitleData.json_data.segments.length > 0) {
+              clearInterval(pollInterval)
+              setProject(updatedProject)
               setSubtitles(subtitleData.json_data.segments)
+              setGenerating(false)
+              toast.success('Subtitles generated successfully!')
+              return
             }
-            setGenerating(false)
-            toast.success('Subtitles generated successfully!')
-          } else if (updatedProject.status === 'failed') {
+          }
+          
+          // Check for failure
+          if (updatedProject.status === 'failed') {
             clearInterval(pollInterval)
             setGenerating(false)
             toast.error('Subtitle generation failed')
+            return
+          }
+          
+          // Stop polling after max attempts
+          if (pollCount >= maxPolls) {
+            clearInterval(pollInterval)
+            setGenerating(false)
+            toast.error('Subtitle generation is taking longer than expected. Please refresh the page.')
           }
         } catch (error) {
           console.error('Polling error:', error)
+          pollCount++
+          if (pollCount >= maxPolls) {
+            clearInterval(pollInterval)
+            setGenerating(false)
+            toast.error('Error checking subtitle status. Please refresh the page.')
+          }
         }
       }, 5000) // Poll every 5 seconds
-
-      // Stop polling after 10 minutes
-      setTimeout(() => {
-        clearInterval(pollInterval)
-        setGenerating(false)
-      }, 600000)
     } catch (error: any) {
       console.error('=== Generate Subtitles Error ===')
       console.error('Full error:', error)
@@ -220,6 +329,26 @@ export default function ProjectDetailPage() {
     } catch (error: any) {
       console.error('Download error:', error)
       toast.error('Failed to download SRT file')
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!project) return
+
+    if (!confirm(`Are you sure you want to delete "${project.title}"? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      setDeleting(true)
+      await apiClient.projects.deleteProject(project.id)
+      toast.success('Project deleted successfully')
+      router.push('/dashboard/projects')
+    } catch (error: any) {
+      console.error('Delete error:', error)
+      toast.error(error.response?.data?.detail || 'Failed to delete project')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -325,10 +454,10 @@ export default function ProjectDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-neutral-950 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading project...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-subit-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-neutral-400">Loading project...</p>
         </div>
       </div>
     )
@@ -336,12 +465,13 @@ export default function ProjectDetailPage() {
 
   if (!project) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-neutral-950 flex items-center justify-center">
         <div className="text-center">
-          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Project not found</h2>
+          <AlertCircle className="w-16 h-16 text-gray-400 dark:text-neutral-600 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-900 dark:text-neutral-100 mb-2">Project not found</h2>
+          <p className="text-gray-600 dark:text-neutral-400 mb-4">The project you're looking for doesn't exist.</p>
           <Link href="/dashboard">
-            <button className="px-4 py-2 bg-gray-900 text-white rounded-lg">
+            <button className="px-4 py-2 bg-subit-600 text-white rounded-lg hover:bg-subit-700">
               Back to Dashboard
             </button>
           </Link>
@@ -351,24 +481,32 @@ export default function ProjectDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white dark:bg-neutral-950">
       {/* Header */}
-      <div className="bg-white border-b">
+      <div className="bg-white dark:bg-neutral-900 border-b border-gray-200 dark:border-neutral-800">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between mb-4">
-            <Link href="/dashboard" className="flex items-center text-gray-600 hover:text-gray-900">
-              <ChevronLeft className="w-5 h-5 mr-1" />
-              Back to Dashboard
-            </Link>
-            {getStatusBadge(project.status)}
-          </div>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{project.title}</h1>
-              <p className="text-gray-600">
-                Duration: {formatTime(project.video_duration || 0)} • 
-                Created {new Date(project.created_at).toLocaleDateString()}
-              </p>
+              <Link href="/dashboard" className="flex items-center text-gray-600 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-neutral-100 mb-2">
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Back to Dashboard
+              </Link>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-neutral-100">{project.title}</h1>
+              <div className="flex items-center space-x-4 mt-2">
+                <span className="flex items-center px-3 py-1 bg-gray-100 dark:bg-neutral-800 text-gray-800 dark:text-neutral-200 rounded-full text-sm">
+                  <Clock className="w-3 h-3 mr-1" />
+                  {formatTime(project.video_duration || 0)}
+                </span>
+                {project.status === 'completed' && (
+                  <button
+                    onClick={handleDownloadSRT}
+                    className="flex items-center space-x-2 px-4 py-2 border border-gray-300 dark:border-neutral-700 rounded-lg text-gray-700 dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download SRT</span>
+                  </button>
+                )}
+              </div>
             </div>
             <div className="flex items-center space-x-3">
               {subtitles.length > 0 && (
@@ -383,13 +521,30 @@ export default function ProjectDetailPage() {
                   </button>
                   <button
                     onClick={handleDownloadSRT}
-                    className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                    className="flex items-center space-x-2 px-4 py-2 border border-gray-300 dark:border-neutral-700 rounded-lg text-gray-700 dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
                   >
                     <Download className="w-4 h-4" />
                     <span>Download SRT</span>
                   </button>
                 </>
               )}
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex items-center space-x-2 px-4 py-2 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {deleting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-red-700 border-t-transparent rounded-full animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    <span>Delete</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
@@ -398,26 +553,31 @@ export default function ProjectDetailPage() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Success banner */}
         {project.status === 'completed' && subtitles.length > 0 && (
-          <div className="mb-6 bg-white border border-gray-200 rounded-lg p-4 flex items-center space-x-3">
-            <div className="w-6 h-6 rounded-full bg-green-100 text-green-700 flex items-center justify-center">✓</div>
-            <div className="text-gray-800 font-medium">Subtitles Generated Successfully!</div>
+          <div className="mb-6 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-lg p-4 flex items-center space-x-3">
+            <div className="w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 flex items-center justify-center">✓</div>
+            <div className="text-gray-800 dark:text-neutral-200 font-medium">Subtitles Generated Successfully!</div>
           </div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Video Player */}
           <div>
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Video Preview</h2>
+            <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-neutral-100 mb-4">Video Preview</h2>
               <div className="aspect-video bg-black rounded-lg overflow-hidden">
                 {project.video_url ? (
                   <video
+                    key={project.video_url} // Force re-render when URL changes
                     src={project.video_url}
                     controls
                     className="w-full h-full"
                     ref={videoRef}
                     onPlay={handlePlay}
                     onPause={handlePause}
+                    onError={(e) => {
+                      console.error('Video playback error:', e)
+                      toast.error('Failed to load video. Please refresh the page.')
+                    }}
                   >
                     Your browser does not support the video tag.
                   </video>
@@ -432,9 +592,9 @@ export default function ProjectDetailPage() {
 
           {/* Subtitles Editor */}
           <div>
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Subtitles</h2>
+            <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-neutral-100">Subtitles</h2>
                 {subtitles.length === 0 && !generating && (
                   <button
                     onClick={handleGenerateSubtitles}
@@ -461,7 +621,7 @@ export default function ProjectDetailPage() {
                     return (
                       <div
                         key={index}
-                        className={`border rounded-lg p-4 transition-colors ${isActiveSeg ? 'border-blue-400 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}
+                        className={`border rounded-lg p-4 transition-colors ${isActiveSeg ? 'border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-neutral-700 hover:border-blue-300 dark:hover:border-blue-600'}`}
                       >
                         <div className="flex items-start justify-between mb-2">
                           <span className="text-sm text-gray-600">
@@ -486,17 +646,17 @@ export default function ProjectDetailPage() {
                           <textarea
                             value={editText}
                             onChange={(e) => setEditText(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-700 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100"
                             rows={2}
                           />
                         ) : (
-                          <p className="text-gray-900 leading-7">
-                            {words.map((w, wi) => {
+                          <p className="text-gray-900 dark:text-neutral-200 leading-7">
+                            {subtitle.text || words.map((w, wi) => {
                               const on = activeWord && activeWord.segment === index && activeWord.word === wi
                               return (
                                 <span key={wi} className={on ? 'bg-yellow-200 rounded px-0.5' : ''}>{w.text}</span>
                               )
-                            })}
+                            }).join('') || '[No text]'}
                           </p>
                         )}
                       </div>
@@ -508,8 +668,8 @@ export default function ProjectDetailPage() {
               {subtitles.length === 0 && !generating && (
                 <div className="text-center py-12">
                   <Languages className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No subtitles yet</h3>
-                  <p className="text-gray-600 mb-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-100 mb-2">No subtitles yet</h3>
+                  <p className="text-gray-600 dark:text-neutral-400 mb-4">
                     Generate AI-powered subtitles for your video
                   </p>
                 </div>
@@ -521,25 +681,23 @@ export default function ProjectDetailPage() {
         {/* Download and Next Steps */}
         {project.status === 'completed' && subtitles.length > 0 && (
           <div className="grid md:grid-cols-3 gap-6 mt-8">
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-3">Download Options</h3>
+            <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 p-6">
+              <h3 className="font-semibold text-gray-900 dark:text-neutral-100 mb-3">Download Options</h3>
               <div className="space-y-3">
                 <button onClick={handleDownloadSRT} className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">Download SRT File</button>
                 <button disabled className="w-full py-2.5 bg-gray-200 text-gray-700 rounded-lg cursor-not-allowed">Download VTT File</button>
               </div>
             </div>
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-3">Next Steps</h3>
-              <div className="space-y-3">
-                <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="w-full py-2.5 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50">Customize Subtitles</button>
-                <button onClick={() => window.location.assign('/dashboard/upload')} className="w-full py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Process Another Video</button>
+            <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 p-6">
+              <h3 className="font-semibold text-gray-900 dark:text-neutral-100 mb-3">Next Steps</h3>
+              <div className="space-y-2">
+                <button onClick={() => window.location.assign('/dashboard/upload')} className="w-full py-2.5 border border-gray-300 dark:border-neutral-700 text-gray-700 dark:text-neutral-300 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800">Process Another Video</button>
               </div>
             </div>
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-3">Export</h3>
-              <div className="space-y-3">
-                <button onClick={() => toast.success('Export started (demo)')} className="w-full py-2.5 bg-gray-900 hover:bg-gray-800 text-white rounded-lg">Export Video</button>
-                <button onClick={() => toast.success('Share link copied (demo)')} className="w-full py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Share</button>
+            <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 p-6">
+              <h3 className="font-semibold text-gray-900 dark:text-neutral-100 mb-3">Export</h3>
+              <div className="space-y-2">
+                <button onClick={() => toast.success('Share link copied (demo)')} className="w-full py-2.5 border border-gray-300 dark:border-neutral-700 text-gray-700 dark:text-neutral-300 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800">Share</button>
               </div>
             </div>
           </div>

@@ -3,21 +3,26 @@ SUBIT.AI - FastAPI Backend
 Main application entry point for the AI subtitle generation platform
 """
 
+import os
+import logging
+from contextlib import asynccontextmanager
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from parent directory FIRST
+backend_dir = Path(__file__).parent
+project_root = backend_dir.parent
+load_dotenv(dotenv_path=str(project_root / '.env'))
+load_dotenv(dotenv_path=str(backend_dir / '.env'), override=True)
+
 from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from contextlib import asynccontextmanager
-import os
-from dotenv import load_dotenv
-import logging
 
 from routes import auth, projects, subtitles, billing
 # from routes import export
 from services.supabase_client import get_supabase_client
 # from workers.celery import celery_app
-
-# Load environment variables
-load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

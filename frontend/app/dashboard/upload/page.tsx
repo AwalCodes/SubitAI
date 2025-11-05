@@ -47,13 +47,15 @@ export default function UploadPage() {
     setCurrentStep('process')
     setUploadProgress(0)
 
+    let progressInterval: NodeJS.Timeout | null = null
+
     try {
       // Simulate upload progress
-      const progressInterval = setInterval(() => {
+      progressInterval = setInterval(() => {
         setUploadProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(progressInterval)
-            return prev
+          if (prev >= 95) {
+            if (progressInterval) clearInterval(progressInterval)
+            return 95 // Stop at 95%, wait for API
           }
           return prev + 10
         })
@@ -61,7 +63,8 @@ export default function UploadPage() {
 
       const response = await apiClient.projects.uploadVideo(file, title)
       
-      clearInterval(progressInterval)
+      // Clear interval and complete progress
+      if (progressInterval) clearInterval(progressInterval)
       setUploadProgress(100)
 
       toast.success('Video uploaded successfully!', {
@@ -74,6 +77,8 @@ export default function UploadPage() {
       }, 1000)
     } catch (error: any) {
       console.error('Upload error:', error)
+      // Clear interval on error
+      if (progressInterval) clearInterval(progressInterval)
       toast.error(error.response?.data?.detail || 'Failed to upload video')
       setUploading(false)
       setCurrentStep('upload')
@@ -102,7 +107,7 @@ export default function UploadPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-subit-50/20">
+    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-subit-50/20 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
       {/* Header with gradient */}
       <div className="bg-gradient-to-r from-subit-600 via-subit-500 to-subit-400 border-b border-subit-300/20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -125,7 +130,7 @@ export default function UploadPage() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="max-w-4xl mx-auto">
           {/* Enhanced Stepper */}
-          <AnimatedCard className="bg-white/80 backdrop-blur-sm rounded-2xl border border-neutral-200/50 shadow-glass p-8 mb-8">
+          <AnimatedCard className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm rounded-2xl border border-neutral-200/50 dark:border-neutral-800/50 shadow-glass p-8 mb-8">
             <div className="flex items-center justify-center space-x-8 sm:space-x-12">
               {steps.map((step, idx) => {
                 const isActive = currentStep === step.key
@@ -134,10 +139,10 @@ export default function UploadPage() {
                   <div key={step.key} className="flex flex-col items-center flex-1 max-w-[120px]">
                     <div className={`relative w-16 h-16 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
                       isActive 
-                        ? 'border-subit-600 bg-subit-50 text-subit-600 scale-110 shadow-glow' 
+                        ? 'border-subit-600 bg-subit-50 dark:bg-subit-900/30 text-subit-600 dark:text-subit-400 scale-110 shadow-glow' 
                         : isPast
-                        ? 'border-green-500 bg-green-50 text-green-600'
-                        : 'border-neutral-200 text-neutral-400'
+                        ? 'border-green-500 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+                        : 'border-neutral-200 dark:border-neutral-700 text-neutral-400 dark:text-neutral-500'
                     }`}>
                       {isPast && !isActive ? (
                         <CheckCircle className="w-8 h-8" />
@@ -148,15 +153,15 @@ export default function UploadPage() {
                       )}
                     </div>
                     <span className={`mt-3 text-sm font-medium transition-colors ${
-                      isActive ? 'text-subit-700 font-semibold' : 
-                      isPast ? 'text-green-600' : 
-                      'text-neutral-500'
+                      isActive ? 'text-subit-700 dark:text-subit-400 font-semibold' : 
+                      isPast ? 'text-green-600 dark:text-green-400' : 
+                      'text-neutral-500 dark:text-neutral-400'
                     }`}>
                       {step.label}
                     </span>
                     {idx < steps.length - 1 && (
                       <div className={`absolute left-[calc(50%+40px)] top-8 w-8 sm:w-16 h-0.5 transition-colors ${
-                        isPast ? 'bg-green-500' : 'bg-neutral-200'
+                        isPast ? 'bg-green-500 dark:bg-green-400' : 'bg-neutral-200 dark:bg-neutral-700'
                       }`} />
                     )}
                   </div>
@@ -167,12 +172,12 @@ export default function UploadPage() {
 
           {/* Upload Area */}
           {!file ? (
-            <AnimatedCard
+            <div
               {...getRootProps()}
               className={`border-2 border-dashed rounded-2xl p-16 text-center cursor-pointer transition-all duration-300 ${
                 isDragActive
-                  ? 'border-subit-500 bg-gradient-to-br from-subit-50 to-blue-50 scale-[1.02] shadow-glow'
-                  : 'border-neutral-300 hover:border-subit-400 hover:bg-neutral-50/50 bg-white/80 backdrop-blur-sm'
+                  ? 'border-subit-500 bg-gradient-to-br from-subit-50 to-blue-50 dark:from-subit-900/30 dark:to-blue-900/30 scale-[1.02] shadow-glow'
+                  : 'border-neutral-300 dark:border-neutral-700 hover:border-subit-400 dark:hover:border-subit-500 hover:bg-neutral-50/50 dark:hover:bg-neutral-800/50 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm'
               }`}
             >
               <input {...getInputProps()} />
@@ -180,22 +185,22 @@ export default function UploadPage() {
                 <div className="absolute inset-0 bg-gradient-to-br from-subit-500 to-subit-600 rounded-full opacity-20 blur-xl scale-150 animate-pulse" />
                 <Cloud className={`relative w-20 h-20 ${isDragActive ? 'text-subit-600' : 'text-neutral-400'} transition-colors`} />
               </div>
-              <h3 className="text-2xl font-bold text-neutral-900 mb-3">
+              <h3 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-3">
                 {isDragActive ? '🎉 Drop your video here!' : 'Drag and drop your video here'}
               </h3>
-              <p className="text-lg text-neutral-600 mb-6">or click to browse</p>
+              <p className="text-lg text-neutral-600 dark:text-neutral-400 mb-6">or click to browse</p>
               <div className="inline-flex items-center space-x-2 px-6 py-3 bg-subit-50 border border-subit-200 rounded-xl text-subit-700 font-medium">
                 <Upload className="w-5 h-5" />
                 <span>Choose File</span>
               </div>
-              <p className="text-sm text-neutral-500 mt-6">
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-6">
                 Supported: MP4, AVI, MOV, WMV, FLV, WEBM, MKV (Max 1GB)
               </p>
-            </AnimatedCard>
+            </div>
           ) : (
-            <AnimatedCard className="bg-white/80 backdrop-blur-sm rounded-2xl border border-neutral-200/50 shadow-glass p-8 space-y-6">
+            <AnimatedCard className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm rounded-2xl border border-neutral-200/50 dark:border-neutral-800/50 shadow-glass p-8 space-y-6">
               {/* File Info */}
-              <div className="flex items-start justify-between p-6 bg-gradient-to-r from-subit-50 to-blue-50 rounded-xl border border-subit-100">
+              <div className="flex items-start justify-between p-6 bg-gradient-to-r from-subit-50 to-blue-50 dark:from-subit-900/30 dark:to-blue-900/30 rounded-xl border border-subit-100 dark:border-subit-800">
                 <div className="flex items-start space-x-4 flex-1">
                   <div className="relative">
                     <div className="absolute inset-0 bg-subit-500 rounded-xl opacity-20 blur-lg" />
@@ -204,8 +209,8 @@ export default function UploadPage() {
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-neutral-900 text-lg mb-1 truncate">{file.name}</h3>
-                    <div className="flex items-center space-x-4 text-sm text-neutral-600">
+                    <h3 className="font-bold text-neutral-900 dark:text-neutral-100 text-lg mb-1 truncate">{file.name}</h3>
+                    <div className="flex items-center space-x-4 text-sm text-neutral-600 dark:text-neutral-400">
                       <span className="flex items-center">
                         <Cloud className="w-4 h-4 mr-1" />
                         {formatFileSize(file.size)}
@@ -229,7 +234,7 @@ export default function UploadPage() {
 
               {/* Title Input */}
               <div className="space-y-2">
-                <label htmlFor="title" className="block text-sm font-semibold text-neutral-700">
+                <label htmlFor="title" className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300">
                   Project Title
                 </label>
                 <input
@@ -239,21 +244,21 @@ export default function UploadPage() {
                   onChange={(e) => setTitle(e.target.value)}
                   disabled={uploading}
                   placeholder="Enter a title for your project"
-                  className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-subit-500 focus:border-subit-500 disabled:bg-neutral-100 disabled:cursor-not-allowed transition-all bg-white text-neutral-900 placeholder-neutral-400"
+                  className="w-full px-4 py-3 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-subit-500 focus:border-subit-500 disabled:bg-neutral-100 dark:disabled:bg-neutral-800 disabled:cursor-not-allowed transition-all bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500"
                 />
               </div>
 
               {/* Upload Progress */}
               {uploading && (
-                <AnimatedCard className="p-6 bg-gradient-to-r from-blue-50 to-subit-50 border border-blue-200 rounded-xl">
+                <AnimatedCard className="p-6 bg-gradient-to-r from-blue-50 to-subit-50 dark:from-blue-900/30 dark:to-subit-900/30 border border-blue-200 dark:border-blue-800 rounded-xl">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-2">
-                      <Loader className="w-5 h-5 text-subit-600 animate-spin" />
-                      <span className="text-base font-semibold text-neutral-900">Uploading your video...</span>
+                      <Loader className="w-5 h-5 text-subit-600 dark:text-subit-400 animate-spin" />
+                      <span className="text-base font-semibold text-neutral-900 dark:text-neutral-100">Uploading your video...</span>
                     </div>
-                    <span className="text-lg font-bold text-subit-600">{uploadProgress}%</span>
+                    <span className="text-lg font-bold text-subit-600 dark:text-subit-400">{uploadProgress}%</span>
                   </div>
-                  <div className="relative w-full bg-neutral-200 rounded-full h-3 overflow-hidden">
+                  <div className="relative w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-3 overflow-hidden">
                     <div
                       className="absolute inset-0 bg-gradient-to-r from-subit-500 to-blue-500 h-3 rounded-full transition-all duration-500 ease-out shadow-lg"
                       style={{ width: `${uploadProgress}%` }}
@@ -284,12 +289,12 @@ export default function UploadPage() {
               </button>
 
               {/* Info */}
-              <div className="bg-gradient-to-r from-blue-50 to-subit-50 border border-blue-200 rounded-xl p-6">
+              <div className="bg-gradient-to-r from-blue-50 to-subit-50 dark:from-blue-900/30 dark:to-subit-900/30 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
                 <div className="flex items-start space-x-4">
-                  <CheckCircle className="w-6 h-6 text-blue-600 flex-shrink-0" />
-                  <div className="text-base text-blue-900">
+                  <CheckCircle className="w-6 h-6 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                  <div className="text-base text-blue-900 dark:text-blue-100">
                     <p className="font-bold mb-2">What happens next?</p>
-                    <ul className="space-y-2 text-blue-800">
+                    <ul className="space-y-2 text-blue-800 dark:text-blue-200">
                       <li className="flex items-start">
                         <span className="mr-2">✓</span>
                         <span>Your video will be uploaded to secure cloud storage</span>
@@ -314,28 +319,28 @@ export default function UploadPage() {
           )}
 
           {/* Plan Limits */}
-          <AnimatedCard delay={0.2} className="mt-8 bg-white/80 backdrop-blur-sm rounded-2xl border border-neutral-200/50 shadow-glass p-8">
+          <AnimatedCard delay={0.2} className="mt-8 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm rounded-2xl border border-neutral-200/50 dark:border-neutral-800/50 shadow-glass p-8">
             <div className="flex items-center space-x-3 mb-6">
               <Zap className="w-6 h-6 text-yellow-500" />
-              <h3 className="text-xl font-bold text-neutral-900">Your Plan Limits</h3>
+              <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">Your Plan Limits</h3>
             </div>
             {(() => { const tier = (user as any)?.user_metadata?.subscription_tier || 'free'; return (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-xl">
-                  <span className="text-neutral-600 font-medium">Max video length</span>
-                  <span className="font-bold text-neutral-900 text-lg">
-                    {tier === 'team' ? 'Unlimited' : tier === 'pro' ? '30 minutes' : '5 minutes'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-xl">
-                  <span className="text-neutral-600 font-medium">Max file size</span>
-                  <span className="font-bold text-neutral-900 text-lg">
-                    {tier === 'team' ? '1 GB' : tier === 'pro' ? '500 MB' : '200 MB'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-xl">
-                  <span className="text-neutral-600 font-medium">Watermark</span>
-                  <span className="font-bold text-neutral-900 text-lg">
+                              <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-800 rounded-xl">
+                    <span className="text-neutral-600 dark:text-neutral-400 font-medium">Max video length</span>
+                    <span className="font-bold text-neutral-900 dark:text-neutral-100 text-lg">
+                      {tier === 'team' ? 'Unlimited' : tier === 'pro' ? '30 minutes' : '5 minutes'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-800 rounded-xl">
+                    <span className="text-neutral-600 dark:text-neutral-400 font-medium">Max file size</span>
+                    <span className="font-bold text-neutral-900 dark:text-neutral-100 text-lg">
+                      {tier === 'team' ? '1 GB' : tier === 'pro' ? '500 MB' : '200 MB'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-800 rounded-xl">
+                    <span className="text-neutral-600 dark:text-neutral-400 font-medium">Watermark</span>
+                    <span className="font-bold text-neutral-900 dark:text-neutral-100 text-lg">
                     {tier === 'pro' || tier === 'team' ? 'No watermark' : 'With watermark'}
                   </span>
                 </div>

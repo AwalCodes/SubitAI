@@ -1,5 +1,6 @@
 'use client'
 
+import * as React from 'react'
 import { motion } from 'framer-motion'
 
 /**
@@ -171,6 +172,24 @@ export function AnimatedCard({
     </motion.div>
   )
 }
+
+// Animated div with ref forwarding for useDropzone compatibility
+export const AnimatedCardWithRef = React.forwardRef<HTMLDivElement, {
+  children: React.ReactNode
+  delay?: number
+  className?: string
+}>(({ children, delay = 0, className = '' }, ref) => {
+  return (
+    <div
+      ref={ref}
+      className={className}
+    >
+      {children}
+    </div>
+  )
+})
+
+AnimatedCardWithRef.displayName = 'AnimatedCardWithRef'
 
 // Glow animation for premium elements
 export const glowAnimation = {

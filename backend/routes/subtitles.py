@@ -7,18 +7,69 @@ from typing import List, Optional
 import logging
 from services.supabase_client import get_supabase_client
 from services.auth_service import get_current_user, check_subscription_tier
-# from services.whisper_service import whisper_service
+from services.whisper_service import whisper_service
 # from services.export_service import export_service
 # from workers.celery import transcribe_video_task
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+async def process_video_transcription(project_id: str, video_filename: str, user_id: str):
+    """Background task to transcribe video and save subtitles"""
+    try:
+        supabase = get_supabase_client()
+        
+        logger.info(f"Starting transcription for project {project_id}")
+        
+        # Construct full video path with user_id prefix if not already present
+        if not video_filename.startswith(user_id):
+            video_path = f"{user_id}/{video_filename}"
+        else:
+            video_path = video_filename
+        
+        # Transcribe video
+        transcription_result = await whisper_service.transcribe_video(video_path, 'en')
+        
+        # Save subtitles to database
+        subtitle_data = {
+            "project_id": project_id,
+            "srt_data": transcription_result["srt_content"],
+            "json_data": {
+                "text": transcription_result["text"],
+                "language": transcription_result["language"],
+                "segments": transcription_result["segments"],
+                "duration": transcription_result["duration"]
+            },
+            "language": transcription_result["language"]
+        }
+        
+        supabase.table("subtitles").insert(subtitle_data).execute()
+        
+        # Update project status to completed
+        supabase.table("projects")\
+            .update({"status": "completed"})\
+            .eq("id", project_id)\
+            .execute()
+        
+        logger.info(f"Transcription completed for project {project_id}")
+        
+    except Exception as e:
+        logger.error(f"Transcription failed: {e}")
+        # Update project status to failed
+        try:
+            supabase = get_supabase_client()
+            supabase.table("projects")\
+                .update({"status": "failed"})\
+                .eq("id", project_id)\
+                .execute()
+        except:
+            pass
+
 @router.post("/generate/{project_id}")
 async def generate_subtitles(
     project_id: str,
+    background_tasks: BackgroundTasks,
     language: str = "en",
-    background_tasks: BackgroundTasks = None,
     user: dict = Depends(get_current_user)
 ):
     """Generate subtitles for a project using Whisper AI"""
@@ -53,15 +104,12 @@ async def generate_subtitles(
             .execute()
         
         # Start transcription in background
-        if background_tasks:
-            background_tasks.add_task(
-                transcribe_video_task,
-                project_id,
-                project["video_filename"]
-            )
-        else:
-            # For testing, run synchronously
-            transcribe_video_task.delay(project_id, project["video_filename"])
+        background_tasks.add_task(
+            process_video_transcription,
+            project_id,
+            project["video_filename"],
+            user["id"]
+        )
         
         return {
             "message": "Subtitle generation started",

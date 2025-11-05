@@ -7,6 +7,7 @@ import { Plus, Video, Clock, CheckCircle, AlertCircle, Zap, ArrowRight, Sparkles
 import { apiClient } from '@/lib/api'
 import Link from 'next/link'
 import { AnimatedContainer, AnimatedCard, scaleIn, fadeInUp } from '@/components/ui/animations'
+import { OnboardingModal } from '@/components/onboarding-modal'
 
 interface Project {
   id: string
@@ -23,6 +24,7 @@ export default function Dashboard() {
   const [projects, setProjects] = useState<Project[]>([])
   const [projectsLoading, setProjectsLoading] = useState(true)
   const [initialLoad, setInitialLoad] = useState(true)
+  const [showOnboarding, setShowOnboarding] = useState(false)
 
   useEffect(() => {
     if (!loading && !user) {
@@ -37,13 +39,24 @@ export default function Dashboard() {
     }
   }, [user])
 
+  useEffect(() => {
+    // Show onboarding for new users (first time visiting dashboard)
+    if (user && !projectsLoading && projects.length === 0) {
+      const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding')
+      if (!hasSeenOnboarding) {
+        setShowOnboarding(true)
+      }
+    }
+  }, [user, projectsLoading, projects.length])
+
   const fetchProjects = async () => {
     try {
       setProjectsLoading(true)
       const response = await apiClient.projects.getProjects({ limit: 10 })
       setProjects(response.data.projects || [])
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch projects:', error)
+      // Don't block the UI if projects fail to load
       setProjects([])
     } finally {
       setProjectsLoading(false)
@@ -89,15 +102,16 @@ export default function Dashboard() {
     })
   }
 
-  if (loading || initialLoad) {
+  // Show loading only if user auth is still loading, not if projects are loading
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-neutral-50 dark:from-neutral-900 dark:to-neutral-950 to-white dark:to-neutral-900 flex items-center justify-center">
         <div className="text-center">
           <div className="relative">
             <div className="w-20 h-20 border-4 border-subit-500/20 border-t-subit-500 rounded-full animate-spin mx-auto mb-6" />
             <Sparkles className="w-8 h-8 text-subit-500 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-pulse" />
           </div>
-          <p className="text-neutral-600 text-lg font-medium">Loading your dashboard...</p>
+          <p className="text-neutral-600 dark:text-neutral-400 text-lg font-medium">Loading your dashboard...</p>
         </div>
       </div>
     )
@@ -139,7 +153,7 @@ export default function Dashboard() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-neutral-50">
+    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-neutral-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
       {/* Header with gradient background */}
       <div className="bg-gradient-to-r from-subit-600 via-subit-500 to-subit-400 border-b border-subit-300/20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -269,6 +283,15 @@ export default function Dashboard() {
           )}
         </AnimatedCard>
       </div>
+
+      {/* Onboarding Modal */}
+      <OnboardingModal
+        isOpen={showOnboarding}
+        onClose={() => {
+          setShowOnboarding(false)
+          localStorage.setItem('hasSeenOnboarding', 'true')
+        }}
+      />
     </div>
   )
 }

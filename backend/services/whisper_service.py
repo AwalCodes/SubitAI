@@ -9,8 +9,17 @@ import json
 from typing import Dict, List, Any, Optional
 import logging
 from fastapi import HTTPException
-import whisper
-import torch
+
+# Try to import whisper - not required for basic functionality
+try:
+    import whisper
+    import torch
+    WHISPER_AVAILABLE = True
+except ImportError:
+    WHISPER_AVAILABLE = False
+    whisper = None
+    torch = None
+
 from services.video_service import video_service
 
 logger = logging.getLogger(__name__)
@@ -21,26 +30,48 @@ class WhisperService:
     def __init__(self):
         self.model = None
         self.temp_dir = tempfile.gettempdir()
-        self._load_model()
+        self._model_loading = False
+        # Don't load model on init - load lazily when needed
     
     def _load_model(self):
-        """Load Whisper model"""
+        """Load Whisper model lazily"""
+        if not WHISPER_AVAILABLE:
+            raise HTTPException(status_code=503, detail="Whisper AI model not installed. Please install: pip install openai-whisper torch")
+        
+        if self.model is not None:
+            return
+        
+        if self._model_loading:
+            # Wait for another thread to finish loading
+            while self._model_loading:
+                import time
+                time.sleep(0.1)
+            return
+        
         try:
+            self._model_loading = True
             # Use GPU if available, otherwise CPU
             device = "cuda" if torch.cuda.is_available() else "cpu"
             logger.info(f"Loading Whisper model on {device}")
             
             # Load the large-v3 model for best accuracy
-            self.model = whisper.load_model("large-v3", device=device)
+            # Use base model for faster loading and processing
+            model_name = os.getenv("WHISPER_MODEL", "base")
+            self.model = whisper.load_model(model_name, device=device)
             logger.info("Whisper model loaded successfully")
             
         except Exception as e:
             logger.error(f"Failed to load Whisper model: {e}")
             raise HTTPException(status_code=500, detail="Failed to initialize AI model")
+        finally:
+            self._model_loading = False
     
     async def transcribe_video(self, file_path: str, language: str = "en") -> Dict[str, Any]:
         """Transcribe video using Whisper AI"""
         try:
+            # Load model if not already loaded
+            self._load_model()
+            
             # Download video from storage
             video_data = await video_service.download_video(file_path)
             
@@ -53,12 +84,21 @@ class WhisperService:
             
             # Transcribe with Whisper
             logger.info(f"Starting transcription for {file_path}")
+            
+            # Determine if we're on CPU or GPU
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            fp16_enabled = device == "cuda"  # Only use fp16 on GPU
+            
             result = self.model.transcribe(
                 temp_file,
                 language=language if language != "auto" else None,
                 verbose=True,
-                word_timestamps=True
+                word_timestamps=True,
+                fp16=fp16_enabled  # Disable fp16 on CPU for better compatibility
             )
+            
+            logger.info(f"Transcription completed. Found {len(result.get('segments', []))} segments")
+            logger.info(f"Full text length: {len(result.get('text', ''))}")
             
             # Clean up temporary file
             os.unlink(temp_file)
@@ -66,11 +106,14 @@ class WhisperService:
             # Process results
             segments = []
             for segment in result["segments"]:
+                text_content = segment.get("text", "").strip()
+                logger.info(f"Segment {segment['id']}: '{text_content}' ({segment['start']:.2f}s - {segment['end']:.2f}s)")
+                
                 segments.append({
                     "id": segment["id"],
                     "start": segment["start"],
                     "end": segment["end"],
-                    "text": segment["text"].strip(),
+                    "text": text_content,
                     "words": segment.get("words", [])
                 })
             

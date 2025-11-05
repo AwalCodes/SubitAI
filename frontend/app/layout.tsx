@@ -3,6 +3,9 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import { Providers } from '@/lib/providers'
+import { ThemeProvider } from '@/components/providers/theme-provider'
+import { CommandPalette } from '@/components/command-palette'
+import { FloatingHelp } from '@/components/floating-help'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -64,35 +67,39 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className="h-full" suppressHydrationWarning>
       <body className={`${inter.className} h-full antialiased`}>
-        <Providers>
-          {children}
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: '#363636',
-                color: '#fff',
-              },
-              success: {
-                duration: 3000,
-                iconTheme: {
-                  primary: '#10b981',
-                  secondary: '#fff',
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+          <Providers>
+            {children}
+            <CommandPalette />
+            <FloatingHelp />
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 4000,
+                style: {
+                  background: '#363636',
+                  color: '#fff',
                 },
-              },
-              error: {
-                duration: 5000,
-                iconTheme: {
-                  primary: '#ef4444',
-                  secondary: '#fff',
+                success: {
+                  duration: 3000,
+                  iconTheme: {
+                    primary: '#10b981',
+                    secondary: '#fff',
+                  },
                 },
-              },
-            }}
-          />
-        </Providers>
+                error: {
+                  duration: 5000,
+                  iconTheme: {
+                    primary: '#ef4444',
+                    secondary: '#fff',
+                  },
+                },
+              }}
+            />
+          </Providers>
+        </ThemeProvider>
       </body>
     </html>
   )

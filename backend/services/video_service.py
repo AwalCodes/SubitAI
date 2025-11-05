@@ -138,6 +138,23 @@ class VideoService:
             logger.error(f"Video deletion failed: {e}")
             return False
     
+    def get_signed_video_url(self, file_path: str, expires_in: int = 3600) -> str:
+        """Generate a signed URL for private video access"""
+        try:
+            # Generate signed URL that expires in expires_in seconds
+            signed_url = self.supabase.storage.from_("videos").create_signed_url(file_path, expires_in)
+            if isinstance(signed_url, dict) and 'signedURL' in signed_url:
+                return signed_url['signedURL']
+            elif isinstance(signed_url, str):
+                return signed_url
+            else:
+                # Fallback to public URL if signed URL generation fails
+                return self.supabase.storage.from_("videos").get_public_url(file_path)
+        except Exception as e:
+            logger.warning(f"Failed to generate signed URL: {e}, falling back to public URL")
+            # Fallback to public URL
+            return self.supabase.storage.from_("videos").get_public_url(file_path)
+    
     def validate_video_file(self, filename: str, file_size: int) -> bool:
         """Validate video file format and size"""
         # Check file extension

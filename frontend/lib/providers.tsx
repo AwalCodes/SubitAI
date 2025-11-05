@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { User } from '@supabase/supabase-js'
+import { apiClient } from '@/lib/api'
 
 interface UserContextType {
   user: User | null
@@ -36,20 +37,17 @@ export function Providers({ children }: { children: React.ReactNode }) {
         } else {
           localStorage.removeItem('access_token')
         }
-        // Fetch user subscription (optional)
+        // Fetch user subscription (optional - don't block on this)
         try {
-          const response = await fetch('/api/billing/subscription', {
-            headers: {
-              'Authorization': `Bearer ${sessionData.session?.access_token ?? ''}`
-            }
-          })
-          
-          if (response.ok) {
-            const data = await response.json()
-            setSubscription(data.subscription)
+          const response = await apiClient.billing.getSubscription()
+          if (response.data?.subscription) {
+            setSubscription(response.data.subscription)
           }
-        } catch (error) {
-          console.log('No subscription endpoint available')
+        } catch (error: any) {
+          // Silently fail - subscription is optional
+          if (error.response?.status !== 404) {
+            console.log('Subscription fetch error:', error)
+          }
         }
       } else {
         setSubscription(null)

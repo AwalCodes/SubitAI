@@ -16,9 +16,9 @@ export default function Hero() {
           
           {/* Main headline matching Figma */}
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight">
-            Generate Professional{' '}
+            Generate{' '}
             <span className="text-primary-700">Subtitles</span>{' '}
-            with AI
+            with AI for free, No watermark
           </h1>
           
           {/* Subtitle matching Figma */}

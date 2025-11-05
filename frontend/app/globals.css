@@ -17,6 +17,12 @@
     color: #111827;
     line-height: 1.6;
     font-weight: 400;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  body.dark {
+    background-color: #0F172A;
+    color: #F5F6FA;
   }
   
   html {
