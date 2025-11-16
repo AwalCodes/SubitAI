@@ -1,7 +1,8 @@
-# Environment variables
-.env
-.env.local
-.env.*.local
+# Dependencies
+node_modules/
+*/node_modules/
+.pnp
+.pnp.js
 
 # Python
 __pycache__/
@@ -13,39 +14,66 @@ venv/
 env/
 ENV/
 
-# Node
-node_modules/
+# Testing
+coverage/
+*.lcov
+.nyc_output
+
+# Next.js
 .next/
+out/
+build/
+dist/
+
+# Production
+/build
+
+# Misc
+.DS_Store
+*.pem
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
 
-# IDEs
+# Debug
+lerna-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.dev.vars
+
+# Vercel
+.vercel
+
+# Cloudflare
+.wrangler/
+wrangler.toml.bak
+
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Build
-dist/
-build/
-*.egg-info/
-
-# Logs
-*.log
-
 # Temporary files
 *.tmp
-temp/
-tmp/
+*.temp
+.cache/
 
-# Documentation files (deployment guides)
-*.md
-!README.md
-*.sh
+# OS
+Thumbs.db
+
+# Supabase
+.supabase/
+
+# Legacy backend (deprecated)
+backend/.env
+backend/**/*.pyc
+backend/temp/
+backend/uploads/
