@@ -1,0 +1,16 @@
+name = "subit-ai-worker"
+main = "src/index.ts"
+compatibility_date = "2024-01-15"
+node_compat = true
+
+# Worker configuration
+workers_dev = true
+route = ""
+zone_id = ""
+
+# Environment variables (set via Cloudflare Dashboard or wrangler secret)
+# For local development, use .dev.vars file
+
+[env.production]
+name = "subit-ai-worker-production"
+

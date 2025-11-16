@@ -1,0 +1,16 @@
+# Cloudflare Worker Environment Variables (for local development)
+# Copy this file to .dev.vars and fill in your actual values
+
+# Groq API Key
+GROQ_API_KEY=your_groq_api_key_here
+
+# Supabase Configuration
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_SERVICE_KEY=your_supabase_service_role_key
+
+# CORS Configuration
+ALLOWED_ORIGINS=http://localhost:3000,https://yourdomain.com
+
+# Optional: Sentry for error tracking
+SENTRY_DSN=
+
