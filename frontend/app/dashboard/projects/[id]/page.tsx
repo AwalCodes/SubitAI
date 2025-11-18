@@ -178,7 +178,7 @@ export default function ProjectDetailPage() {
         clearInterval(pollInterval)
       }
     }
-  }, [project?.id, project?.status, generating, subtitles.length])
+  }, [project, generating, subtitles.length])
 
   const fetchProject = async () => {
     try {

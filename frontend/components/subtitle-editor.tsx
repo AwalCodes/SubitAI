@@ -92,7 +92,7 @@ export function SubtitleEditor({
         {segments.length === 0 ? (
           <div className="p-12 text-center">
             <p className="text-neutral-500 dark:text-neutral-400 text-sm">
-              No subtitles yet. Click "Add" to create your first subtitle.
+              No subtitles yet. Click &quot;Add&quot; to create your first subtitle.
             </p>
           </div>
         ) : (

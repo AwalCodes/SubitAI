@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
 import { User } from '@supabase/supabase-js'
 
@@ -19,7 +19,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [subscription, setSubscription] = useState<any>(null)
   const supabase = createClient()
 
-  const fetchUser = async () => {
+  const fetchUser = useCallback(async () => {
     try {
       const { data: { user }, error } = await supabase.auth.getUser()
       if (error) {
@@ -62,10 +62,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Error fetching user:', error)
+      setUser(null)
+      setSubscription(null)
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
 
   useEffect(() => {
     fetchUser()

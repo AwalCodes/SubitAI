@@ -48,7 +48,7 @@ export default function TermsPage() {
 
             <section>
               <h2 className="text-2xl font-bold text-gray-900 mb-3">Limitation of Liability</h2>
-              <p className="text-gray-700">SUBIT.AI provides services "as is" and does not guarantee accuracy or availability. We are not liable for any indirect or consequential damages arising from the use of our services.</p>
+              <p className="text-gray-700">SUBIT.AI provides services &quot;as is&quot; and does not guarantee accuracy or availability. We are not liable for any indirect or consequential damages arising from the use of our services.</p>
             </section>
           </div>
         </div>

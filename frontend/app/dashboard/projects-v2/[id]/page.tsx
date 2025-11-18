@@ -73,9 +73,9 @@ export default function ProjectViewV2() {
   // Load project and subtitles
   useEffect(() => {
     loadProject()
-  }, [projectId])
+  }, [projectId, loadProject])
 
-  const loadProject = async () => {
+  const loadProject = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)

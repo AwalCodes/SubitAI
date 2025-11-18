@@ -155,7 +155,7 @@ export default function Pricing() {
 
                 {/* Features */}
                 <div className="space-y-4 mb-8">
-                  <h4 className="font-semibold text-gray-900 mb-4">What's included:</h4>
+                  <h4 className="font-semibold text-gray-900 mb-4">What&apos;s included:</h4>
                   {plan.features.map((feature, featureIndex) => (
                     <div key={featureIndex} className="flex items-start space-x-3">
                       <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />

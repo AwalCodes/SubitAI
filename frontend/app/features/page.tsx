@@ -165,7 +165,7 @@ export default function FeaturesPage() {
                       </div>
                       
                       <div className="space-y-3 mb-6">
-                        <h4 className="font-semibold text-gray-900 text-sm mb-3">What's included:</h4>
+                        <h4 className="font-semibold text-gray-900 text-sm mb-3">What&apos;s included:</h4>
                         {plan.features.map((feature, idx) => (
                           <div key={idx} className="flex items-start gap-2">
                             <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
