@@ -3,7 +3,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { User } from '@supabase/supabase-js'
-import { apiClient } from '@/lib/api'
 
 interface UserContextType {
   user: User | null
@@ -39,15 +38,23 @@ export function Providers({ children }: { children: React.ReactNode }) {
         }
         // Fetch user subscription (optional - don't block on this)
         try {
-          const response = await apiClient.billing.getSubscription()
-          if (response.data?.subscription) {
-            setSubscription(response.data.subscription)
+          const { data: subscriptionData, error: subscriptionError } = await supabase
+            .from('billing')
+            .select('plan, status, current_period_start, current_period_end, created_at, updated_at')
+            .eq('user_id', user.id)
+            .maybeSingle()
+
+          if (subscriptionError && subscriptionError.code !== 'PGRST116') {
+            throw subscriptionError
           }
-        } catch (error: any) {
-          // Silently fail - subscription is optional
-          if (error.response?.status !== 404) {
-            console.log('Subscription fetch error:', error)
+
+          if (subscriptionData) {
+            setSubscription(subscriptionData)
+          } else {
+            setSubscription(null)
           }
+        } catch (error) {
+          console.log('Subscription fetch error:', error)
         }
       } else {
         setSubscription(null)
