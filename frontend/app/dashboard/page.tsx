@@ -34,10 +34,33 @@ export default function Dashboard() {
   }, [user, loading, router])
 
   useEffect(() => {
-    if (user) {
-      fetchProjects()
+    if (!user) return
+    
+    const fetchProjects = async () => {
+      try {
+        setProjectsLoading(true)
+        const supabase = createClient()
+        const { data: projects, error } = await supabase
+          .from('projects')
+          .select('id, title, status, created_at, video_duration, export_url')
+          .eq('user_id', user?.id)
+          .order('created_at', { ascending: false })
+          .limit(10)
+        
+        if (error) throw error
+        setProjects(projects || [])
+      } catch (error: any) {
+        console.error('Failed to fetch projects:', error)
+        // Don't block the UI if projects fail to load
+        setProjects([])
+      } finally {
+        setProjectsLoading(false)
+        setInitialLoad(false)
+      }
     }
-  }, [user, fetchProjects])
+    
+    fetchProjects()
+  }, [user?.id])
 
   useEffect(() => {
     // Show onboarding for new users (first time visiting dashboard)

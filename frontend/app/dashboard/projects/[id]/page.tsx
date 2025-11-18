@@ -72,7 +72,7 @@ export default function ProjectDetailPage() {
     if (user && params.id) {
       fetchProject()
     }
-  }, [user, params.id])
+  }, [user, params.id, fetchProject])
 
   // Auto-start polling if project is in processing state
   useEffect(() => {

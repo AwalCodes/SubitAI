@@ -41,7 +41,7 @@ export default function ContactPage() {
               Get in Touch
             </h1>
             <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
-              Have questions? Send us a message and we'll get back to you promptly.
+              Have questions? Send us a message and we&apos;ll get back to you promptly.
             </p>
           </AnimatedDiv>
 

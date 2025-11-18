@@ -111,7 +111,7 @@ export default function ProjectViewV2() {
     } finally {
       setLoading(false)
     }
-  }, [projectId])
+  }, [projectId, user?.id])
 
   // Update subtitle segments
   const handleUpdateSubtitles = useCallback((newSegments: any[]) => {
