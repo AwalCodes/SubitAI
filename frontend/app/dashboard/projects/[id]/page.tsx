@@ -69,10 +69,46 @@ export default function ProjectDetailPage() {
   const [activeWord, setActiveWord] = useState<{ segment: number; word: number } | null>(null)
 
   useEffect(() => {
-    if (user && params.id) {
-      fetchProject()
+    if (!user || !params.id) return
+    
+    const fetchProject = async () => {
+      try {
+        setLoading(true)
+        const supabase = createClient()
+        const { data: projectData, error } = await supabase
+          .from('projects')
+          .select(`
+            id, title, status, video_url, video_duration, export_url, created_at,
+            subtitles (id, srt_data, json_data, language)
+          `)
+          .eq('id', params.id as string)
+          .single()
+        
+        if (error) throw error
+        setProject(projectData)
+
+        // Load subtitles if they exist
+        if (projectData.subtitles && projectData.subtitles.length > 0) {
+          const subtitleData = projectData.subtitles[0]
+          if (subtitleData.json_data?.segments) {
+            setSubtitles(subtitleData.json_data.segments)
+          }
+        }
+
+        // Auto-start polling if project is processing and no subtitles
+        if (projectData.status === 'processing' && (!projectData.subtitles || projectData.subtitles.length === 0)) {
+          startPolling(projectData.id)
+        }
+      } catch (error: any) {
+        console.error('Failed to fetch project:', error)
+        setError(error.message || 'Failed to load project')
+      } finally {
+        setLoading(false)
+      }
     }
-  }, [user, params.id, fetchProject])
+    
+    fetchProject()
+  }, [user, params.id])
 
   // Auto-start polling if project is in processing state
   useEffect(() => {

@@ -156,7 +156,7 @@ export default function ContactPage() {
                 Expert Support
               </h3>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                We'd love to hear from your technical team
+                We&apos;d love to hear from your technical team
               </p>
             </AnimatedCard>
 

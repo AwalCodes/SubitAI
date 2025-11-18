@@ -60,7 +60,7 @@ export default function Dashboard() {
     }
     
     fetchProjects()
-  }, [user?.id])
+  }, [user])
 
   useEffect(() => {
     // Show onboarding for new users (first time visiting dashboard)
