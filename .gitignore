@@ -77,3 +77,9 @@ backend/.env
 backend/**/*.pyc
 backend/temp/
 backend/uploads/
+DEPLOYMENT_GUIDE.md
+DIAGNOSIS_REPORT.md
+QUICK_START.md
+REFACTORING_SUMMARY.md
+TESTING_GUIDE.md
+WORK_COMPLETED.md
