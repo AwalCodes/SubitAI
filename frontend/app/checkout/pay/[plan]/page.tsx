@@ -43,7 +43,7 @@ export default function PaymentRedirectPage() {
         <p className="text-neutral-600 mb-6">
           {method === 'card' ? 'Taking you to Stripe checkout' : 'Taking you to crypto payment gateway'}
         </p>
-        <p className="text-sm text-neutral-500">If you're not redirected automatically, <a href={PAYMENT_LINKS[planKey]?.[method]} className="text-subit-600 hover:text-subit-700 underline">click here</a></p>
+        <p className="text-sm text-neutral-500">If you&apos;re not redirected automatically, <a href={PAYMENT_LINKS[planKey]?.[method]} className="text-subit-600 hover:text-subit-700 underline">click here</a></p>
       </div>
     </div>
   )

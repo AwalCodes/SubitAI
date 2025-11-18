@@ -353,7 +353,7 @@ export async function healthCheck(): Promise<boolean> {
   }
 }
 
-export default {
+const apiV2 = {
   transcribeFile,
   transcribeFileStream,
   getSupportedLanguages,
@@ -362,3 +362,4 @@ export default {
   healthCheck,
 };
 
+export default apiV2;

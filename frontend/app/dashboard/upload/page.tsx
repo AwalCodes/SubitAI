@@ -4,7 +4,8 @@ import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useDropzone } from 'react-dropzone'
 import { Upload, Video, X, CheckCircle, AlertCircle, Cloud, Zap, Sparkles, ArrowRight, Loader } from 'lucide-react'
-import { apiClient } from '@/lib/api'
+import { createClient } from '@/lib/supabase'
+import { transcribeFile } from '@/lib/api-v2'
 import { useUser } from '@/lib/providers'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
@@ -61,8 +62,47 @@ export default function UploadPage() {
         })
       }, 500)
 
-      const response = await apiClient.projects.uploadVideo(file, title)
+      const supabase = createClient()
       
+      // Create project in database
+      const { data: projectData, error: projectError } = await supabase
+        .from('projects')
+        .insert({
+          user_id: user?.id,
+          title: title.trim(),
+          status: 'processing',
+          video_size: file.size,
+        })
+        .select()
+        .single()
+
+      if (projectError) throw projectError
+
+      // Upload video to storage
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
+      const filePath = `${user?.id}/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('videos')
+        .upload(filePath, file)
+
+      if (uploadError) throw uploadError
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('videos')
+        .getPublicUrl(filePath)
+
+      // Update project with video info
+      await supabase
+        .from('projects')
+        .update({
+          video_url: publicUrl,
+          video_filename: fileName,
+        })
+        .eq('id', projectData.id)
+
       // Clear interval and complete progress
       if (progressInterval) clearInterval(progressInterval)
       setUploadProgress(100)
@@ -73,7 +113,7 @@ export default function UploadPage() {
       })
       
       setTimeout(() => {
-        router.push(`/dashboard/projects/${response.data.project.id}`)
+        router.push(`/dashboard/projects/${projectData.id}`)
       }, 1000)
     } catch (error: any) {
       console.error('Upload error:', error)

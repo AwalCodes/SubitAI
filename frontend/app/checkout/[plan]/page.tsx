@@ -75,7 +75,7 @@ export default function SubscribePlanPage() {
               <span className="text-2xl">{plan.price}</span>
             </div>
             <div className="p-6">
-              <h3 className="font-semibold text-neutral-900 mb-4 text-lg">What's included:</h3>
+              <h3 className="font-semibold text-neutral-900 mb-4 text-lg">What&apos;s included:</h3>
               <ul className="space-y-3">
                 {plan.features.map((f, i) => (
                   <li key={i} className="flex items-start space-x-3">

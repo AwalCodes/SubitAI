@@ -20,7 +20,7 @@ export default function FAQPage() {
     },
     { 
       q: 'How is energy calculated?', 
-      a: 'Operations consume energy depending on your plan: Free gets 30/day, Pro gets 300/day, Premium has unlimited. Energy resets daily and unused energy doesn\'t carry over.' 
+      a: 'Operations consume energy depending on your plan: Free gets 30/day, Pro gets 300/day, Premium has unlimited. Energy resets daily and unused energy doesn&apos;t carry over.' 
     },
     { 
       q: 'Do you support crypto payments?', 
@@ -108,7 +108,7 @@ export default function FAQPage() {
               Still have questions?
             </h2>
             <p className="text-subit-50 mb-6 max-w-md mx-auto">
-              Can't find the answer you're looking for? Our support team is here to help.
+              Can&apos;t find the answer you&apos;re looking for? Our support team is here to help.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a 

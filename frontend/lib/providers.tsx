@@ -96,7 +96,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     )
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [fetchUser, supabase.auth])
 
   const refetch = () => {
     fetchUser()

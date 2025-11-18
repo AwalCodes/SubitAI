@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useUser } from '@/lib/providers'
-import { apiClient } from '@/lib/api'
+import { createClient } from '@/lib/supabase'
 import {
   Video,
   Download,
@@ -90,8 +90,17 @@ export default function ProjectDetailPage() {
           pollCount++
           console.log(`Polling attempt ${pollCount}/${maxPolls} for project ${projectId}`)
           
-          const response = await apiClient.projects.getProject(projectId)
-          const updatedProject = response.data.project
+          const supabase = createClient()
+          const { data: updatedProject, error } = await supabase
+            .from('projects')
+            .select(`
+              id, title, status, video_url, video_duration, export_url, created_at,
+              subtitles (id, srt_data, json_data, language)
+            `)
+            .eq('id', projectId)
+            .single()
+          
+          if (error) throw error
           
           // Check if subtitles were generated
           if (updatedProject.subtitles && updatedProject.subtitles.length > 0) {
@@ -122,8 +131,16 @@ export default function ProjectDetailPage() {
             if (pollCount >= 5) {
               console.log('Project marked as completed, fetching subtitles...')
               // Try fetching one more time
-              const finalResponse = await apiClient.projects.getProject(projectId)
-              const finalProject = finalResponse.data.project
+              const { data: finalProject, error: finalError } = await supabase
+                .from('projects')
+                .select(`
+                  id, title, status, video_url, video_duration, export_url, created_at,
+                  subtitles (id, srt_data, json_data, language)
+                `)
+                .eq('id', projectId)
+                .single()
+              
+              if (finalError) throw finalError
               if (finalProject.subtitles && finalProject.subtitles.length > 0) {
                 const subtitleData = finalProject.subtitles[0]
                 if (subtitleData.json_data?.segments && subtitleData.json_data.segments.length > 0) {
@@ -166,8 +183,17 @@ export default function ProjectDetailPage() {
   const fetchProject = async () => {
     try {
       setLoading(true)
-      const response = await apiClient.projects.getProject(params.id as string)
-      const projectData = response.data.project
+      const supabase = createClient()
+      const { data: projectData, error } = await supabase
+        .from('projects')
+        .select(`
+          id, title, status, video_url, video_duration, export_url, created_at,
+          subtitles (id, srt_data, json_data, language)
+        `)
+        .eq('id', params.id as string)
+        .single()
+      
+      if (error) throw error
       setProject(projectData)
 
       // Load subtitles if they exist
@@ -203,7 +229,9 @@ export default function ProjectDetailPage() {
     try {
       setGenerating(true)
       console.log(`Calling API: /subtitles/generate/${project.id}`)
-      const response = await apiClient.subtitles.generateSubtitles(project.id, 'en')
+      // Note: Subtitle generation now handled by Cloudflare Worker
+      toast.info('Subtitle generation via worker not yet implemented')
+      return
       console.log('API Response:', response)
       toast.success('Subtitle generation started! This may take a few minutes.')
       
@@ -214,8 +242,17 @@ export default function ProjectDetailPage() {
       const pollInterval = setInterval(async () => {
         try {
           pollCount++
-          const response = await apiClient.projects.getProject(project.id)
-          const updatedProject = response.data.project
+          const supabase = createClient()
+          const { data: updatedProject, error } = await supabase
+            .from('projects')
+            .select(`
+              id, title, status, video_url, video_duration, export_url, created_at,
+              subtitles (id, srt_data, json_data, language)
+            `)
+            .eq('id', project.id)
+            .single()
+          
+          if (error) throw error
           
           // Check if subtitles were generated (status can be completed or processing, but subtitles exist)
           if (updatedProject.subtitles && updatedProject.subtitles.length > 0) {
@@ -303,7 +340,13 @@ export default function ProjectDetailPage() {
         }
       }
       
-      await apiClient.subtitles.updateSubtitles(project.id, updateData)
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('subtitles')
+        .update({ json_data: updateData.json_data })
+        .eq('project_id', project.id)
+      
+      if (error) throw error
       toast.success('Subtitles saved successfully!')
     } catch (error: any) {
       console.error('Save error:', error)
@@ -317,12 +360,20 @@ export default function ProjectDetailPage() {
     if (!project) return
 
     try {
-      const response = await apiClient.subtitles.downloadSubtitles(project.id, 'srt')
-      const blob = new Blob([response.data.content], { type: 'text/plain' })
+      const supabase = createClient()
+      const { data: subtitleData, error } = await supabase
+        .from('subtitles')
+        .select('srt_data')
+        .eq('project_id', project.id)
+        .single()
+      
+      if (error) throw error
+      
+      const blob = new Blob([subtitleData.srt_data], { type: 'text/plain' })
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = response.data.filename
+      a.download = `${project.title}.srt`
       a.click()
       window.URL.revokeObjectURL(url)
       toast.success('SRT file downloaded!')
@@ -341,7 +392,13 @@ export default function ProjectDetailPage() {
 
     try {
       setDeleting(true)
-      await apiClient.projects.deleteProject(project.id)
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', project.id)
+      
+      if (error) throw error
       toast.success('Project deleted successfully')
       router.push('/dashboard/projects')
     } catch (error: any) {
@@ -469,7 +526,7 @@ export default function ProjectDetailPage() {
         <div className="text-center">
           <AlertCircle className="w-16 h-16 text-gray-400 dark:text-neutral-600 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-gray-900 dark:text-neutral-100 mb-2">Project not found</h2>
-          <p className="text-gray-600 dark:text-neutral-400 mb-4">The project you're looking for doesn't exist.</p>
+          <p className="text-gray-600 dark:text-neutral-400 mb-4">The project you&apos;re looking for doesn&apos;t exist.</p>
           <Link href="/dashboard">
             <button className="px-4 py-2 bg-subit-600 text-white rounded-lg hover:bg-subit-700">
               Back to Dashboard

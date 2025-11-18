@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useUser } from '@/lib/providers'
 import { useRouter } from 'next/navigation'
 import { Video, Clock, CheckCircle, AlertCircle, Trash2, ArrowRight, Plus, Search } from 'lucide-react'
-import { apiClient } from '@/lib/api'
+import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
 import { AnimatedCard } from '@/components/ui/animations'
 import toast from 'react-hot-toast'
@@ -36,13 +36,21 @@ export default function ProjectsPage() {
     if (user) {
       fetchProjects()
     }
-  }, [user])
+  }, [user, fetchProjects])
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     try {
       setProjectsLoading(true)
-      const response = await apiClient.projects.getProjects({ limit: 100 })
-      setProjects(response.data.projects || [])
+      const supabase = createClient()
+      const { data: projects, error } = await supabase
+        .from('projects')
+        .select('id, title, status, created_at, video_duration, export_url')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false })
+        .limit(100)
+      
+      if (error) throw error
+      setProjects(projects || [])
     } catch (error: any) {
       console.error('Failed to fetch projects:', error)
       toast.error('Failed to load projects')
@@ -50,7 +58,7 @@ export default function ProjectsPage() {
     } finally {
       setProjectsLoading(false)
     }
-  }
+  }, [user?.id])
 
   const handleDelete = async (projectId: string, projectTitle: string) => {
     if (!confirm(`Are you sure you want to delete "${projectTitle}"? This action cannot be undone.`)) {
@@ -59,13 +67,19 @@ export default function ProjectsPage() {
 
     try {
       setDeletingId(projectId)
-      await apiClient.projects.deleteProject(projectId)
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', projectId)
+      
+      if (error) throw error
       toast.success('Project deleted successfully')
       // Remove from list
       setProjects(projects.filter(p => p.id !== projectId))
     } catch (error: any) {
       console.error('Failed to delete project:', error)
-      toast.error(error.response?.data?.detail || 'Failed to delete project')
+      toast.error('Failed to delete project')
     } finally {
       setDeletingId(null)
     }

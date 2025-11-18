@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useUser } from '@/lib/providers'
 import { useRouter } from 'next/navigation'
 import { Plus, Video, Clock, CheckCircle, AlertCircle, Zap, ArrowRight, Sparkles } from 'lucide-react'
-import { apiClient } from '@/lib/api'
+import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
 import { AnimatedContainer, AnimatedCard, scaleIn, fadeInUp } from '@/components/ui/animations'
 import { OnboardingModal } from '@/components/onboarding-modal'
@@ -37,7 +37,7 @@ export default function Dashboard() {
     if (user) {
       fetchProjects()
     }
-  }, [user])
+  }, [user, fetchProjects])
 
   useEffect(() => {
     // Show onboarding for new users (first time visiting dashboard)
@@ -52,8 +52,16 @@ export default function Dashboard() {
   const fetchProjects = async () => {
     try {
       setProjectsLoading(true)
-      const response = await apiClient.projects.getProjects({ limit: 10 })
-      setProjects(response.data.projects || [])
+      const supabase = createClient()
+      const { data: projects, error } = await supabase
+        .from('projects')
+        .select('id, title, status, created_at, video_duration, export_url')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false })
+        .limit(10)
+      
+      if (error) throw error
+      setProjects(projects || [])
     } catch (error: any) {
       console.error('Failed to fetch projects:', error)
       // Don't block the UI if projects fail to load
