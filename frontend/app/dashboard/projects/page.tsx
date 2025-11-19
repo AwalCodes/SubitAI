@@ -32,12 +32,6 @@ export default function ProjectsPage() {
     }
   }, [user, userLoading, router])
 
-  useEffect(() => {
-    if (user) {
-      fetchProjects()
-    }
-  }, [user, fetchProjects])
-
   const fetchProjects = useCallback(async () => {
     try {
       setProjectsLoading(true)
@@ -59,6 +53,12 @@ export default function ProjectsPage() {
       setProjectsLoading(false)
     }
   }, [user?.id])
+
+  useEffect(() => {
+    if (user) {
+      fetchProjects()
+    }
+  }, [user, fetchProjects])
 
   const handleDelete = async (projectId: string, projectTitle: string) => {
     if (!confirm(`Are you sure you want to delete "${projectTitle}"? This action cannot be undone.`)) {

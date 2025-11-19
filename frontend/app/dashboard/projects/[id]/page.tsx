@@ -266,79 +266,14 @@ export default function ProjectDetailPage() {
 
     try {
       setGenerating(true)
-      console.log(`Calling API: /subtitles/generate/${project.id}`)
-      // Note: Subtitle generation now handled by Cloudflare Worker
-      toast.info('Subtitle generation via worker not yet implemented')
-      return
-      console.log('API Response:', response)
-      toast.success('Subtitle generation started! This may take a few minutes.')
-      
-      // Poll for completion
-      let pollCount = 0
-      const maxPolls = 120 // 10 minutes at 5 second intervals
-      
-      const pollInterval = setInterval(async () => {
-        try {
-          pollCount++
-          const supabase = createClient()
-          const { data: updatedProject, error } = await supabase
-            .from('projects')
-            .select(`
-              id, title, status, video_url, video_duration, export_url, created_at,
-              subtitles (id, srt_data, json_data, language)
-            `)
-            .eq('id', project.id)
-            .single()
-          
-          if (error) throw error
-          
-          // Check if subtitles were generated (status can be completed or processing, but subtitles exist)
-          if (updatedProject.subtitles && updatedProject.subtitles.length > 0) {
-            const subtitleData = updatedProject.subtitles[0]
-            if (subtitleData.json_data?.segments && subtitleData.json_data.segments.length > 0) {
-              clearInterval(pollInterval)
-              setProject(updatedProject)
-              setSubtitles(subtitleData.json_data.segments)
-              setGenerating(false)
-              toast.success('Subtitles generated successfully!')
-              return
-            }
-          }
-          
-          // Check for failure
-          if (updatedProject.status === 'failed') {
-            clearInterval(pollInterval)
-            setGenerating(false)
-            toast.error('Subtitle generation failed')
-            return
-          }
-          
-          // Stop polling after max attempts
-          if (pollCount >= maxPolls) {
-            clearInterval(pollInterval)
-            setGenerating(false)
-            toast.error('Subtitle generation is taking longer than expected. Please refresh the page.')
-          }
-        } catch (error) {
-          console.error('Polling error:', error)
-          pollCount++
-          if (pollCount >= maxPolls) {
-            clearInterval(pollInterval)
-            setGenerating(false)
-            toast.error('Error checking subtitle status. Please refresh the page.')
-          }
-        }
-      }, 5000) // Poll every 5 seconds
+      console.log(`Subtitle generation is currently handled by the worker UI flow`)
+      toast('Subtitle generation from this page is not implemented yet.')
     } catch (error: any) {
       console.error('=== Generate Subtitles Error ===')
       console.error('Full error:', error)
-      console.error('Error response:', error.response)
-      console.error('Error status:', error.response?.status)
-      console.error('Error data:', error.response?.data)
-      console.error('Error message:', error.message)
-      
-      const errorMessage = error.response?.data?.detail || error.message || 'Failed to generate subtitles'
+      const errorMessage = (error as any)?.message || 'Failed to generate subtitles'
       toast.error(errorMessage)
+    } finally {
       setGenerating(false)
     }
   }
