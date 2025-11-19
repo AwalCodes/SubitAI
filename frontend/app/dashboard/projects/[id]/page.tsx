@@ -38,7 +38,6 @@ interface Project {
   status: string
   video_url: string
   video_duration: number
-  export_url?: string
   created_at: string
   subtitles?: Array<{
     id: string
@@ -79,7 +78,7 @@ export default function ProjectDetailPage() {
         const { data: projectData, error } = await supabase
           .from('projects')
           .select(`
-            id, title, status, video_url, video_duration, export_url, created_at,
+            id, title, status, video_url, video_duration, created_at,
             subtitles (id, srt_data, json_data, language)
           `)
           .eq('id', params.id as string)
@@ -132,7 +131,7 @@ export default function ProjectDetailPage() {
           const { data: updatedProject, error } = await supabase
             .from('projects')
             .select(`
-              id, title, status, video_url, video_duration, export_url, created_at,
+              id, title, status, video_url, video_duration, created_at,
               subtitles (id, srt_data, json_data, language)
             `)
             .eq('id', projectId)
@@ -172,7 +171,7 @@ export default function ProjectDetailPage() {
               const { data: finalProject, error: finalError } = await supabase
                 .from('projects')
                 .select(`
-                  id, title, status, video_url, video_duration, export_url, created_at,
+                  id, title, status, video_url, video_duration, created_at,
                   subtitles (id, srt_data, json_data, language)
                 `)
                 .eq('id', projectId)
@@ -225,7 +224,7 @@ export default function ProjectDetailPage() {
       const { data: projectData, error } = await supabase
         .from('projects')
         .select(`
-          id, title, status, video_url, video_duration, export_url, created_at,
+          id, title, status, video_url, video_duration, created_at,
           subtitles (id, srt_data, json_data, language)
         `)
         .eq('id', params.id as string)

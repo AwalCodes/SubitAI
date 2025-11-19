@@ -15,7 +15,6 @@ interface Project {
   status: 'uploading' | 'processing' | 'completed' | 'failed'
   created_at: string
   video_duration?: number
-  export_url?: string
 }
 
 export default function Dashboard() {
@@ -42,7 +41,7 @@ export default function Dashboard() {
         const supabase = createClient()
         const { data: projects, error } = await supabase
           .from('projects')
-          .select('id, title, status, created_at, video_duration, export_url')
+          .select('id, title, status, created_at, video_duration')
           .eq('user_id', user?.id)
           .order('created_at', { ascending: false })
           .limit(10)
@@ -78,7 +77,7 @@ export default function Dashboard() {
       const supabase = createClient()
       const { data: projects, error } = await supabase
         .from('projects')
-        .select('id, title, status, created_at, video_duration, export_url')
+        .select('id, title, status, created_at, video_duration')
         .eq('user_id', user?.id)
         .order('created_at', { ascending: false })
         .limit(10)
