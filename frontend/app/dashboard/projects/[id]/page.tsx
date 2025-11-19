@@ -111,111 +111,112 @@ export default function ProjectDetailPage() {
     fetchProject()
   }, [user, params.id])
 
-  // Auto-start polling if project is in processing state
+  // Auto-start polling if project is in processing state and we have no subtitles yet
   useEffect(() => {
-    if (project && project.status === 'processing' && !generating && subtitles.length === 0) {
-      setGenerating(true)
-      // Start polling for subtitle completion
-      let pollCount = 0
-      const maxPolls = 240 // 20 minutes at 5 second intervals (model download can take time)
-      const projectId = project.id
-      
-      console.log('Starting subtitle polling for project:', projectId)
-      
-      const pollInterval = setInterval(async () => {
-        try {
-          pollCount++
-          console.log(`Polling attempt ${pollCount}/${maxPolls} for project ${projectId}`)
-          
-          const supabase = createClient()
-          const { data: updatedProject, error } = await supabase
-            .from('projects')
-            .select(`
-              id, title, status, video_url, video_duration, created_at,
-              subtitles (id, srt_data, json_data, language)
-            `)
-            .eq('id', projectId)
-            .single()
-          
-          if (error) throw error
-          
-          // Check if subtitles were generated
-          if (updatedProject.subtitles && updatedProject.subtitles.length > 0) {
-            const subtitleData = updatedProject.subtitles[0]
-            if (subtitleData.json_data?.segments && subtitleData.json_data.segments.length > 0) {
-              console.log('Subtitles found! Stopping polling.')
-              clearInterval(pollInterval)
-              setProject(updatedProject)
-              setSubtitles(subtitleData.json_data.segments)
-              setGenerating(false)
-              toast.success('Subtitles generated successfully!')
-              return
-            }
-          }
-          
-          // Check for failure status
-          if (updatedProject.status === 'failed') {
-            console.log('Subtitle generation failed')
+    if (!project || project.status !== 'processing' || subtitles.length > 0) {
+      return
+    }
+
+    setGenerating(true)
+    let pollCount = 0
+    const maxPolls = 240 // 20 minutes at 5 second intervals (model download can take time)
+    const projectId = project.id
+    
+    console.log('Starting subtitle polling for project:', projectId)
+    
+    const pollInterval = setInterval(async () => {
+      try {
+        pollCount++
+        console.log(`Polling attempt ${pollCount}/${maxPolls} for project ${projectId}`)
+        
+        const supabase = createClient()
+        const { data: updatedProject, error } = await supabase
+          .from('projects')
+          .select(`
+            id, title, status, video_url, video_duration, created_at,
+            subtitles (id, srt_data, json_data, language)
+          `)
+          .eq('id', projectId)
+          .single()
+        
+        if (error) throw error
+        
+        // Check if subtitles were generated
+        if (updatedProject.subtitles && updatedProject.subtitles.length > 0) {
+          const subtitleData = updatedProject.subtitles[0]
+          if (subtitleData.json_data?.segments && subtitleData.json_data.segments.length > 0) {
+            console.log('Subtitles found! Stopping polling.')
             clearInterval(pollInterval)
+            setProject(updatedProject)
+            setSubtitles(subtitleData.json_data.segments)
             setGenerating(false)
-            toast.error('Subtitle generation failed')
+            toast.success('Subtitles generated successfully!')
             return
           }
-          
-          // Check if status changed to completed (even without subtitles in response yet)
-          if (updatedProject.status === 'completed') {
-            // Give it one more poll to get subtitles
-            if (pollCount >= 5) {
-              console.log('Project marked as completed, fetching subtitles...')
-              // Try fetching one more time
-              const { data: finalProject, error: finalError } = await supabase
-                .from('projects')
-                .select(`
-                  id, title, status, video_url, video_duration, created_at,
-                  subtitles (id, srt_data, json_data, language)
-                `)
-                .eq('id', projectId)
-                .single()
-              
-              if (finalError) throw finalError
-              if (finalProject.subtitles && finalProject.subtitles.length > 0) {
-                const subtitleData = finalProject.subtitles[0]
-                if (subtitleData.json_data?.segments && subtitleData.json_data.segments.length > 0) {
-                  clearInterval(pollInterval)
-                  setProject(finalProject)
-                  setSubtitles(subtitleData.json_data.segments)
-                  setGenerating(false)
-                  toast.success('Subtitles generated successfully!')
-                  return
-                }
+        }
+        
+        // Check for failure status
+        if (updatedProject.status === 'failed') {
+          console.log('Subtitle generation failed')
+          clearInterval(pollInterval)
+          setGenerating(false)
+          toast.error('Subtitle generation failed')
+          return
+        }
+        
+        // Check if status changed to completed (even without subtitles in response yet)
+        if (updatedProject.status === 'completed') {
+          // Give it one more poll to get subtitles
+          if (pollCount >= 5) {
+            console.log('Project marked as completed, fetching subtitles...')
+            // Try fetching one more time
+            const { data: finalProject, error: finalError } = await supabase
+              .from('projects')
+              .select(`
+                id, title, status, video_url, video_duration, created_at,
+                subtitles (id, srt_data, json_data, language)
+              `)
+              .eq('id', projectId)
+              .single()
+            
+            if (finalError) throw finalError
+            if (finalProject.subtitles && finalProject.subtitles.length > 0) {
+              const subtitleData = finalProject.subtitles[0]
+              if (subtitleData.json_data?.segments && subtitleData.json_data.segments.length > 0) {
+                clearInterval(pollInterval)
+                setProject(finalProject)
+                setSubtitles(subtitleData.json_data.segments)
+                setGenerating(false)
+                toast.success('Subtitles generated successfully!')
+                return
               }
             }
           }
-          
-          // Stop polling after max attempts
-          if (pollCount >= maxPolls) {
-            console.log('Max polling attempts reached')
-            clearInterval(pollInterval)
-            setGenerating(false)
-            toast.error('Subtitle generation is taking longer than expected. Please refresh the page.')
-          }
-        } catch (error) {
-          console.error('Polling error:', error)
-          pollCount++
-          if (pollCount >= maxPolls) {
-            clearInterval(pollInterval)
-            setGenerating(false)
-            toast.error('Error checking subtitle status. Please refresh the page.')
-          }
         }
-      }, 5000) // Poll every 5 seconds
-      
-      return () => {
-        console.log('Cleaning up polling interval')
-        clearInterval(pollInterval)
+        
+        // Stop polling after max attempts
+        if (pollCount >= maxPolls) {
+          console.log('Max polling attempts reached')
+          clearInterval(pollInterval)
+          setGenerating(false)
+          toast.error('Subtitle generation is taking longer than expected. Please refresh the page.')
+        }
+      } catch (error) {
+        console.error('Polling error:', error)
+        pollCount++
+        if (pollCount >= maxPolls) {
+          clearInterval(pollInterval)
+          setGenerating(false)
+          toast.error('Error checking subtitle status. Please refresh the page.')
+        }
       }
+    }, 5000) // Poll every 5 seconds
+    
+    return () => {
+      console.log('Cleaning up polling interval')
+      clearInterval(pollInterval)
     }
-  }, [project, generating, subtitles.length])
+  }, [project, subtitles.length])
 
   const fetchProject = async () => {
     try {
