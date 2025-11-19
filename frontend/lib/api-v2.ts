@@ -3,13 +3,12 @@
  * Improved error handling, retry logic, and real upload progress
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient as getBrowserSupabaseClient } from '@/lib/supabase';
 
 const WORKER_URL = process.env.NEXT_PUBLIC_WORKER_URL || 'http://localhost:8787';
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Reuse the single browser Supabase client to avoid multiple GoTrueClient instances
+const supabase = getBrowserSupabaseClient();
 
 // Types
 interface TranscribeOptions {
@@ -43,8 +42,23 @@ interface APIError {
 
 /**
  * Get current auth token
+ *
+ * Prefer the cached access_token we store in localStorage via Providers,
+ * and fall back to Supabase auth session if needed.
  */
 async function getAuthToken(): Promise<string | null> {
+  if (typeof window !== 'undefined') {
+    try {
+      const storedToken = window.localStorage.getItem('access_token');
+      if (storedToken) {
+        return storedToken;
+      }
+    } catch (error) {
+      // Ignore localStorage errors and fall back to Supabase
+      console.error('Error reading access_token from localStorage:', error);
+    }
+  }
+
   const { data: { session } } = await supabase.auth.getSession();
   return session?.access_token || null;
 }

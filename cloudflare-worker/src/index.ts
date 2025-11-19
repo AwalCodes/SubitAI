@@ -32,14 +32,20 @@ const app = new Hono<{ Bindings: Env }>();
 // Middleware
 app.use('*', logger());
 app.use('*', async (c, next) => {
+  // Allow multiple origins configured via ALLOWED_ORIGINS env (comma-separated)
+  const allowedOrigins = c.env.ALLOWED_ORIGINS
+    ? c.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
+    : [];
+
   const corsMiddleware = cors({
-    origin: c.env.ALLOWED_ORIGINS?.split(',') || ['*'],
+    origin: allowedOrigins.length > 0 ? allowedOrigins : ['*'],
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     exposeHeaders: ['Content-Length'],
     maxAge: 86400,
     credentials: true,
   });
+
   return corsMiddleware(c, next);
 });
 

@@ -25,7 +25,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
       if (error) {
         console.error('Error getting Supabase user:', error)
       }
-      console.log('Fetched user:', user)
       setUser(user)
 
       if (user) {
@@ -54,7 +53,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             setSubscription(null)
           }
         } catch (error) {
-          console.log('Subscription fetch error:', error)
+          console.error('Subscription fetch error:', error)
         }
       } else {
         setSubscription(null)
@@ -74,7 +73,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state change:', event, session?.user)
         if (event === 'SIGNED_IN') {
           setUser(session?.user ?? null)
           if (session?.access_token) {
