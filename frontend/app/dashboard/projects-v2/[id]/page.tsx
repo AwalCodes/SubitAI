@@ -70,11 +70,7 @@ export default function ProjectViewV2() {
   // Video ref
   const videoRef = useRef<HTMLVideoElement>(null)
 
-  // Load project and subtitles
-  useEffect(() => {
-    loadProject()
-  }, [projectId, loadProject])
-
+  // Load project and subtitles function
   const loadProject = useCallback(async () => {
     try {
       setLoading(true)

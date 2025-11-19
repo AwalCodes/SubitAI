@@ -97,7 +97,8 @@ export default function ProjectDetailPage() {
 
         // Auto-start polling if project is processing and no subtitles
         if (projectData.status === 'processing' && (!projectData.subtitles || projectData.subtitles.length === 0)) {
-          startPolling(projectData.id)
+          // Polling will be handled by the separate useEffect
+          console.log('Project is processing, polling will start automatically')
         }
       } catch (error: any) {
         console.error('Failed to fetch project:', error)
