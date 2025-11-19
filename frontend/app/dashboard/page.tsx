@@ -201,7 +201,7 @@ export default function Dashboard() {
                 <span className="font-bold text-white text-lg">30</span>
                 <span className="text-subit-100 text-sm">energy</span>
               </div>
-              <Link href="/dashboard/upload">
+              <Link href="/dashboard/upload-v2">
                 <button className="group flex items-center space-x-2 px-6 py-3 bg-white text-subit-600 rounded-xl font-semibold hover:bg-subit-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 border border-white/20">
                   <Plus className="w-5 h-5" />
                   <span>New Project</span>

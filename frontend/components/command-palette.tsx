@@ -33,7 +33,7 @@ export function CommandPalette() {
     { group: 'Navigation', items: [
       { icon: Home, label: 'Dashboard', href: '/dashboard' },
       { icon: FileText, label: 'My Projects', href: '/dashboard/projects' },
-      { icon: Upload, label: 'Upload Video', href: '/dashboard/upload' },
+      { icon: Upload, label: 'Upload Video', href: '/dashboard/upload-v2' },
     ]},
     { group: 'Account', items: [
       { icon: User, label: 'Profile', href: '/dashboard/settings' },

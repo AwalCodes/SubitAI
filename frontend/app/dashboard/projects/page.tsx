@@ -153,7 +153,7 @@ export default function ProjectsPage() {
               <h1 className="text-3xl font-bold text-gray-900 dark:text-neutral-100 mb-2">My Projects</h1>
               <p className="text-gray-600 dark:text-neutral-400">Manage all your video projects</p>
             </div>
-            <Link href="/dashboard/upload">
+            <Link href="/dashboard/upload-v2">
               <button className="flex items-center space-x-2 px-6 py-3 bg-subit-600 text-white rounded-lg hover:bg-subit-700 transition-colors">
                 <Plus className="w-5 h-5" />
                 <span>New Project</span>
@@ -192,7 +192,7 @@ export default function ProjectsPage() {
                 <Video className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-neutral-100 mb-2">No projects yet</h3>
                 <p className="text-gray-600 dark:text-neutral-400 mb-6">Get started by uploading your first video</p>
-                <Link href="/dashboard/upload">
+                <Link href="/dashboard/upload-v2">
                   <button className="inline-flex items-center space-x-2 px-6 py-3 bg-subit-600 text-white rounded-lg hover:bg-subit-700 transition-colors">
                     <Plus className="w-5 h-5" />
                     <span>Create Your First Project</span>

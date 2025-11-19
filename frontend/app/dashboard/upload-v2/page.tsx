@@ -117,16 +117,20 @@ export default function UploadPageV2() {
 
       if (uploadError) throw uploadError
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
+      // Get a signed URL so the video can be played from a private bucket
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from('videos')
-        .getPublicUrl(filePath)
+        .createSignedUrl(filePath, 60 * 60 * 24 * 7) // 7 days
+
+      if (signedUrlError || !signedUrlData?.signedUrl) {
+        throw signedUrlError || new Error('Failed to create signed URL for video')
+      }
 
       // Update project with video info
       await supabase
         .from('projects')
         .update({
-          video_url: publicUrl,
+          video_url: signedUrlData.signedUrl,
           video_filename: fileName,
         })
         .eq('id', newProjectId)
