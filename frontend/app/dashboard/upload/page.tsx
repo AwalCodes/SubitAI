@@ -1,11 +1,10 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useDropzone } from 'react-dropzone'
 import { Upload, Video, X, CheckCircle, AlertCircle, Cloud, Zap, Sparkles, ArrowRight, Loader } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
-import { transcribeFile } from '@/lib/api-v2'
 import { useUser } from '@/lib/providers'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
@@ -14,6 +13,12 @@ import { AnimatedCard, fadeInUp, scaleIn } from '@/components/ui/animations'
 export default function UploadPage() {
   const { user } = useUser()
   const router = useRouter()
+
+  // Redirect all traffic from legacy upload page to the new upload-v2 flow
+  useEffect(() => {
+    router.replace('/dashboard/upload-v2')
+  }, [router])
+
   const [file, setFile] = useState<File | null>(null)
   const [title, setTitle] = useState('')
   const [uploading, setUploading] = useState(false)
