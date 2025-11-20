@@ -21,7 +21,7 @@ import { transcribeFile } from '@/lib/api-v2'
 import { useUser } from '@/lib/providers'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
-import { createClient } from '@supabase/supabase-js'
+import { createClient as getBrowserSupabaseClient } from '@/lib/supabase'
 
 // State machine states
 type UploadState = 
@@ -32,10 +32,8 @@ type UploadState =
   | 'success' 
   | 'error';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Reuse the shared browser Supabase client so we share auth/session state
+const supabase = getBrowserSupabaseClient()
 
 export default function UploadPageV2() {
   const { user } = useUser()
@@ -82,6 +80,9 @@ export default function UploadPageV2() {
       return
     }
 
+    // Track the project we create so we can mark it failed on any error
+    let createdProjectId: string | null = null
+
     try {
       setState('uploading_video')
       setError(null)
@@ -103,6 +104,7 @@ export default function UploadPageV2() {
       if (projectError) throw projectError
 
       const newProjectId = projectData.id
+      createdProjectId = newProjectId
       setProjectId(newProjectId)
 
       // Upload video to storage
@@ -190,11 +192,16 @@ export default function UploadPageV2() {
       setError(error.error || error.message || 'Failed to process video')
       
       // Mark project as failed if it was created
-      if (projectId) {
-        await supabase
-          .from('projects')
-          .update({ status: 'failed' })
-          .eq('id', projectId)
+      const idToFail = createdProjectId || projectId
+      if (idToFail) {
+        try {
+          await supabase
+            .from('projects')
+            .update({ status: 'failed' })
+            .eq('id', idToFail)
+        } catch (updateError) {
+          console.error('Failed to mark project as failed:', updateError)
+        }
       }
 
       toast.error(error.error || error.message || 'Processing failed')
