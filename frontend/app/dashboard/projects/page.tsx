@@ -132,7 +132,12 @@ export default function ProjectsPage() {
     project.title.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  if (userLoading || projectsLoading) {
+  // Only show the full-screen loading state on the initial load when we
+  // don't have any projects yet. After that, keep showing the list while
+  // background refetches happen.
+  const isInitialLoading = (userLoading || projectsLoading) && projects.length === 0
+
+  if (isInitialLoading) {
     return (
       <div className="min-h-screen bg-white dark:bg-neutral-950 flex items-center justify-center">
         <div className="text-center">
