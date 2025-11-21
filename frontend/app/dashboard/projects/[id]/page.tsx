@@ -482,7 +482,10 @@ export default function ProjectDetailPage() {
     }
   }
 
-  if (loading) {
+  // Only show the full-screen loading state before we have any project data.
+  // Once a project has been loaded, keep showing it even if `loading` toggles
+  // due to background refetches (e.g. when switching tabs or auth refresh).
+  if (loading && !project) {
     return (
       <div className="min-h-screen bg-white dark:bg-neutral-950 flex items-center justify-center">
         <div className="text-center">
