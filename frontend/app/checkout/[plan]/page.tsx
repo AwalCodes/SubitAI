@@ -17,7 +17,6 @@ const PLAN_DETAILS: Record<string, { title: string; price: string; features: str
     features: [
       '300 energy  per day',
       'Advanced subtitle generation',
-      'Watermark-free exports',
       'Full font library',
       'Basic positioning'
     ],
@@ -28,7 +27,6 @@ const PLAN_DETAILS: Record<string, { title: string; price: string; features: str
     features: [
       'Unlimited energy',
       'Premium subtitle generation',
-      'Watermark-free exports',
       'Full font library + custom uploads',
       'Free positioning anywhere',
       'Advanced shadow & animation effects',

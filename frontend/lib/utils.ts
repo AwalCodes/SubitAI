@@ -110,20 +110,17 @@ export function getSubscriptionLimits(tier: string) {
     free: {
       videoLength: 5 * 60, // 5 minutes
       videoSize: 200 * 1024 * 1024, // 200MB
-      dailyEnergy: 30,
-      watermark: true
+      dailyEnergy: 30
     },
     pro: {
       videoLength: 30 * 60, // 30 minutes
       videoSize: 500 * 1024 * 1024, // 500MB
-      dailyEnergy: 300,
-      watermark: false
+      dailyEnergy: 300
     },
     team: {
       videoLength: Infinity,
       videoSize: 1024 * 1024 * 1024, // 1GB
-      dailyEnergy: Infinity,
-      watermark: false
+      dailyEnergy: Infinity
     }
   }
   

@@ -19,8 +19,7 @@ const plans = [
       'Basic subtitle generation',
       '30 energy per day',
       'Font customization',
-      'Color customization',
-      'Watermark-free exports'
+      'Color customization'
     ],
   },
   {
@@ -33,7 +32,6 @@ const plans = [
       '300 energy per day',
       'Full font library',
       'Advanced color options',
-      'Watermark-free exports',
       'Basic positioning'
     ],
   },
@@ -46,7 +44,6 @@ const plans = [
       'Unlimited energy',
       'Full font library + custom uploads',
       'Advanced color options + gradients',
-      'Watermark-free exports',
       'Free positioning anywhere',
       'Advanced shadow & animation effects'
     ],

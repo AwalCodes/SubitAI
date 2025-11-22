@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Check, Zap, Star, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { getSubscriptionLimits } from '@/lib/utils'
 
 const plans = [
   {
@@ -15,9 +16,7 @@ const plans = [
       'Basic subtitle generation',
       '30 energy per day',
       'Font customization',
-      'Color customization',
-      '5-minute video limit',
-      'Watermark on exports'
+      'Color customization'
     ],
     limitations: [
       'Advanced positioning',
@@ -37,9 +36,7 @@ const plans = [
       '300 energy per day',
       'Full font library',
       'Advanced color options',
-      'Watermark-free exports',
-      'Basic positioning',
-      '30-minute video limit'
+      'Basic positioning'
     ],
     limitations: [
       'Advanced shadow & animation'
@@ -58,7 +55,6 @@ const plans = [
       'Unlimited energy',
       'Full font library + custom uploads',
       'Advanced color options - gradients',
-      'Watermark-free exports',
       'Free positioning anywhere',
       'Advanced shadow & animation effects',
       'No video upload limits'
@@ -69,6 +65,18 @@ const plans = [
     color: 'from-purple-500 to-purple-600'
   }
 ]
+
+function getVideoLimitFeature(planName: string): string {
+  const tierKey = planName === 'Premium' ? 'team' : planName.toLowerCase()
+  const { videoLength } = getSubscriptionLimits(tierKey)
+
+  if (!Number.isFinite(videoLength)) {
+    return 'No video upload limits'
+  }
+
+  const minutes = Math.round(videoLength / 60)
+  return `${minutes}-minute video limit`
+}
 
 const energyFeatures = [
   {
@@ -84,8 +92,7 @@ const energyFeatures = [
     title: 'Energy Usage',
     description: 'Typical energy costs for different operations:',
     items: [
-      'Generate Subtitles: 1 energy per minute',
-      'Remove Watermark: 5 energy',
+      'Generate Subtitles: 10 energy per transcription',
       'Advanced Positioning: 2 energy',
       'Custom Fonts: 1 energy'
     ]
@@ -156,7 +163,7 @@ export default function Pricing() {
                 {/* Features */}
                 <div className="space-y-4 mb-8">
                   <h4 className="font-semibold text-gray-900 mb-4">What&apos;s included:</h4>
-                  {plan.features.map((feature, featureIndex) => (
+                  {[...plan.features, getVideoLimitFeature(plan.name)].map((feature, featureIndex) => (
                     <div key={featureIndex} className="flex items-start space-x-3">
                       <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
                       <span className="text-gray-700">{feature}</span>
