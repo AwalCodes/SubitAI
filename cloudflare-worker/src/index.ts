@@ -15,7 +15,7 @@ import {
 } from './utils/subtitles';
 import { 
   validateFile, 
-  extractAudioFromVideo 
+  extractAudioFromVideo,
 } from './utils/media';
 
 // Types
@@ -24,6 +24,177 @@ interface Env {
   SUPABASE_URL: string;
   SUPABASE_SERVICE_KEY: string;
   ALLOWED_ORIGINS: string;
+}
+
+type SubscriptionTier = 'free' | 'pro' | 'team' | string;
+
+interface QuotaLimits {
+  dailyEnergy: number;
+}
+
+interface QuotaSummary {
+  tier: SubscriptionTier;
+  limit: number;
+  usedToday: number;
+  remaining: number;
+}
+
+function getSubscriptionLimits(tier: SubscriptionTier): QuotaLimits {
+  switch (tier) {
+    case 'pro':
+      return { dailyEnergy: 300 };
+    case 'team':
+      return { dailyEnergy: Number.POSITIVE_INFINITY };
+    case 'free':
+    default:
+      return { dailyEnergy: 30 };
+  }
+}
+
+async function getTodayUsageEnergy(userId: string, env: Env): Promise<number> {
+  const startOfDay = new Date();
+  startOfDay.setUTCHours(0, 0, 0, 0);
+
+  const url = new URL(`${env.SUPABASE_URL}/rest/v1/usage_tracking`);
+  url.searchParams.set('user_id', `eq.${userId}`);
+  url.searchParams.set('created_at', `gte.${startOfDay.toISOString()}`);
+  url.searchParams.set('select', 'energy_cost');
+
+  const res = await fetch(url.toString(), {
+    headers: {
+      apikey: env.SUPABASE_SERVICE_KEY,
+      Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+    },
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error('Failed to fetch usage:', res.status, text);
+    throw new Error('Failed to fetch usage');
+  }
+
+  const rows = (await res.json()) as Array<{ energy_cost: number | null }>;
+  return rows.reduce((sum, row) => {
+    const cost = row.energy_cost ?? 0;
+    // Never allow negative usage to decrease total energy used
+    return sum + (cost > 0 ? cost : 0);
+  }, 0);
+}
+
+async function getEffectiveSubscriptionTier(userId: string, env: Env): Promise<SubscriptionTier> {
+  try {
+    const url = new URL(`${env.SUPABASE_URL}/rest/v1/billing`);
+    url.searchParams.set('user_id', `eq.${userId}`);
+    url.searchParams.set('status', 'eq.active');
+    url.searchParams.set('order', 'current_period_end.desc');
+    url.searchParams.set('limit', '1');
+    url.searchParams.set('select', 'plan,status,current_period_end');
+
+    const res = await fetch(url.toString(), {
+      headers: {
+        apikey: env.SUPABASE_SERVICE_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+      },
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.error('Failed to fetch billing info:', res.status, text);
+      return 'free';
+    }
+
+    const rows = (await res.json()) as Array<{
+      plan: SubscriptionTier;
+      status: string;
+      current_period_end: string | null;
+    }>;
+
+    if (!rows.length) {
+      return 'free';
+    }
+
+    const record = rows[0];
+
+    if (record.status !== 'active') {
+      return 'free';
+    }
+
+    if (record.current_period_end) {
+      const periodEnd = new Date(record.current_period_end);
+      if (isNaN(periodEnd.getTime()) || periodEnd < new Date()) {
+        return 'free';
+      }
+    }
+
+    return record.plan || 'free';
+  } catch (error) {
+    console.error('Error determining subscription tier:', error);
+    return 'free';
+  }
+}
+
+async function recordUsage(
+  userId: string,
+  actionType: string,
+  energyCost: number,
+  env: Env,
+  projectId?: string | null,
+): Promise<void> {
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/usage_tracking`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: env.SUPABASE_SERVICE_KEY,
+      Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+      Prefer: 'return=minimal',
+    },
+    body: JSON.stringify([
+      {
+        user_id: userId,
+        project_id: projectId ?? null,
+        action_type: actionType,
+        energy_cost: energyCost,
+      },
+    ]),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error('Failed to record usage:', res.status, text);
+    throw new Error('Failed to record usage');
+  }
+}
+
+async function getQuotaSummary(
+  userId: string,
+  env: Env,
+): Promise<QuotaSummary> {
+  const tier = await getEffectiveSubscriptionTier(userId, env);
+  const { dailyEnergy } = getSubscriptionLimits(tier || 'free');
+
+  if (!Number.isFinite(dailyEnergy)) {
+    return {
+      tier,
+      limit: Number.POSITIVE_INFINITY,
+      usedToday: 0,
+      remaining: Number.POSITIVE_INFINITY,
+    };
+  }
+
+  const usedToday = await getTodayUsageEnergy(userId, env);
+  const remaining = Math.max(0, dailyEnergy - usedToday);
+
+  return {
+    tier,
+    limit: dailyEnergy,
+    usedToday,
+    remaining,
+  };
+}
+
+function calculateEnergyCostFromFileSize(_fileSize: number): number {
+  // Fixed cost per transcription request
+  return 10;
 }
 
 // Initialize Hono app
@@ -37,13 +208,15 @@ app.use('*', async (c, next) => {
     ? c.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
     : [];
 
+  const allowAll = allowedOrigins.length === 0;
+
   const corsMiddleware = cors({
-    origin: allowedOrigins.length > 0 ? allowedOrigins : ['*'],
+    origin: allowAll ? ['*'] : allowedOrigins,
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     exposeHeaders: ['Content-Length'],
     maxAge: 86400,
-    credentials: true,
+    credentials: allowAll ? false : true,
   });
 
   return corsMiddleware(c, next);
@@ -54,7 +227,7 @@ app.onError((err, c) => {
   console.error('Worker error:', err);
   return c.json({
     success: false,
-    error: err.message || 'Internal server error',
+    error: 'Internal server error',
     timestamp: new Date().toISOString(),
   }, 500);
 });
@@ -67,6 +240,40 @@ app.get('/health', (c) => {
     version: '2.0.0',
     timestamp: new Date().toISOString(),
   });
+});
+
+// Quota endpoint - returns daily energy limits and current usage for authenticated user
+app.get('/quota', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization');
+    if (!authHeader) {
+      return c.json({ success: false, error: 'Missing authorization' }, 401);
+    }
+
+    const user = await getUser(authHeader, c.env);
+    if (!user) {
+      return c.json({ success: false, error: 'Invalid authorization' }, 401);
+    }
+
+    const summary = await getQuotaSummary(user.id, c.env);
+
+    return c.json({
+      success: true,
+      dailyLimit: Number.isFinite(summary.limit) ? summary.limit : null,
+      usedToday: summary.usedToday,
+      remaining: Number.isFinite(summary.remaining) ? summary.remaining : null,
+      subscriptionTier: summary.tier || 'free',
+      unlimited: !Number.isFinite(summary.limit),
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Quota endpoint error:', error);
+    return c.json({
+      success: false,
+      error: 'Failed to fetch quota',
+      timestamp: new Date().toISOString(),
+    }, 500);
+  }
 });
 
 // Main transcription endpoint
@@ -85,9 +292,19 @@ app.post('/transcribe', async (c) => {
 
     // Parse multipart form data
     const formData = await c.req.formData();
-    const file = formData.get('file') as File;
-    const language = (formData.get('language') as string) || 'en';
-    const format = (formData.get('format') as string) || 'srt,vtt,json';
+    const fileEntry = formData.get('file');
+    const languageEntry = formData.get('language');
+    const formatEntry = formData.get('format');
+
+    const file = fileEntry && typeof fileEntry === 'object' && 'arrayBuffer' in (fileEntry as any)
+      ? (fileEntry as File)
+      : null;
+    const language = typeof languageEntry === 'string' && languageEntry
+      ? languageEntry
+      : 'en';
+    const format = typeof formatEntry === 'string' && formatEntry
+      ? formatEntry
+      : 'srt,vtt,json';
 
     if (!file) {
       return c.json({ success: false, error: 'No file provided' }, 400);
@@ -100,6 +317,32 @@ app.post('/transcribe', async (c) => {
         success: false, 
         error: validation.error 
       }, 400);
+    }
+
+    // Enforce daily quota before doing any heavy processing
+    const energyCost = calculateEnergyCostFromFileSize(file.size);
+
+    try {
+      const summary = await getQuotaSummary(user.id, c.env);
+
+      if (Number.isFinite(summary.limit) && energyCost > summary.remaining) {
+        return c.json({
+          success: false,
+          error: 'Daily quota exceeded',
+          code: 'quota_exceeded',
+          dailyLimit: summary.limit,
+          usedToday: summary.usedToday,
+          remaining: summary.remaining,
+          timestamp: new Date().toISOString(),
+        }, 402);
+      }
+    } catch (quotaError) {
+      console.error('Quota check failed:', quotaError);
+      return c.json({
+        success: false,
+        error: 'Failed to verify quota',
+        timestamp: new Date().toISOString(),
+      }, 500);
     }
 
     console.log(`Processing file: ${file.name}, size: ${file.size} bytes`);
@@ -147,14 +390,33 @@ app.post('/transcribe', async (c) => {
       response.json = transcription;
     }
 
+    // Record usage; if this fails, do not return the transcription
+    try {
+      await recordUsage(user.id, 'transcribe', energyCost, c.env, undefined);
+    } catch (usageError) {
+      console.error('Failed to record usage after transcription:', usageError);
+      return c.json({
+        success: false,
+        error: 'Failed to record usage',
+        code: 'usage_tracking_failed',
+        timestamp: new Date().toISOString(),
+      }, 500);
+    }
+
     return c.json(response);
 
   } catch (error: any) {
-    console.error('Transcription error:', error);
+    const requestId = (globalThis as any).crypto?.randomUUID
+      ? (globalThis as any).crypto.randomUUID()
+      : `req_${Date.now().toString(36)}`;
+
+    console.error('Transcription error:', { requestId, error });
+
     return c.json({
       success: false,
-      error: error.message || 'Failed to transcribe audio',
-      details: error.stack,
+      error: 'Failed to transcribe audio',
+      requestId,
+      timestamp: new Date().toISOString(),
     }, 500);
   }
 });
@@ -181,8 +443,11 @@ app.post('/transcribe/stream', async (c) => {
     (async () => {
       try {
         const formData = await c.req.formData();
-        const file = formData.get('file') as File;
-        
+        const fileEntry = formData.get('file');
+        const file = fileEntry && typeof fileEntry === 'object' && 'arrayBuffer' in (fileEntry as any)
+          ? (fileEntry as File)
+          : null;
+
         if (!file) {
           await writer.write(encoder.encode(JSON.stringify({ 
             error: 'No file provided' 
