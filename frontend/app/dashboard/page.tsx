@@ -256,7 +256,7 @@ export default function Dashboard() {
               <p className="text-neutral-600 mb-8 max-w-md mx-auto">
                 Get started by uploading your first video and let AI generate professional subtitles automatically
               </p>
-              <Link href="/dashboard/upload">
+              <Link href="/dashboard/upload-v2">
                 <button className="group inline-flex items-center space-x-2 px-8 py-4 bg-gradient-to-r from-subit-500 to-subit-600 text-white rounded-xl font-semibold hover:shadow-glow-lg transition-all duration-200 transform hover:-translate-y-0.5">
                   <Plus className="w-5 h-5" />
                   <span>Create Your First Project</span>

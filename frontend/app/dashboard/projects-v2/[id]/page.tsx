@@ -16,15 +16,12 @@ import {
   Play, Pause, SkipBack, SkipForward,
   Loader, AlertCircle, CheckCircle
 } from 'lucide-react'
-import { createClient } from '@supabase/supabase-js'
 import { useUser } from '@/lib/providers'
 import toast from 'react-hot-toast'
 import { SubtitleEditor } from '@/components/subtitle-editor-v2'
+import { createClient } from '@/lib/supabase'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const supabase = createClient()
 
 interface Project {
   id: string
