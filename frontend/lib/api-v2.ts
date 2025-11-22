@@ -44,6 +44,16 @@ interface APIError {
   status?: number;
 }
 
+export interface QuotaInfo {
+  success: boolean;
+  dailyLimit: number | null;
+  usedToday: number;
+  remaining: number | null;
+  subscriptionTier: string;
+  unlimited: boolean;
+  timestamp: string;
+}
+
 /**
  * Get current auth token
  *
@@ -97,6 +107,43 @@ async function withRetry<T>(
   }
 
   throw lastError!;
+}
+
+/**
+ * Fetch current quota / usage information for the authenticated user
+ */
+export async function fetchQuota(): Promise<QuotaInfo> {
+  const token = await getAuthToken();
+  if (!token) {
+    throw { error: 'Not authenticated', status: 401 } as APIError;
+  }
+
+  return withRetry(async () => {
+    const response = await fetch(`${WORKER_URL}/quota`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    let data: any;
+    try {
+      data = await response.json();
+    } catch (error) {
+      throw {
+        error: 'Invalid quota response from server',
+        status: response.status,
+      } as APIError;
+    }
+
+    if (!response.ok || !data?.success) {
+      throw {
+        error: data?.error || 'Failed to fetch quota',
+        status: response.status,
+      } as APIError;
+    }
+
+    return data as QuotaInfo;
+  });
 }
 
 /**

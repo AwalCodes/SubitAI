@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
 import { AnimatedContainer, AnimatedCard, scaleIn, fadeInUp } from '@/components/ui/animations'
 import { OnboardingModal } from '@/components/onboarding-modal'
+import { fetchQuota, type QuotaInfo } from '@/lib/api-v2'
 
 interface Project {
   id: string
@@ -24,6 +25,8 @@ export default function Dashboard() {
   const [projectsLoading, setProjectsLoading] = useState(true)
   const [initialLoad, setInitialLoad] = useState(true)
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [quota, setQuota] = useState<QuotaInfo | null>(null)
+  const [quotaLoading, setQuotaLoading] = useState(false)
 
   useEffect(() => {
     if (!loading && !user) {
@@ -62,6 +65,37 @@ export default function Dashboard() {
   }, [user])
 
   useEffect(() => {
+    if (!user) return
+
+    let cancelled = false
+
+    const loadQuota = async () => {
+      try {
+        setQuotaLoading(true)
+        const data = await fetchQuota()
+        if (!cancelled) {
+          setQuota(data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch quota:', error)
+        if (!cancelled) {
+          setQuota(null)
+        }
+      } finally {
+        if (!cancelled) {
+          setQuotaLoading(false)
+        }
+      }
+    }
+
+    loadQuota()
+
+    return () => {
+      cancelled = true
+    }
+  }, [user])
+
+  useEffect(() => {
     // Show onboarding for new users (first time visiting dashboard)
     if (user && !projectsLoading && projects.length === 0) {
       const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding')
@@ -70,6 +104,10 @@ export default function Dashboard() {
       }
     }
   }, [user, projectsLoading, projects.length])
+
+  const remainingEnergy = !quotaLoading && quota && quota.remaining !== null
+    ? quota.remaining
+    : 0
 
   const fetchProjects = async () => {
     try {
@@ -174,7 +212,7 @@ export default function Dashboard() {
     },
     {
       label: 'Energy Remaining',
-      value: 30,
+      value: remainingEnergy,
       icon: Zap,
       color: 'yellow',
       bgColor: 'bg-yellow-50',
@@ -198,7 +236,7 @@ export default function Dashboard() {
               {/* Energy indicator with glow */}
               <div className="flex items-center space-x-2 px-5 py-3 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 shadow-lg">
                 <Zap className="w-5 h-5 text-yellow-300" />
-                <span className="font-bold text-white text-lg">30</span>
+                <span className="font-bold text-white text-lg">{remainingEnergy}</span>
                 <span className="text-subit-100 text-sm">energy</span>
               </div>
               <Link href="/dashboard/upload-v2">
