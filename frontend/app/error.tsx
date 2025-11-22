@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import Link from 'next/link'
 import { AlertCircle } from 'lucide-react'
+import { logClientError } from '@/lib/logging'
 
 export default function Error({
   error,
@@ -13,6 +14,10 @@ export default function Error({
 }) {
   useEffect(() => {
     console.error('App error boundary caught:', error)
+    logClientError(error, {
+      source: 'app-error-boundary',
+      digest: error.digest,
+    })
   }, [error])
 
   return (

@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import Link from 'next/link'
 import { AlertCircle } from 'lucide-react'
+import { logClientError } from '@/lib/logging'
 
 export default function DashboardError({
   error,
@@ -13,6 +14,10 @@ export default function DashboardError({
 }) {
   useEffect(() => {
     console.error('Dashboard error boundary caught:', error)
+    logClientError(error, {
+      source: 'dashboard-error-boundary',
+      digest: error.digest,
+    })
   }, [error])
 
   return (
