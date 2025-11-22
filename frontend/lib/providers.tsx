@@ -72,19 +72,20 @@ export function Providers({ children }: { children: React.ReactNode }) {
     fetchUser()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN') {
+      (event, session) => {
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
           setUser(session?.user ?? null)
           if (session?.access_token) {
             localStorage.setItem('access_token', session.access_token)
+          } else {
+            localStorage.removeItem('access_token')
           }
-          await fetchUser()
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
           setSubscription(null)
           localStorage.removeItem('access_token')
         } else if (event === 'INITIAL_SESSION') {
-          // Handle initial session on page load
+          // Handle initial session on page load without extra auth calls
           if (session?.user) {
             setUser(session.user)
             if (session.access_token) {
