@@ -55,6 +55,16 @@ export default function ProjectViewV2() {
   const { user } = useUser()
   const projectId = params.id as string
 
+  useEffect(() => {
+    if (projectId) {
+      router.replace(`/dashboard/projects/${projectId}`)
+    } else {
+      router.replace('/dashboard/projects')
+    }
+  }, [projectId, router])
+
+  return null
+
   // State
   const [loading, setLoading] = useState(true)
   const [project, setProject] = useState<Project | null>(null)

@@ -39,6 +39,7 @@ interface Project {
   video_url: string
   video_duration: number
   created_at: string
+  video_filename?: string
   subtitles?: Array<{
     id: string
     srt_data: string
@@ -78,7 +79,7 @@ export default function ProjectDetailPage() {
         const { data: projectData, error } = await supabase
           .from('projects')
           .select(`
-            id, title, status, video_url, video_duration, created_at,
+            id, title, status, video_url, video_duration, created_at, video_filename,
             subtitles (id, srt_data, json_data, language)
           `)
           .eq('id', params.id as string)
@@ -133,7 +134,7 @@ export default function ProjectDetailPage() {
         const { data: updatedProject, error } = await supabase
           .from('projects')
           .select(`
-            id, title, status, video_url, video_duration, created_at,
+            id, title, status, video_url, video_duration, created_at, video_filename,
             subtitles (id, srt_data, json_data, language)
           `)
           .eq('id', projectId)
@@ -173,7 +174,7 @@ export default function ProjectDetailPage() {
             const { data: finalProject, error: finalError } = await supabase
               .from('projects')
               .select(`
-                id, title, status, video_url, video_duration, created_at,
+                id, title, status, video_url, video_duration, created_at, video_filename,
                 subtitles (id, srt_data, json_data, language)
               `)
               .eq('id', projectId)
@@ -225,7 +226,7 @@ export default function ProjectDetailPage() {
       const { data: projectData, error } = await supabase
         .from('projects')
         .select(`
-          id, title, status, video_url, video_duration, created_at,
+          id, title, status, video_url, video_duration, created_at, video_filename,
           subtitles (id, srt_data, json_data, language)
         `)
         .eq('id', params.id as string)
@@ -366,6 +367,19 @@ export default function ProjectDetailPage() {
     try {
       setDeleting(true)
       const supabase = createClient()
+      
+      // Attempt to delete the associated video file from storage first (best-effort)
+      if (project.video_filename && user?.id) {
+        const filePath = `${user.id}/${project.video_filename}`
+        const { error: storageError } = await supabase.storage
+          .from('videos')
+          .remove([filePath])
+
+        if (storageError) {
+          console.error('Failed to delete video file from storage:', storageError)
+        }
+      }
+
       const { error } = await supabase
         .from('projects')
         .delete()
@@ -724,7 +738,7 @@ export default function ProjectDetailPage() {
             <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 p-6">
               <h3 className="font-semibold text-gray-900 dark:text-neutral-100 mb-3">Next Steps</h3>
               <div className="space-y-2">
-                <button onClick={() => window.location.assign('/dashboard/upload')} className="w-full py-2.5 border border-gray-300 dark:border-neutral-700 text-gray-700 dark:text-neutral-300 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800">Process Another Video</button>
+                <button onClick={() => window.location.assign('/dashboard/upload-v2')} className="w-full py-2.5 border border-gray-300 dark:border-neutral-700 text-gray-700 dark:text-neutral-300 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800">Process Another Video</button>
               </div>
             </div>
             <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 p-6">
