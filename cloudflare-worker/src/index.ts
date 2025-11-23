@@ -26,10 +26,20 @@ interface Env {
   ALLOWED_ORIGINS: string;
 }
 
+function validateEnv(env: Env): { ok: boolean; missing: string[] } {
+  const missing: string[] = [];
+  if (!env.GROQ_API_KEY) missing.push('GROQ_API_KEY');
+  if (!env.SUPABASE_URL) missing.push('SUPABASE_URL');
+  if (!env.SUPABASE_SERVICE_KEY) missing.push('SUPABASE_SERVICE_KEY');
+  return { ok: missing.length === 0, missing };
+}
+
 type SubscriptionTier = 'free' | 'pro' | 'team' | string;
 
 interface QuotaLimits {
   dailyEnergy: number;
+  videoLength: number;
+  videoSize: number;
 }
 
 interface QuotaSummary {
@@ -42,12 +52,24 @@ interface QuotaSummary {
 function getSubscriptionLimits(tier: SubscriptionTier): QuotaLimits {
   switch (tier) {
     case 'pro':
-      return { dailyEnergy: 300 };
+      return {
+        dailyEnergy: 300,
+        videoLength: 30 * 60, // 30 minutes
+        videoSize: 500 * 1024 * 1024, // 500MB
+      };
     case 'team':
-      return { dailyEnergy: Number.POSITIVE_INFINITY };
+      return {
+        dailyEnergy: Number.POSITIVE_INFINITY,
+        videoLength: Number.POSITIVE_INFINITY,
+        videoSize: 1024 * 1024 * 1024, // 1GB
+      };
     case 'free':
     default:
-      return { dailyEnergy: 30 };
+      return {
+        dailyEnergy: 30,
+        videoLength: 5 * 60, // 5 minutes
+        videoSize: 200 * 1024 * 1024, // 200MB
+      };
   }
 }
 
@@ -197,6 +219,19 @@ function calculateEnergyCostFromFileSize(_fileSize: number): number {
   return 10;
 }
 
+function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes)) {
+    return 'unlimited';
+  }
+  if (bytes === 0) return '0 B';
+
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  const value = Math.round((bytes / Math.pow(k, i)) * 100) / 100;
+  return `${value} ${sizes[i]}`;
+}
+
 // Initialize Hono app
 const app = new Hono<{ Bindings: Env }>();
 
@@ -234,11 +269,25 @@ app.onError((err, c) => {
 
 // Health check endpoint
 app.get('/health', (c) => {
+  const envStatus = validateEnv(c.env);
+
+  if (!envStatus.ok) {
+    console.error('Worker environment misconfigured: missing bindings', envStatus.missing);
+    return c.json({
+      status: 'unhealthy',
+      service: 'subit-ai-worker',
+      version: '2.0.0',
+      timestamp: new Date().toISOString(),
+      envOk: false,
+    }, 500);
+  }
+
   return c.json({
     status: 'healthy',
     service: 'subit-ai-worker',
     version: '2.0.0',
     timestamp: new Date().toISOString(),
+    envOk: true,
   });
 });
 
@@ -254,6 +303,9 @@ app.get('/quota', async (c) => {
     if (!user) {
       return c.json({ success: false, error: 'Invalid authorization' }, 401);
     }
+
+    const tier = await getEffectiveSubscriptionTier(user.id, c.env);
+    const limits = getSubscriptionLimits(tier || 'free');
 
     const summary = await getQuotaSummary(user.id, c.env);
 
@@ -290,6 +342,9 @@ app.post('/transcribe', async (c) => {
       return c.json({ success: false, error: 'Invalid authorization' }, 401);
     }
 
+    const tier = await getEffectiveSubscriptionTier(user.id, c.env);
+    const limits = getSubscriptionLimits(tier || 'free');
+
     // Parse multipart form data
     const formData = await c.req.formData();
     const fileEntry = formData.get('file');
@@ -308,6 +363,18 @@ app.post('/transcribe', async (c) => {
 
     if (!file) {
       return c.json({ success: false, error: 'No file provided' }, 400);
+    }
+
+    if (Number.isFinite(limits.videoSize) && file.size > limits.videoSize) {
+      return c.json({
+        success: false,
+        error: 'File size exceeds limit for your plan',
+        code: 'file_too_large',
+        maxSizeBytes: limits.videoSize,
+        maxSizeHumanReadable: formatBytes(limits.videoSize),
+        tier: tier || 'free',
+        timestamp: new Date().toISOString(),
+      }, 400);
     }
 
     // Validate file
@@ -366,6 +433,18 @@ app.post('/transcribe', async (c) => {
     const processingTime = Date.now() - startTime;
 
     console.log(`Transcription completed in ${processingTime}ms`);
+
+    if (Number.isFinite(limits.videoLength) && transcription.duration > limits.videoLength) {
+      return c.json({
+        success: false,
+        error: 'Video duration exceeds limit for your plan',
+        code: 'video_too_long',
+        maxDurationSeconds: limits.videoLength,
+        actualDurationSeconds: transcription.duration,
+        tier: tier || 'free',
+        timestamp: new Date().toISOString(),
+      }, 400);
+    }
 
     // Generate requested formats
     const formats = format.split(',').map(f => f.trim().toLowerCase());

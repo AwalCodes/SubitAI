@@ -22,6 +22,7 @@ import { useUser } from '@/lib/providers'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { createClient as getBrowserSupabaseClient } from '@/lib/supabase'
+import { getSubscriptionLimits } from '@/lib/utils'
 
 // State machine states
 type UploadState = 
@@ -36,9 +37,15 @@ type UploadState =
 const supabase = getBrowserSupabaseClient()
 
 export default function UploadPageV2() {
-  const { user } = useUser()
+  const { user, loading, subscription } = useUser()
   const router = useRouter()
   
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/auth/login')
+    }
+  }, [loading, user, router])
+
   // State
   const [state, setState] = useState<UploadState>('idle')
   const [file, setFile] = useState<File | null>(null)
@@ -50,10 +57,22 @@ export default function UploadPageV2() {
   const retryCountRef = useRef(0)
   const MAX_RETRIES = 3
 
+  const planTier = (subscription?.plan as string | undefined) || 'free'
+  const { videoSize } = getSubscriptionLimits(planTier)
+  const maxFileSizeLabel = Number.isFinite(videoSize)
+    ? `${Math.round(videoSize / (1024 * 1024))}MB`
+    : 'No size limit'
+
   // File selection handler
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       const selectedFile = acceptedFiles[0]
+
+      if (Number.isFinite(videoSize) && selectedFile.size > videoSize) {
+        toast.error(`File is too large for your ${planTier} plan. Maximum size is ${maxFileSizeLabel}.`)
+        return
+      }
+
       setFile(selectedFile)
       setTitle(selectedFile.name.replace(/\.[^/.]+$/, ''))
       setState('file_selected')
@@ -61,7 +80,7 @@ export default function UploadPageV2() {
       setUploadProgress(0)
       toast.success('File selected!')
     }
-  }, [])
+  }, [videoSize, planTier, maxFileSizeLabel])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -77,6 +96,17 @@ export default function UploadPageV2() {
   const handleProcess = async () => {
     if (!file || !title.trim()) {
       toast.error('Please select a file and enter a title')
+      return
+    }
+
+    if (!user) {
+      toast.error('Please sign in to upload and generate subtitles')
+      router.push('/auth/login')
+      return
+    }
+
+    if (Number.isFinite(videoSize) && file.size > videoSize) {
+      toast.error(`File is too large for your ${planTier} plan. Maximum size is ${maxFileSizeLabel}.`)
       return
     }
 
@@ -189,7 +219,20 @@ export default function UploadPageV2() {
     } catch (error: any) {
       console.error('Processing error:', error)
       setState('error')
-      setError(error.error || error.message || 'Failed to process video')
+
+      const isQuotaExceeded =
+        (typeof error?.status === 'number' && error.status === 402) ||
+        error?.code === 'quota_exceeded'
+
+      if (isQuotaExceeded) {
+        const message = 'You have used all your subtitle energy for today. Please upgrade your plan or try again tomorrow.'
+        setError(message)
+        toast.error(message)
+      } else {
+        const message = error?.error || error?.message || 'Failed to process video'
+        setError(message)
+        toast.error(message)
+      }
       
       // Mark project as failed if it was created
       const idToFail = createdProjectId || projectId
@@ -203,8 +246,6 @@ export default function UploadPageV2() {
           console.error('Failed to mark project as failed:', updateError)
         }
       }
-
-      toast.error(error.error || error.message || 'Processing failed')
     }
   }
 
@@ -295,7 +336,7 @@ export default function UploadPageV2() {
                 <span>Choose File</span>
               </div>
               <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-4 sm:mt-6">
-                Audio: MP3, WAV, OGG, FLAC • Video: MP4, MOV, AVI, WEBM, MKV (Max 500MB)
+                Audio: MP3, WAV, OGG, FLAC • Video: MP4, MOV, AVI, WEBM, MKV (Max {maxFileSizeLabel})
               </p>
             </div>
           )}

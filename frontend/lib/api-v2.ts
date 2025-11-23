@@ -42,6 +42,7 @@ interface APIError {
   error: string;
   details?: string;
   status?: number;
+  code?: string;
 }
 
 export interface QuotaInfo {
@@ -193,7 +194,9 @@ export async function transcribeFile(options: TranscribeOptions): Promise<Transc
             } else {
               reject({ 
                 error: result.error || 'Transcription failed', 
-                status: xhr.status 
+                status: xhr.status,
+                code: result.code,
+                details: result.details,
               });
             }
           } catch (e) {
@@ -208,7 +211,8 @@ export async function transcribeFile(options: TranscribeOptions): Promise<Transc
             reject({ 
               error: errorData.error || 'Request failed', 
               status: xhr.status,
-              details: errorData.details
+              details: errorData.details,
+              code: errorData.code,
             });
           } catch (e) {
             reject({ 

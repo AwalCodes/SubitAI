@@ -54,7 +54,7 @@ interface Project {
 export default function ProjectDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const { user } = useUser()
+  const { user, loading: userLoading } = useUser()
   const [project, setProject] = useState<Project | null>(null)
   const [subtitles, setSubtitles] = useState<Subtitle[]>([])
   const [loading, setLoading] = useState(true)
@@ -68,6 +68,12 @@ export default function ProjectDetailPage() {
   const rafRef = useRef<number | null>(null)
   const [activeSegment, setActiveSegment] = useState<number | null>(null)
   const [activeWord, setActiveWord] = useState<{ segment: number; word: number } | null>(null)
+
+  useEffect(() => {
+    if (!userLoading && !user) {
+      router.push('/auth/login')
+    }
+  }, [userLoading, user, router])
 
   useEffect(() => {
     if (!user || !params.id) return
