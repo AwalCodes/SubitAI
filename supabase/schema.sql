@@ -70,6 +70,20 @@ CREATE TABLE public.usage_tracking (
     energy_cost INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+ 
+-- Client error logs table
+CREATE TABLE public.client_error_logs (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    name TEXT,
+    message TEXT,
+    stack TEXT,
+    context JSONB,
+    url TEXT,
+    user_agent TEXT,
+    path TEXT,
+    source TEXT
+);
 
 -- Storage policies for Supabase Storage
 CREATE POLICY "Users can upload their own videos" ON storage.objects
@@ -207,4 +221,4 @@ CREATE INDEX idx_subtitles_project_id ON public.subtitles(project_id);
 CREATE INDEX idx_billing_user_id ON public.billing(user_id);
 CREATE INDEX idx_usage_tracking_user_id ON public.usage_tracking(user_id);
 CREATE INDEX idx_usage_tracking_created_at ON public.usage_tracking(created_at);
-
+CREATE INDEX idx_client_error_logs_created_at ON public.client_error_logs(created_at);
