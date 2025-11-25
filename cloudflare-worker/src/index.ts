@@ -350,6 +350,7 @@ app.post('/transcribe', async (c) => {
     const fileEntry = formData.get('file');
     const languageEntry = formData.get('language');
     const formatEntry = formData.get('format');
+    const projectIdEntry = formData.get('projectId');
 
     const file = fileEntry && typeof fileEntry === 'object' && 'arrayBuffer' in (fileEntry as any)
       ? (fileEntry as File)
@@ -360,6 +361,9 @@ app.post('/transcribe', async (c) => {
     const format = typeof formatEntry === 'string' && formatEntry
       ? formatEntry
       : 'srt,vtt,json';
+    const projectId = typeof projectIdEntry === 'string' && projectIdEntry
+      ? projectIdEntry
+      : undefined;
 
     if (!file) {
       return c.json({ success: false, error: 'No file provided' }, 400);
@@ -471,7 +475,7 @@ app.post('/transcribe', async (c) => {
 
     // Record usage; if this fails, do not return the transcription
     try {
-      await recordUsage(user.id, 'transcribe', energyCost, c.env, undefined);
+      await recordUsage(user.id, 'transcribe', energyCost, c.env, projectId);
     } catch (usageError) {
       console.error('Failed to record usage after transcription:', usageError);
       return c.json({

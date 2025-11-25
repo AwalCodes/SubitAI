@@ -19,7 +19,8 @@ import {
   AlertCircle,
   ChevronLeft,
   Languages,
-  Share2
+  Share2,
+  Zap
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
@@ -64,6 +65,7 @@ export default function ProjectDetailPage() {
   const [deleting, setDeleting] = useState(false)
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const [editText, setEditText] = useState('')
+  const [energyCost, setEnergyCost] = useState<number | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const rafRef = useRef<number | null>(null)
   const [activeSegment, setActiveSegment] = useState<number | null>(null)
@@ -117,6 +119,27 @@ export default function ProjectDetailPage() {
     
     fetchProject()
   }, [user, params.id])
+
+  useEffect(() => {
+    if (!project?.id) return
+
+    const fetchEnergy = async () => {
+      try {
+        const res = await fetch(`/api/project-energy/${project.id}`)
+        if (!res.ok) {
+          return
+        }
+        const data = await res.json()
+        if (data && data.success) {
+          setEnergyCost(typeof data.energyCost === 'number' ? data.energyCost : 0)
+        }
+      } catch (err) {
+        console.error('Failed to fetch project energy usage:', err)
+      }
+    }
+
+    fetchEnergy()
+  }, [project?.id])
 
   // Auto-start polling if project is in processing state and we have no subtitles yet
   useEffect(() => {
@@ -534,47 +557,56 @@ export default function ProjectDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-neutral-950">
+    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-neutral-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
       {/* Header */}
-      <div className="bg-white dark:bg-neutral-900 border-b border-gray-200 dark:border-neutral-800">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
+      <div className="bg-gradient-to-r from-subit-600 via-subit-500 to-subit-400 border-b border-subit-300/20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <Link href="/dashboard" className="flex items-center text-gray-600 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-neutral-100 mb-2">
+              <Link
+                href="/dashboard"
+                className="flex items-center text-subit-50 hover:text-white mb-3 text-sm"
+              >
                 <ChevronLeft className="w-4 h-4 mr-1" />
                 Back to Dashboard
               </Link>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-neutral-100">{project.title}</h1>
-              <div className="flex items-center space-x-4 mt-2">
-                <span className="flex items-center px-3 py-1 bg-gray-100 dark:bg-neutral-800 text-gray-800 dark:text-neutral-200 rounded-full text-sm">
+              <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+                {project.title}
+              </h1>
+              <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-subit-50">
+                <span className="flex items-center px-3 py-1 rounded-full bg-white/10">
                   <Clock className="w-3 h-3 mr-1" />
                   {formatTime(project.video_duration || 0)}
                 </span>
-                {project.status === 'completed' && (
-                  <button
-                    onClick={handleDownloadSRT}
-                    className="flex items-center space-x-2 px-4 py-2 border border-gray-300 dark:border-neutral-700 rounded-lg text-gray-700 dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>Download SRT</span>
-                  </button>
+                <span className="flex items-center px-3 py-1 rounded-full bg-white/10">
+                  {new Date(project.created_at).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </span>
+                {typeof energyCost === 'number' && (
+                  <span className="flex items-center px-3 py-1 rounded-full bg-white/10">
+                    <Zap className="w-3 h-3 mr-1" />
+                    {energyCost} energy used
+                  </span>
                 )}
               </div>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               {subtitles.length > 0 && (
                 <>
                   <button
                     onClick={handleSaveAll}
                     disabled={saving}
-                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors"
+                    className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-white text-subit-600 rounded-lg font-medium hover:bg-subit-50 transition-colors disabled:opacity-50"
                   >
                     <Save className="w-4 h-4" />
                     <span>{saving ? 'Saving...' : 'Save Changes'}</span>
                   </button>
                   <button
                     onClick={handleDownloadSRT}
-                    className="flex items-center space-x-2 px-4 py-2 border border-gray-300 dark:border-neutral-700 rounded-lg text-gray-700 dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
+                    className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-white/10 border border-white/40 rounded-lg text-white hover:bg-white/20 transition-colors"
                   >
                     <Download className="w-4 h-4" />
                     <span>Download SRT</span>
@@ -584,11 +616,11 @@ export default function ProjectDetailPage() {
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="flex items-center space-x-2 px-4 py-2 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center justify-center space-x-2 px-4 py-2.5 border border-red-200/70 bg-red-500/10 text-red-50 rounded-lg hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {deleting ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-red-700 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-red-100 border-t-transparent rounded-full animate-spin" />
                     <span>Deleting...</span>
                   </>
                 ) : (
@@ -615,7 +647,7 @@ export default function ProjectDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Video Player */}
           <div>
-            <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 p-6">
+            <div className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm rounded-2xl border border-neutral-200/60 dark:border-neutral-800/60 p-6 sm:p-7 shadow-lg">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-neutral-100 mb-4">Video Preview</h2>
               <div className="aspect-video bg-black rounded-lg overflow-hidden">
                 {project.video_url ? (
@@ -667,14 +699,18 @@ export default function ProjectDetailPage() {
               )}
 
               {subtitles.length > 0 && (
-                <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
                   {subtitles.map((subtitle, index) => {
                     const words = getSegmentWords(subtitle)
                     const isActiveSeg = activeSegment === index
                     return (
                       <div
                         key={index}
-                        className={`border rounded-lg p-4 transition-colors ${isActiveSeg ? 'border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-neutral-700 hover:border-blue-300 dark:hover:border-blue-600'}`}
+                        className={`border rounded-xl p-4 sm:p-5 transition-colors ${
+                          isActiveSeg
+                            ? 'border-subit-300 dark:border-subit-500 bg-subit-50/80 dark:bg-subit-900/20 shadow-sm'
+                            : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:border-subit-300 dark:hover:border-subit-500 hover:bg-neutral-50 dark:hover:bg-neutral-900/80'
+                        }`}
                       >
                         <div className="flex items-start justify-between mb-2">
                           <span className="text-sm text-gray-600">
@@ -699,7 +735,7 @@ export default function ProjectDetailPage() {
                           <textarea
                             value={editText}
                             onChange={(e) => setEditText(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-700 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-subit-500 focus:border-transparent bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100"
                             rows={2}
                           />
                         ) : (

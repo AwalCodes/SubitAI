@@ -20,6 +20,7 @@ interface TranscribeOptions {
   language?: string;
   format?: string;
   onProgress?: (progress: number, message?: string) => void;
+  projectId?: string;
 }
 
 interface TranscriptionResult {
@@ -151,7 +152,7 @@ export async function fetchQuota(): Promise<QuotaInfo> {
  * Transcribe audio/video file
  */
 export async function transcribeFile(options: TranscribeOptions): Promise<TranscriptionResult> {
-  const { file, language = 'en', format = 'srt,vtt,json', onProgress } = options;
+  const { file, language = 'en', format = 'srt,vtt,json', onProgress, projectId } = options;
 
   const token = await getAuthToken();
   if (!token) {
@@ -163,6 +164,9 @@ export async function transcribeFile(options: TranscribeOptions): Promise<Transc
     formData.append('file', file);
     formData.append('language', language);
     formData.append('format', format);
+    if (projectId) {
+      formData.append('projectId', projectId);
+    }
 
     // Create XMLHttpRequest for progress tracking
     return new Promise<TranscriptionResult>((resolve, reject) => {

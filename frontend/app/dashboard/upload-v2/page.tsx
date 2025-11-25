@@ -175,6 +175,7 @@ export default function UploadPageV2() {
         file,
         language: 'auto',
         format: 'srt,vtt,json',
+        projectId: newProjectId,
         onProgress: (progress, message) => {
           setUploadProgress(progress)
           if (message) setProgressMessage(message)
