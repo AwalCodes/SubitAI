@@ -1,4 +1,8 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import Logo from '@/components/shared/Logo'
 
 const navLinks = [
@@ -9,6 +13,14 @@ const navLinks = [
 ]
 
 export default function Header() {
+  const pathname = usePathname()
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  const isActive = (href: string) => {
+    if (href === '/') return pathname === '/'
+    return pathname.startsWith(href)
+  }
+
   return (
     <header className="header-container">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -19,7 +31,11 @@ export default function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
             {navLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="nav-link">
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`nav-link ${isActive(link.href) ? 'active' : ''}`}
+              >
                 {link.label}
               </Link>
             ))}
@@ -36,12 +52,57 @@ export default function Header() {
           </div>
 
           {/* Mobile toggle placeholder */}
-          <button className="md:hidden p-2 rounded-lg text-neutral-600 hover:text-subit-600 hover:bg-neutral-100 transition-colors">
+          <button
+            type="button"
+            onClick={() => setMobileOpen((open) => !open)}
+            className="md:hidden p-2 rounded-lg text-neutral-600 hover:text-subit-600 hover:bg-neutral-100 transition-colors"
+            aria-label="Toggle navigation menu"
+          >
             <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d={mobileOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'}
+              />
             </svg>
           </button>
         </div>
+
+        {mobileOpen && (
+          <div className="md:hidden pb-4">
+            <nav className="space-y-2 pt-2 pb-3 border-t border-neutral-100">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`block px-2 py-2 rounded-lg nav-link ${
+                    isActive(link.href) ? 'active' : ''
+                  }`}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+            <div className="mt-2 flex flex-col space-y-2 border-t border-neutral-100 pt-3">
+              <Link
+                href="/auth/login"
+                className="w-full text-center nav-link px-2 py-2 rounded-lg bg-white"
+                onClick={() => setMobileOpen(false)}
+              >
+                Log in
+              </Link>
+              <Link
+                href="/auth/signup"
+                className="w-full text-center btn-primary"
+                onClick={() => setMobileOpen(false)}
+              >
+                Sign up
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
     </header>
   )

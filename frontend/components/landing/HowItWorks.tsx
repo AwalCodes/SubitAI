@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import Link from 'next/link'
 import { Upload, Brain, Download, ArrowRight } from 'lucide-react'
 
 const steps = [
@@ -108,13 +109,19 @@ export default function HowItWorks() {
               Join thousands of content creators who trust SUBIT.AI for their subtitle needs.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="btn-primary">
+              <Link
+                href="/auth/signup"
+                className="btn-primary inline-flex items-center justify-center"
+              >
                 Get Started for Free
                 <ArrowRight className="w-4 h-4 ml-2" />
-              </button>
-              <button className="btn-outline">
+              </Link>
+              <Link
+                href="/pricing"
+                className="btn-outline inline-flex items-center justify-center"
+              >
                 View Pricing
-              </button>
+              </Link>
             </div>
           </div>
         </motion.div>

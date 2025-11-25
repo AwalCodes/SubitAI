@@ -1,10 +1,17 @@
-import React from 'react'
+'use client'
+
+import React, { useState } from 'react'
 import Link from 'next/link'
 
 export default function Hero() {
+  const [showDemo, setShowDemo] = useState(false)
+
   return (
-    <section className="relative bg-white py-20">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="relative overflow-hidden bg-gradient-to-b from-neutral-50 via-white to-subit-50/40 py-24">
+      <div className="pointer-events-none absolute inset-x-0 top-[-200px] flex justify-center opacity-40">
+        <div className="h-72 w-[600px] bg-gradient-to-r from-subit-400/40 via-purple-400/40 to-blue-400/40 blur-3xl rounded-full" />
+      </div>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div className="text-center max-w-4xl mx-auto">
           {/* Feature Badge matching Figma */}
           <div className="inline-flex items-center px-4 py-2 bg-primary-50 text-primary-700 rounded-full text-sm font-medium mb-8">
@@ -57,7 +64,11 @@ export default function Hero() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </Link>
-            <button className="btn-secondary">
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => setShowDemo(true)}
+            >
               <svg className="mr-2 w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z"/>
               </svg>
@@ -71,12 +82,16 @@ export default function Hero() {
           {/* Demo section matching Figma */}
           <div className="text-center">
             <p className="text-lg font-medium text-gray-700 mb-4">See SUBIT.AI in action</p>
-            <div className="inline-flex items-center px-6 py-3 bg-gray-100 hover:bg-gray-200 rounded-button transition-colors cursor-pointer">
+            <button
+              type="button"
+              onClick={() => setShowDemo(true)}
+              className="inline-flex items-center px-6 py-3 bg-gray-100 hover:bg-gray-200 rounded-button transition-colors cursor-pointer"
+            >
               <svg className="w-5 h-5 mr-2 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z"/>
               </svg>
               <span className="text-gray-700 font-medium">Click to watch demo</span>
-            </div>
+            </button>
           </div>
           
           {/* Bottom stats matching Figma */}
@@ -100,6 +115,28 @@ export default function Hero() {
           </div>
         </div>
       </div>
+
+      {showDemo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="relative w-full max-w-3xl mx-4 bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowDemo(false)}
+              className="absolute right-4 top-4 rounded-full bg-white/80 p-1 text-neutral-600 hover:text-neutral-900 shadow-sm"
+              aria-label="Close demo"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <div className="aspect-video bg-black flex items-center justify-center text-white text-sm sm:text-base">
+              <span className="opacity-70">
+                Demo video placeholder. Replace this with your own recording when ready.
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

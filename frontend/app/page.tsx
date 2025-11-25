@@ -1,6 +1,8 @@
 import { Metadata } from 'next'
 import Hero from '@/components/landing/Hero'
 import Features from '@/components/landing/Features'
+import HowItWorks from '@/components/landing/HowItWorks'
+import Pricing from '@/components/landing/Pricing'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 
@@ -15,7 +17,9 @@ export default function HomePage() {
       <Header />
       <main>
         <Hero />
+        <HowItWorks />
         <Features />
+        <Pricing />
       </main>
       <Footer />
     </div>
