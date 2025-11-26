@@ -124,14 +124,49 @@ async function getEffectiveSubscriptionTier(userId: string, env: Env): Promise<S
       return 'free';
     }
 
-    const url = new URL(`${env.SUPABASE_URL}/rest/v1/billing`);
-    url.searchParams.set('user_id', `eq.${userId.trim()}`);
-    url.searchParams.set('status', 'eq.active');
-    url.searchParams.set('order', 'current_period_end.desc');
-    url.searchParams.set('limit', '1');
-    url.searchParams.set('select', 'plan,status,current_period_end');
+    // First, check the users table for subscription_tier (source of truth for manual changes)
+    const userUrl = new URL(`${env.SUPABASE_URL}/rest/v1/users`);
+    userUrl.searchParams.set('id', `eq.${userId.trim()}`);
+    userUrl.searchParams.set('select', 'subscription_tier');
 
-    const res = await fetch(url.toString(), {
+    const userRes = await fetch(userUrl.toString(), {
+      headers: {
+        apikey: env.SUPABASE_SERVICE_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    let userTier: SubscriptionTier | null = null;
+    
+    if (userRes.ok) {
+      try {
+        const userRows = await userRes.json() as Array<{ subscription_tier: string }>;
+        if (userRows && userRows.length > 0 && userRows[0].subscription_tier) {
+          // Map 'team' to 'team' for Cloudflare Worker (it uses 'team' internally)
+          const tier = userRows[0].subscription_tier;
+          if (tier === 'team' || tier === 'premium') {
+            userTier = 'team';
+          } else if (tier === 'pro') {
+            userTier = 'pro';
+          } else {
+            userTier = 'free';
+          }
+        }
+      } catch (error) {
+        console.error('Failed to parse user response:', error);
+      }
+    }
+
+    // Then check the billing table for active Stripe subscriptions
+    const billingUrl = new URL(`${env.SUPABASE_URL}/rest/v1/billing`);
+    billingUrl.searchParams.set('user_id', `eq.${userId.trim()}`);
+    billingUrl.searchParams.set('status', 'eq.active');
+    billingUrl.searchParams.set('order', 'current_period_end.desc');
+    billingUrl.searchParams.set('limit', '1');
+    billingUrl.searchParams.set('select', 'plan,status,current_period_end');
+
+    const res = await fetch(billingUrl.toString(), {
       headers: {
         apikey: env.SUPABASE_SERVICE_KEY,
         Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
@@ -142,7 +177,8 @@ async function getEffectiveSubscriptionTier(userId: string, env: Env): Promise<S
     if (!res.ok) {
       const text = await res.text().catch(() => 'Unknown error');
       console.error('Failed to fetch billing info:', res.status, text);
-      return 'free';
+      // Fall back to user tier from users table
+      return userTier || 'free';
     }
 
     let rows: Array<{
@@ -159,27 +195,32 @@ async function getEffectiveSubscriptionTier(userId: string, env: Env): Promise<S
       }>;
     } catch (error) {
       console.error('Failed to parse billing response:', error);
-      return 'free';
+      // Fall back to user tier from users table
+      return userTier || 'free';
     }
 
+    // If no billing record, use the tier from users table
     if (!rows || !rows.length) {
-      return 'free';
+      return userTier || 'free';
     }
 
     const record = rows[0];
 
     if (!record || record.status !== 'active') {
-      return 'free';
+      // Fall back to user tier from users table
+      return userTier || 'free';
     }
 
     if (record.current_period_end) {
       const periodEnd = new Date(record.current_period_end);
       if (isNaN(periodEnd.getTime()) || periodEnd < new Date()) {
-        return 'free';
+        // Billing expired, use tier from users table
+        return userTier || 'free';
       }
     }
 
-    return record.plan || 'free';
+    // Return billing plan if active, otherwise user tier
+    return record.plan || userTier || 'free';
   } catch (error) {
     console.error('Error determining subscription tier:', error);
     return 'free';
