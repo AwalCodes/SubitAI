@@ -122,7 +122,7 @@ export default function LoginPage() {
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-white mb-2">Welcome back</h2>
             <p className="text-slate-400">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link href="/auth/signup" className="text-violet-400 hover:text-violet-300 font-medium transition-colors">
                 Sign up free
               </Link>
