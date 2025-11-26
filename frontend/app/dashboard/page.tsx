@@ -103,7 +103,8 @@ export default function Dashboard() {
     return () => {
       cancelled = true
     }
-  }, [user])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
 
   useEffect(() => {
     // Show onboarding for new users (first time visiting dashboard)
@@ -143,6 +144,33 @@ export default function Dashboard() {
       setInitialLoad(false)
     }
   }, [user?.id])
+
+  const stats = useMemo(() => [
+    {
+      label: 'Total Projects',
+      value: projects.length,
+      icon: Video,
+      gradient: 'from-blue-500 to-blue-600'
+    },
+    {
+      label: 'Completed',
+      value: projects.filter(p => p.status === 'completed').length,
+      icon: CheckCircle,
+      gradient: 'from-emerald-500 to-emerald-600'
+    },
+    {
+      label: 'Processing',
+      value: projects.filter(p => p.status === 'processing').length,
+      icon: Clock,
+      gradient: 'from-amber-500 to-amber-600'
+    },
+    {
+      label: 'Energy',
+      value: remainingEnergy,
+      icon: Zap,
+      gradient: 'from-violet-500 to-fuchsia-600'
+    }
+  ], [projects, remainingEnergy])
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -222,33 +250,6 @@ export default function Dashboard() {
       </div>
     )
   }
-
-  const stats = useMemo(() => [
-    {
-      label: 'Total Projects',
-      value: projects.length,
-      icon: Video,
-      gradient: 'from-blue-500 to-blue-600'
-    },
-    {
-      label: 'Completed',
-      value: projects.filter(p => p.status === 'completed').length,
-      icon: CheckCircle,
-      gradient: 'from-emerald-500 to-emerald-600'
-    },
-    {
-      label: 'Processing',
-      value: projects.filter(p => p.status === 'processing').length,
-      icon: Clock,
-      gradient: 'from-amber-500 to-amber-600'
-    },
-    {
-      label: 'Energy',
-      value: remainingEnergy,
-      icon: Zap,
-      gradient: 'from-violet-500 to-fuchsia-600'
-    }
-  ], [projects, remainingEnergy])
 
   const sidebarLinks = [
     { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', active: true },

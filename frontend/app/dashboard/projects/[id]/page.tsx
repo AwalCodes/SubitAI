@@ -961,7 +961,38 @@ export default function ProjectDetailPage() {
             <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 p-6">
               <h3 className="font-semibold text-gray-900 dark:text-neutral-100 mb-3">Export</h3>
               <div className="space-y-2">
-                <button onClick={() => toast.success('Share link copied (demo)')} className="w-full py-2.5 border border-gray-300 dark:border-neutral-700 text-gray-700 dark:text-neutral-300 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800">Share</button>
+                <button 
+                  onClick={async () => {
+                    if (!project?.id) {
+                      toast.error('Project not found')
+                      return
+                    }
+                    const shareUrl = `${window.location.origin}/dashboard/projects/${project.id}`
+                    try {
+                      await navigator.clipboard.writeText(shareUrl)
+                      toast.success('Share link copied to clipboard!')
+                    } catch (error) {
+                      // Fallback for browsers that don't support clipboard API
+                      const textArea = document.createElement('textarea')
+                      textArea.value = shareUrl
+                      textArea.style.position = 'fixed'
+                      textArea.style.opacity = '0'
+                      document.body.appendChild(textArea)
+                      textArea.select()
+                      try {
+                        document.execCommand('copy')
+                        toast.success('Share link copied to clipboard!')
+                      } catch (err) {
+                        toast.error('Failed to copy link. Please copy manually: ' + shareUrl)
+                      }
+                      document.body.removeChild(textArea)
+                    }
+                  }} 
+                  className="w-full py-2.5 border border-gray-300 dark:border-neutral-700 text-gray-700 dark:text-neutral-300 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 flex items-center justify-center gap-2"
+                >
+                  <Share2 className="w-4 h-4" />
+                  Share
+                </button>
               </div>
             </div>
           </div>
