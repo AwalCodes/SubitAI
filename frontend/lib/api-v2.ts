@@ -130,7 +130,6 @@ export async function fetchQuota(): Promise<QuotaInfo> {
     const response = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
       },
     });
 
