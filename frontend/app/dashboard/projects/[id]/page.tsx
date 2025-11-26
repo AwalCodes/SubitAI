@@ -28,6 +28,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
+import { SubtitleCustomizer } from '@/components/subtitle-customizer'
 
 interface Subtitle {
   id: number
@@ -89,6 +90,17 @@ export default function ProjectDetailPage() {
   const [activeWord, setActiveWord] = useState<{ segment: number; word: number } | null>(null)
   const [showExportMenu, setShowExportMenu] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [subtitleStyle, setSubtitleStyle] = useState({
+    fontFamily: 'Arial, sans-serif',
+    fontSize: 24,
+    fontColor: '#FFFFFF',
+    backgroundColor: '#000000',
+    outlineColor: '#000000',
+    outlineWidth: 2,
+    position: { x: 50, y: 90 },
+    alignment: 'center' as 'left' | 'center' | 'right',
+    animation: { type: null as 'fade' | 'slide' | 'bounce' | 'zoom' | null, duration: 0.5 }
+  })
   
   // Detect if file is audio or video
   const isAudio = project ? isAudioFile(project.video_filename, project.video_url) : false
@@ -846,23 +858,69 @@ export default function ProjectDetailPage() {
                   </div>
                 </div>
               ) : (
-                <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                <div className="aspect-video bg-black rounded-lg overflow-hidden relative">
                   {project.video_url ? (
-                    <video
-                      key={project.video_url} // Force re-render when URL changes
-                      src={project.video_url}
-                      controls
-                      className="w-full h-full"
-                      ref={videoRef}
-                      onPlay={handlePlay}
-                      onPause={handlePause}
-                      onError={(e) => {
-                        console.error('Video playback error:', e)
-                        toast.error('Failed to load video. Please refresh the page.')
-                      }}
-                    >
-                      Your browser does not support the video tag.
-                    </video>
+                    <>
+                      <video
+                        key={project.video_url} // Force re-render when URL changes
+                        src={project.video_url}
+                        controls
+                        className="w-full h-full"
+                        ref={videoRef}
+                        onPlay={handlePlay}
+                        onPause={handlePause}
+                        onError={(e) => {
+                          console.error('Video playback error:', e)
+                          toast.error('Failed to load video. Please refresh the page.')
+                        }}
+                      >
+                        Your browser does not support the video tag.
+                      </video>
+                      {/* Subtitle Overlay */}
+                      {subtitles.length > 0 && activeSegment !== null && (
+                        <div
+                          className="absolute inset-0 pointer-events-none flex items-end justify-center pb-8 px-4"
+                          style={{
+                            left: `${subtitleStyle.position.x}%`,
+                            bottom: `${100 - subtitleStyle.position.y}%`,
+                            transform: 'translateX(-50%)',
+                            textAlign: subtitleStyle.alignment
+                          }}
+                        >
+                          <div
+                            className="px-4 py-2 rounded-lg max-w-[90%]"
+                            style={{
+                              fontFamily: subtitleStyle.fontFamily,
+                              fontSize: `${subtitleStyle.fontSize}px`,
+                              color: subtitleStyle.fontColor.startsWith('linear-gradient') 
+                                ? undefined 
+                                : subtitleStyle.fontColor,
+                              background: subtitleStyle.backgroundColor !== 'transparent'
+                                ? subtitleStyle.backgroundColor
+                                : undefined,
+                              WebkitTextStroke: `${subtitleStyle.outlineWidth}px ${subtitleStyle.outlineColor}`,
+                              textShadow: subtitleStyle.outlineWidth > 0
+                                ? `0 0 ${subtitleStyle.outlineWidth * 2}px ${subtitleStyle.outlineColor}`
+                                : undefined,
+                              backgroundImage: subtitleStyle.fontColor.startsWith('linear-gradient')
+                                ? subtitleStyle.fontColor
+                                : undefined,
+                              WebkitBackgroundClip: subtitleStyle.fontColor.startsWith('linear-gradient')
+                                ? 'text'
+                                : undefined,
+                              WebkitTextFillColor: subtitleStyle.fontColor.startsWith('linear-gradient')
+                                ? 'transparent'
+                                : undefined,
+                              animation: subtitleStyle.animation?.type
+                                ? `${subtitleStyle.animation.type} ${subtitleStyle.animation.duration}s ease-in-out`
+                                : undefined
+                            }}
+                          >
+                            {subtitles[activeSegment]?.text}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-white">
                       <Video className="w-16 h-16 opacity-50" />

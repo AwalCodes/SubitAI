@@ -117,7 +117,12 @@ export function getSubscriptionLimits(tier: string) {
       videoSize: 500 * 1024 * 1024, // 500MB
       dailyEnergy: 300
     },
-    team: {
+    premium: {
+      videoLength: Infinity,
+      videoSize: 1024 * 1024 * 1024, // 1GB
+      dailyEnergy: Infinity
+    },
+    team: { // Legacy support
       videoLength: Infinity,
       videoSize: 1024 * 1024 * 1024, // 1GB
       dailyEnergy: Infinity
