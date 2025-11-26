@@ -165,7 +165,7 @@ export function SubtitleCustomizer({ style, onStyleChange }: SubtitleCustomizerP
     ? PRO_FONTS 
     : BASIC_FONTS
 
-  const availableColors = tier === 'premium'
+  const availableColors: Array<{ name: string; value: string; isGradient?: boolean }> = tier === 'premium'
     ? [...ADVANCED_COLORS, ...GRADIENT_PRESETS.map(g => ({ name: g.name, value: g.value, isGradient: true }))]
     : tier === 'pro'
     ? ADVANCED_COLORS
