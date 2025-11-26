@@ -23,7 +23,8 @@ import {
   Zap,
   ChevronDown,
   FileText,
-  FileJson
+  FileJson,
+  FileAudio
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
@@ -55,6 +56,19 @@ interface Project {
   }>
 }
 
+// Helper function to detect if file is audio or video
+const isAudioFile = (filename?: string, url?: string): boolean => {
+  if (filename) {
+    const ext = filename.toLowerCase().split('.').pop()
+    return ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac', 'wma'].includes(ext || '')
+  }
+  if (url) {
+    const ext = url.toLowerCase().split('.').pop()?.split('?')[0]
+    return ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac', 'wma'].includes(ext || '')
+  }
+  return false
+}
+
 export default function ProjectDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -74,6 +88,10 @@ export default function ProjectDetailPage() {
   const [activeSegment, setActiveSegment] = useState<number | null>(null)
   const [activeWord, setActiveWord] = useState<{ segment: number; word: number } | null>(null)
   const [showExportMenu, setShowExportMenu] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  
+  // Detect if file is audio or video
+  const isAudio = project ? isAudioFile(project.video_filename, project.video_url) : false
 
   useEffect(() => {
     if (!userLoading && !user) {
@@ -547,9 +565,9 @@ export default function ProjectDetailPage() {
   }
 
   const tick = () => {
-    const v = videoRef.current
-    if (!v) return
-    const t = v.currentTime
+    const mediaElement = isAudio ? audioRef.current : videoRef.current
+    if (!mediaElement) return
+    const t = mediaElement.currentTime
     let segIdx: number | null = null
     for (let i = 0; i < subtitles.length; i++) {
       const s = subtitles[i]
@@ -580,6 +598,7 @@ export default function ProjectDetailPage() {
     if (rafRef.current) cancelAnimationFrame(rafRef.current)
     rafRef.current = null
   }
+  
 
   useEffect(() => {
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }
@@ -779,33 +798,78 @@ export default function ProjectDetailPage() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Video Player */}
+          {/* Media Player (Video or Audio) */}
           <div>
             <div className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm rounded-2xl border border-neutral-200/60 dark:border-neutral-800/60 p-6 sm:p-7 shadow-lg">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-neutral-100 mb-4">Video Preview</h2>
-              <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                {project.video_url ? (
-                  <video
-                    key={project.video_url} // Force re-render when URL changes
-                    src={project.video_url}
-                    controls
-                    className="w-full h-full"
-                    ref={videoRef}
-                    onPlay={handlePlay}
-                    onPause={handlePause}
-                    onError={(e) => {
-                      console.error('Video playback error:', e)
-                      toast.error('Failed to load video. Please refresh the page.')
-                    }}
-                  >
-                    Your browser does not support the video tag.
-                  </video>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-white">
-                    <Video className="w-16 h-16 opacity-50" />
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-neutral-100 mb-4">
+                {isAudio ? 'Audio Preview' : 'Video Preview'}
+              </h2>
+              {isAudio ? (
+                <div className="bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 rounded-lg p-8 sm:p-12">
+                  <div className="flex flex-col items-center justify-center space-y-6">
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg">
+                      <FileAudio className="w-12 h-12 text-white" />
+                    </div>
+                    {project.video_url ? (
+                      <audio
+                        key={project.video_url}
+                        src={project.video_url}
+                        controls
+                        className="w-full max-w-md"
+                        ref={audioRef}
+                        onPlay={() => {
+                          if (rafRef.current) cancelAnimationFrame(rafRef.current)
+                          rafRef.current = requestAnimationFrame(tick)
+                        }}
+                        onPause={() => {
+                          if (rafRef.current) cancelAnimationFrame(rafRef.current)
+                          rafRef.current = null
+                        }}
+                        onError={(e) => {
+                          console.error('Audio playback error:', e)
+                          toast.error('Failed to load audio. Please refresh the page.')
+                        }}
+                      >
+                        Your browser does not support the audio tag.
+                      </audio>
+                    ) : (
+                      <div className="text-center text-slate-400">
+                        <p>Audio file not available</p>
+                      </div>
+                    )}
+                    {project.title && (
+                      <div className="text-center">
+                        <p className="text-sm text-slate-400">Now Playing</p>
+                        <p className="text-lg font-semibold text-white mt-1">{project.title}</p>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                  {project.video_url ? (
+                    <video
+                      key={project.video_url} // Force re-render when URL changes
+                      src={project.video_url}
+                      controls
+                      className="w-full h-full"
+                      ref={videoRef}
+                      onPlay={handlePlay}
+                      onPause={handlePause}
+                      onError={(e) => {
+                        console.error('Video playback error:', e)
+                        toast.error('Failed to load video. Please refresh the page.')
+                      }}
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-white">
+                      <Video className="w-16 h-16 opacity-50" />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -901,65 +965,22 @@ export default function ProjectDetailPage() {
           </div>
         </div>
 
-        {/* Download and Next Steps */}
+        {/* Next Steps - Export section removed since it's in header */}
         {project.status === 'completed' && subtitles.length > 0 && (
-          <div className="grid md:grid-cols-3 gap-6 mt-8">
+          <div className="grid md:grid-cols-2 gap-6 mt-8">
             <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700 p-6">
-              <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
-                <Download className="w-5 h-5 text-violet-400" />
-                Export Subtitles
-              </h3>
+              <h3 className="font-semibold text-white mb-3">Next Steps</h3>
               <div className="space-y-2">
                 <button 
-                  onClick={handleDownloadSRT} 
-                  className="w-full flex items-center justify-between px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors group"
+                  onClick={() => router.push('/dashboard/upload-v2')} 
+                  className="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
                 >
-                  <div className="flex items-center gap-3">
-                    <FileText className="w-4 h-4 text-blue-400" />
-                    <span className="text-sm font-medium">SRT</span>
-                  </div>
-                  <span className="text-xs text-slate-400 group-hover:text-white">SubRip</span>
-                </button>
-                <button 
-                  onClick={handleDownloadVTT} 
-                  className="w-full flex items-center justify-between px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors group"
-                >
-                  <div className="flex items-center gap-3">
-                    <FileText className="w-4 h-4 text-violet-400" />
-                    <span className="text-sm font-medium">VTT</span>
-                  </div>
-                  <span className="text-xs text-slate-400 group-hover:text-white">WebVTT</span>
-                </button>
-                <button 
-                  onClick={handleDownloadTXT} 
-                  className="w-full flex items-center justify-between px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors group"
-                >
-                  <div className="flex items-center gap-3">
-                    <FileText className="w-4 h-4 text-emerald-400" />
-                    <span className="text-sm font-medium">TXT</span>
-                  </div>
-                  <span className="text-xs text-slate-400 group-hover:text-white">Plain Text</span>
-                </button>
-                <button 
-                  onClick={handleDownloadJSON} 
-                  className="w-full flex items-center justify-between px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors group"
-                >
-                  <div className="flex items-center gap-3">
-                    <FileJson className="w-4 h-4 text-amber-400" />
-                    <span className="text-sm font-medium">JSON</span>
-                  </div>
-                  <span className="text-xs text-slate-400 group-hover:text-white">Data Format</span>
+                  Process Another {isAudio ? 'Audio' : 'Video'}
                 </button>
               </div>
             </div>
-            <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 p-6">
-              <h3 className="font-semibold text-gray-900 dark:text-neutral-100 mb-3">Next Steps</h3>
-              <div className="space-y-2">
-                <button onClick={() => window.location.assign('/dashboard/upload-v2')} className="w-full py-2.5 border border-gray-300 dark:border-neutral-700 text-gray-700 dark:text-neutral-300 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800">Process Another Video</button>
-              </div>
-            </div>
-            <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 p-6">
-              <h3 className="font-semibold text-gray-900 dark:text-neutral-100 mb-3">Export</h3>
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700 p-6">
+              <h3 className="font-semibold text-white mb-3">Share Project</h3>
               <div className="space-y-2">
                 <button 
                   onClick={async () => {
@@ -988,7 +1009,7 @@ export default function ProjectDetailPage() {
                       document.body.removeChild(textArea)
                     }
                   }} 
-                  className="w-full py-2.5 border border-gray-300 dark:border-neutral-700 text-gray-700 dark:text-neutral-300 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 flex items-center justify-center gap-2"
+                  className="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   <Share2 className="w-4 h-4" />
                   Share
