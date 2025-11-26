@@ -38,6 +38,35 @@ export default function Dashboard() {
   const [quotaLoading, setQuotaLoading] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
+  const remainingEnergy = !quotaLoading && quota && quota.remaining !== null
+    ? quota.remaining
+    : 0
+
+  const fetchProjects = useCallback(async () => {
+    if (!user?.id) return
+    
+    try {
+      setProjectsLoading(true)
+      const supabase = createClient()
+      const { data: projects, error } = await supabase
+        .from('projects')
+        .select('id, title, status, created_at, video_duration')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10)
+      
+      if (error) throw error
+      setProjects(projects || [])
+    } catch (error: any) {
+      console.error('Failed to fetch projects:', error)
+      // Don't block the UI if projects fail to load
+      setProjects([])
+    } finally {
+      setProjectsLoading(false)
+      setInitialLoad(false)
+    }
+  }, [user?.id])
+
   useEffect(() => {
     if (!loading && !user) {
       router.push('/auth/login')
@@ -47,32 +76,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!user) return
-    
-    const fetchProjects = async () => {
-      try {
-        setProjectsLoading(true)
-        const supabase = createClient()
-        const { data: projects, error } = await supabase
-          .from('projects')
-          .select('id, title, status, created_at, video_duration')
-          .eq('user_id', user?.id)
-          .order('created_at', { ascending: false })
-          .limit(10)
-        
-        if (error) throw error
-        setProjects(projects || [])
-      } catch (error: any) {
-        console.error('Failed to fetch projects:', error)
-        // Don't block the UI if projects fail to load
-        setProjects([])
-      } finally {
-        setProjectsLoading(false)
-        setInitialLoad(false)
-      }
-    }
-    
     fetchProjects()
-  }, [fetchProjects])
+  }, [user, fetchProjects])
 
   useEffect(() => {
     if (!user) return
@@ -115,35 +120,6 @@ export default function Dashboard() {
       }
     }
   }, [user, projectsLoading, projects.length])
-
-  const remainingEnergy = !quotaLoading && quota && quota.remaining !== null
-    ? quota.remaining
-    : 0
-
-  const fetchProjects = useCallback(async () => {
-    if (!user?.id) return
-    
-    try {
-      setProjectsLoading(true)
-      const supabase = createClient()
-      const { data: projects, error } = await supabase
-        .from('projects')
-        .select('id, title, status, created_at, video_duration')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(10)
-      
-      if (error) throw error
-      setProjects(projects || [])
-    } catch (error: any) {
-      console.error('Failed to fetch projects:', error)
-      // Don't block the UI if projects fail to load
-      setProjects([])
-    } finally {
-      setProjectsLoading(false)
-      setInitialLoad(false)
-    }
-  }, [user?.id])
 
   const stats = useMemo(() => [
     {
