@@ -272,44 +272,58 @@ function formatBytes(bytes: number): string {
 // Initialize Hono app
 const app = new Hono<{ Bindings: Env }>();
 
-// Middleware
-app.use('*', logger());
-
-// CORS middleware - must be before other routes
-app.use('*', async (c, next) => {
-  // Allow multiple origins configured via ALLOWED_ORIGINS env (comma-separated)
-  const allowedOrigins = c.env.ALLOWED_ORIGINS
-    ? c.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
+// Helper function to get CORS headers
+function getCorsHeaders(env: Env, origin: string): Record<string, string> {
+  const allowedOrigins = env.ALLOWED_ORIGINS
+    ? env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
     : [];
-
-  const origin = c.req.header('Origin') || '';
+  
   const allowAll = allowedOrigins.length === 0;
   const isAllowedOrigin = allowAll || allowedOrigins.includes(origin);
-
-  // Handle preflight OPTIONS request
-  if (c.req.method === 'OPTIONS') {
-    if (isAllowedOrigin) {
-      return c.json(null, 204, {
-        'Access-Control-Allow-Origin': allowAll ? '*' : origin,
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Allow-Credentials': allowAll ? 'false' : 'true',
-        'Access-Control-Max-Age': '86400',
-      });
-    } else {
-      return c.json({ error: 'CORS not allowed' }, 403);
-    }
+  
+  if (!isAllowedOrigin && !allowAll) {
+    return {};
   }
+  
+  return {
+    'Access-Control-Allow-Origin': allowAll ? '*' : origin,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Credentials': allowAll ? 'false' : 'true',
+    'Access-Control-Max-Age': '86400',
+  };
+}
 
-  // Apply CORS headers to all responses
-  if (isAllowedOrigin) {
-    c.header('Access-Control-Allow-Origin', allowAll ? '*' : origin);
-    c.header('Access-Control-Allow-Credentials', allowAll ? 'false' : 'true');
-    c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+// Handle ALL OPTIONS requests first (preflight)
+app.options('*', (c) => {
+  const origin = c.req.header('Origin') || '';
+  const headers = getCorsHeaders(c.env, origin);
+  
+  if (Object.keys(headers).length === 0) {
+    return new Response('CORS not allowed', { status: 403 });
   }
+  
+  return new Response(null, {
+    status: 204,
+    headers: headers,
+  });
+});
 
+// Middleware for logging
+app.use('*', logger());
+
+// CORS middleware - add headers to all responses
+app.use('*', async (c, next) => {
+  const origin = c.req.header('Origin') || '';
+  const headers = getCorsHeaders(c.env, origin);
+  
+  // Add CORS headers to response
   await next();
+  
+  // Apply CORS headers after the response is generated
+  Object.entries(headers).forEach(([key, value]) => {
+    c.res.headers.set(key, value);
+  });
 });
 
 // Error handling middleware
