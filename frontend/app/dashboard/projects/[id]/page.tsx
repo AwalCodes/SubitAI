@@ -28,7 +28,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
-import { SubtitleCustomizer } from '@/components/subtitle-customizer'
+import { SubtitleCustomizer, type SubtitleStyle } from '@/components/subtitle-customizer'
 
 interface Subtitle {
   id: number
@@ -90,7 +90,7 @@ export default function ProjectDetailPage() {
   const [activeWord, setActiveWord] = useState<{ segment: number; word: number } | null>(null)
   const [showExportMenu, setShowExportMenu] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
-  const [subtitleStyle, setSubtitleStyle] = useState({
+  const [subtitleStyle, setSubtitleStyle] = useState<SubtitleStyle>({
     fontFamily: 'Arial, sans-serif',
     fontSize: 24,
     fontColor: '#FFFFFF',
@@ -98,8 +98,8 @@ export default function ProjectDetailPage() {
     outlineColor: '#000000',
     outlineWidth: 2,
     position: { x: 50, y: 90 },
-    alignment: 'center' as 'left' | 'center' | 'right',
-    animation: { type: null as 'fade' | 'slide' | 'bounce' | 'zoom' | null, duration: 0.5 }
+    alignment: 'center',
+    animation: { type: null, duration: 0.5 }
   })
   
   // Detect if file is audio or video

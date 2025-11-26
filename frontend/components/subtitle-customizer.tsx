@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-interface SubtitleStyle {
+export interface SubtitleStyle {
   fontFamily: string
   fontSize: number
   fontColor: string
@@ -25,7 +25,7 @@ interface SubtitleStyle {
   outlineWidth: number
   position: { x: number; y: number }
   alignment: 'left' | 'center' | 'right'
-  animation?: {
+  animation: {
     type: 'fade' | 'slide' | 'bounce' | 'zoom' | null
     duration: number
   }
