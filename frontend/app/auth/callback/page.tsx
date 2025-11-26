@@ -1,13 +1,12 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Zap } from 'lucide-react'
 
 export default function AuthCallback() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const supabase = createClient()
 
   useEffect(() => {
@@ -45,6 +44,7 @@ export default function AuthCallback() {
     }
 
     handleAuthCallback()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
 
   return (
