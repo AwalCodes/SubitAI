@@ -221,22 +221,22 @@ export default function UploadPageV2() {
       setProjectId(newProjectId)
 
       // Upload video to storage
-      setProgressMessage('Uploading video...')
-      setUploadProgress(5) // Start at 5% to show immediate feedback
+      setProgressMessage('Uploading file to storage...')
+      setUploadProgress(2) // Start at 2% to show immediate feedback
       
       const fileExt = file.name.split('.').pop()
       const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
       const filePath = `${user?.id}/${fileName}`
 
       // Simulate smooth progress during upload (Supabase doesn't support progress callbacks)
-      // Progress continues smoothly from 5% to 28% over time, then jumps to 30% when done
-      let progressValue = 5
+      // Progress from 2% to 15% (upload phase) - faster at beginning
+      let progressValue = 2
       const progressInterval = setInterval(() => {
-        progressValue += 0.5 // Increment by 0.5% every 200ms
-        if (progressValue < 28) {
-          setUploadProgress(Math.min(progressValue, 28))
+        progressValue += 0.8 // Increment by 0.8% every 200ms for faster initial progress
+        if (progressValue < 15) {
+          setUploadProgress(Math.min(progressValue, 15))
           const percent = Math.round(progressValue)
-          setProgressMessage(`Uploading video... ${percent}%`)
+          setProgressMessage(`Uploading file to storage... ${percent}%`)
         }
       }, 200)
 
@@ -254,8 +254,8 @@ export default function UploadPageV2() {
 
       if (uploadError) throw uploadError
       
-      setUploadProgress(30) // Upload complete, move to 30%
-      setProgressMessage('Video uploaded successfully')
+      setUploadProgress(15) // Upload complete
+      setProgressMessage('File uploaded successfully')
 
       // Get a signed URL so the video can be played from a private bucket
       const { data: signedUrlData, error: signedUrlError } = await supabase.storage
@@ -277,8 +277,8 @@ export default function UploadPageV2() {
 
       // Start transcription
       setState('transcribing')
-      setProgressMessage('Starting transcription...')
-      setUploadProgress(30) // Start transcription at 30%
+      setProgressMessage('Preparing transcription...')
+      setUploadProgress(15) // Start transcription at 15%
 
       const result = await transcribeFile({
         file,
@@ -286,14 +286,49 @@ export default function UploadPageV2() {
         format: 'srt,vtt,json',
         projectId: newProjectId,
         onProgress: (progress, message) => {
-          // Map transcription progress (0-100) to our progress range (30-95%)
-          const transcriptionProgress = 30 + Math.round((progress / 100) * 65)
-          setUploadProgress(transcriptionProgress)
-          if (message) setProgressMessage(message)
+          // Map transcription progress (0-100) to our progress range (15-98%)
+          // Use easing function to slow down at the end (80-100%)
+          let mappedProgress: number
+          if (progress <= 80) {
+            // Fast progress from 15% to 80% (65% of range)
+            mappedProgress = 15 + Math.round((progress / 80) * 65)
+          } else {
+            // Slow progress from 80% to 98% (remaining 18%)
+            const remainingProgress = ((progress - 80) / 20) * 18
+            mappedProgress = 80 + Math.round(remainingProgress)
+          }
+          
+          setUploadProgress(mappedProgress)
+          
+          // Update message with better process names
+          if (message) {
+            if (message.includes('Uploading')) {
+              setProgressMessage(`Uploading to transcription service... ${progress}%`)
+            } else if (message.includes('Processing')) {
+              setProgressMessage(`Processing audio... ${progress}%`)
+            } else if (progress >= 90) {
+              setProgressMessage(`Finalizing subtitles... ${progress}%`)
+            } else {
+              setProgressMessage(message || `Transcribing... ${progress}%`)
+            }
+          } else {
+            if (progress < 30) {
+              setProgressMessage(`Uploading to transcription service... ${progress}%`)
+            } else if (progress < 70) {
+              setProgressMessage(`Processing audio... ${progress}%`)
+            } else if (progress < 90) {
+              setProgressMessage(`Generating subtitles... ${progress}%`)
+            } else {
+              setProgressMessage(`Finalizing... ${progress}%`)
+            }
+          }
         },
       })
 
       // Save subtitles to database
+      setUploadProgress(98)
+      setProgressMessage('Saving subtitles to database...')
+      
       const { error: subtitleError } = await supabase
         .from('subtitles')
         .insert({
@@ -314,6 +349,9 @@ export default function UploadPageV2() {
       }
 
       // Update project status
+      setUploadProgress(99)
+      setProgressMessage('Finalizing project...')
+      
       const { error: updateError } = await supabase
         .from('projects')
         .update({
@@ -329,7 +367,7 @@ export default function UploadPageV2() {
 
       setState('success')
       setUploadProgress(100)
-      setProgressMessage('Complete!')
+      setProgressMessage('Complete! Subtitles generated successfully.')
       
       toast.success('Subtitles generated successfully!')
       

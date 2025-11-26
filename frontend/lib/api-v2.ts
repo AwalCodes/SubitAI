@@ -176,19 +176,35 @@ export async function transcribeFile(options: TranscribeOptions): Promise<Transc
     return new Promise<TranscriptionResult>((resolve, reject) => {
       const xhr = new XMLHttpRequest();
 
-      // Track upload progress
+      // Track upload progress to transcription service
       xhr.upload.addEventListener('progress', (e) => {
         if (e.lengthComputable && onProgress) {
-          const uploadProgress = Math.round((e.loaded / e.total) * 50); // Upload is 50% of total
-          onProgress(uploadProgress, 'Uploading...');
+          // Upload to transcription service: 0-25% of total transcription
+          const uploadProgress = Math.round((e.loaded / e.total) * 25);
+          onProgress(uploadProgress, `Uploading to transcription service... ${uploadProgress}%`);
         }
       });
 
-      // Track download progress (response)
+      // Track download progress (response) - this is the actual transcription processing
       xhr.addEventListener('progress', (e) => {
         if (e.lengthComputable && onProgress) {
-          const downloadProgress = 50 + Math.round((e.loaded / e.total) * 50); // Processing is other 50%
-          onProgress(downloadProgress, 'Processing...');
+          // Processing: 25-100% of total transcription
+          // Map download progress to 25-100% range
+          const downloadProgress = 25 + Math.round((e.loaded / e.total) * 75);
+          
+          // Determine stage based on progress
+          let message = '';
+          if (downloadProgress < 40) {
+            message = `Processing audio... ${downloadProgress}%`;
+          } else if (downloadProgress < 70) {
+            message = `Generating subtitles... ${downloadProgress}%`;
+          } else if (downloadProgress < 90) {
+            message = `Finalizing subtitles... ${downloadProgress}%`;
+          } else {
+            message = `Almost done... ${downloadProgress}%`;
+          }
+          
+          onProgress(downloadProgress, message);
         }
       });
 
