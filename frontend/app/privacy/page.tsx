@@ -3,7 +3,7 @@ import Footer from '@/components/layout/Footer'
 import { Shield } from 'lucide-react'
 
 export const metadata = {
-  title: 'Privacy Policy - SUBIT.AI'
+  title: 'Privacy Policy - SUBITAI'
 }
 
 export default function PrivacyPage() {
@@ -26,7 +26,7 @@ export default function PrivacyPage() {
               {/* Content */}
               <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700 space-y-8">
                 <p className="text-slate-300 leading-relaxed">
-                  SUBIT.AI values your privacy and is committed to protecting your personal data in accordance with the Personal Data Protection Act (PDPA) of Thailand and the General Data Protection Regulation (GDPR) of the European Union.
+                  SUBITAI values your privacy and is committed to protecting your personal data in accordance with the Personal Data Protection Act (PDPA) of Thailand and the General Data Protection Regulation (GDPR) of the European Union.
                 </p>
 
                 <section>

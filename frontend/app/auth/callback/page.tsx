@@ -101,7 +101,7 @@ function AuthCallbackContent() {
             <Zap className="w-7 h-7 text-white" />
           </div>
           <span className="text-2xl font-bold text-white">
-            SUBIT<span className="text-violet-400">.AI</span>
+            SUBITAI
           </span>
         </div>
 

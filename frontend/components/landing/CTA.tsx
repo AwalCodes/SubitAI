@@ -25,7 +25,7 @@ export default function CTA() {
             Ready to create professional subtitles?
           </h2>
           <p className="text-xl text-subit-100 mb-8 max-w-3xl mx-auto">
-            Join thousands of content creators who trust SUBIT.AI for their subtitle needs.
+            Join thousands of content creators who trust SUBITAI for their subtitle needs.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">

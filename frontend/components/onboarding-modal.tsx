@@ -15,7 +15,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
   if (!isOpen) return null
 
   const steps = [
-    { title: 'Welcome to SUBIT.AI! 🎉', description: 'Your AI-powered subtitle generation platform', icon: Sparkles },
+    { title: 'Welcome to SUBITAI! 🎉', description: 'Your AI-powered subtitle generation platform', icon: Sparkles },
     { title: 'Upload Your First Video', description: 'Get started in 3 simple steps', icon: Video },
     { title: 'Manage Your Energy', description: 'Track your usage and limits', icon: Zap },
   ]

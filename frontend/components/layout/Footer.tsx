@@ -30,7 +30,7 @@ export default function Footer() {
                 <Zap className="w-5 h-5 text-white" />
               </div>
               <span className="text-lg font-bold text-white">
-                SUBIT<span className="text-violet-400">.AI</span>
+                SUBITAI
               </span>
             </Link>
             <p className="text-slate-400 text-sm mb-4 max-w-xs">
@@ -95,7 +95,7 @@ export default function Footer() {
         {/* Bottom */}
         <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-slate-500 text-sm">
-            © {new Date().getFullYear()} SUBIT.AI. All rights reserved.
+            © {new Date().getFullYear()} SUBITAI. All rights reserved.
           </p>
           <p className="text-slate-500 text-sm">
             Made with ❤️ for content creators

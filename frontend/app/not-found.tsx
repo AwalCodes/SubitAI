@@ -17,7 +17,7 @@ export default function NotFound() {
             <Zap className="w-5 h-5 text-white" />
           </div>
           <span className="text-xl font-bold text-white">
-            SUBIT<span className="text-violet-400">.AI</span>
+            SUBITAI
           </span>
         </div>
 

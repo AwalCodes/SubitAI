@@ -40,9 +40,10 @@ export default function Dashboard() {
   const [quotaLoading, setQuotaLoading] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  const remainingEnergy = !quotaLoading && quota && quota.remaining !== null
-    ? quota.remaining
-    : 0
+  const isPremium = subscription?.plan === 'premium' || subscription?.plan === 'team'
+  const remainingEnergy = isPremium 
+    ? '∞' 
+    : (!quotaLoading && quota && quota.remaining !== null ? quota.remaining : 0)
 
   const fetchProjects = useCallback(async () => {
     if (!user?.id) return
@@ -246,7 +247,7 @@ export default function Dashboard() {
               <Zap className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold text-white">
-              SUBIT<span className="text-violet-400">.AI</span>
+              SUBITAI
             </span>
           </Link>
         </div>
@@ -305,7 +306,7 @@ export default function Dashboard() {
             <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
               <Zap className="w-5 h-5 text-white" />
             </div>
-            <span className="text-lg font-bold text-white">SUBIT<span className="text-violet-400">.AI</span></span>
+            <span className="text-lg font-bold text-white">SUBITAI</span>
           </Link>
           <div className="flex items-center gap-2">
             <Link 

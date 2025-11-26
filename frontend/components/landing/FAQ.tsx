@@ -6,8 +6,8 @@ import { ChevronDown, ChevronUp } from 'lucide-react'
 
 const faqs = [
   {
-    question: 'How does SUBIT.AI work?',
-    answer: 'SUBIT.AI uses advanced AI technology (OpenAI Whisper) to automatically transcribe your videos into accurate subtitles. Simply upload your video, our AI processes it, and you get professional subtitles that you can customize and export.'
+    question: 'How does SUBITAI work?',
+    answer: 'SUBITAI uses advanced AI technology (OpenAI Whisper) to automatically transcribe your videos into accurate subtitles. Simply upload your video, our AI processes it, and you get professional subtitles that you can customize and export.'
   },
   {
     question: 'What video formats do you support?',
@@ -68,7 +68,7 @@ export default function FAQ() {
             Frequently Asked Questions
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Everything you need to know about SUBIT.AI
+            Everything you need to know about SUBITAI
           </p>
         </motion.div>
 
@@ -130,7 +130,7 @@ export default function FAQ() {
               Still have questions?
             </h3>
             <p className="text-gray-600 mb-6">
-              Our support team is here to help you get the most out of SUBIT.AI
+              Our support team is here to help you get the most out of SUBITAI
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a

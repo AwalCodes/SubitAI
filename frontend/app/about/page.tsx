@@ -62,7 +62,7 @@ export default function AboutPage() {
                 <Sparkles className="w-8 h-8 text-white" />
               </div>
               <h1 className="text-4xl sm:text-5xl font-bold text-white mb-6">
-                About <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">SUBIT.AI</span>
+                About <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">SUBITAI</span>
               </h1>
               <p className="text-xl text-slate-400 leading-relaxed">
                 Building the future of video accessibility with AI-powered subtitle technology
@@ -106,7 +106,7 @@ export default function AboutPage() {
                       Our Mission
                     </h2>
                     <p className="text-slate-400 leading-relaxed text-lg">
-                      SUBIT.AI builds AI-powered tools that make video subtitles fast, accurate, and customizable 
+                      SUBITAI builds AI-powered tools that make video subtitles fast, accurate, and customizable 
                       for creators and teams worldwide. We believe that great content should be accessible to 
                       everyone, regardless of language or hearing ability.
                     </p>
@@ -184,7 +184,7 @@ export default function AboutPage() {
                   <Sparkles className="w-12 h-12 text-white" />
                 </div>
                 <h3 className="text-xl font-semibold text-white mb-1">
-                  The SUBIT.AI Team
+                  The SUBITAI Team
                 </h3>
                 <p className="text-violet-400 font-medium mb-3">
                   AI & Product Engineering

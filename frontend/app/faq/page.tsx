@@ -70,7 +70,7 @@ export default function FAQPage() {
                 Frequently Asked Questions
               </h1>
               <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-                Everything you need to know about SUBIT.AI
+                Everything you need to know about SUBITAI
               </p>
             </motion.div>
 

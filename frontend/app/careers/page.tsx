@@ -2,7 +2,7 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import { Briefcase, MapPin, Clock, ArrowRight } from 'lucide-react'
 
-export const metadata = { title: 'Careers - SUBIT.AI' }
+export const metadata = { title: 'Careers - SUBITAI' }
 
 export default function CareersPage() {
   const roles = [

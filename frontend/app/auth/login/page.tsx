@@ -82,7 +82,7 @@ export default function LoginPage() {
               <Zap className="w-6 h-6 text-white" />
             </div>
             <span className="text-2xl font-bold text-white">
-              SUBIT<span className="text-violet-400">.AI</span>
+              SUBITAI
             </span>
           </Link>
           
@@ -121,7 +121,7 @@ export default function LoginPage() {
               <Zap className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold text-white">
-              SUBIT<span className="text-violet-400">.AI</span>
+              SUBITAI
             </span>
           </div>
 

@@ -78,7 +78,7 @@ export default function Header() {
             <span className={`text-xl font-bold transition-colors duration-300 ${
               scrolled || !isDarkPage ? 'text-slate-900 dark:text-white' : 'text-white'
             }`}>
-              SUBIT<span className="text-violet-500">.AI</span>
+              SUBITAI
             </span>
           </Link>
 

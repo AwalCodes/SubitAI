@@ -62,7 +62,7 @@ export default function SpotsPromoPage() {
           {/* Brand */}
           <div className="flex items-center justify-center space-x-3 mb-4">
             <Logo withText={false} href={null} className="h-8" />
-            <span className="text-2xl font-bold text-blue-600">SUBIT AI</span>
+            <span className="text-2xl font-bold text-blue-600">SUBITAI</span>
           </div>
           <p className="text-center text-gray-600 mb-6">
             Revolutionizing the future with artificial intelligence solutions

@@ -7,7 +7,7 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 
 export const metadata: Metadata = {
-  title: 'SUBIT.AI - AI-Powered Subtitle Generator',
+  title: 'SUBITAI - AI-Powered Subtitle Generator',
   description: 'Generate professional subtitles for your videos using advanced AI technology. Fast, accurate, and customizable.',
 }
 

@@ -145,7 +145,7 @@ export default function Hero() {
                 {/* Subtitle lines */}
                 <div className="space-y-3">
                   {[
-                    { time: '0:00 - 0:03', text: 'Welcome to SUBIT.AI, the fastest way to generate subtitles.' },
+                    { time: '0:00 - 0:03', text: 'Welcome to SUBITAI, the fastest way to generate subtitles.' },
                     { time: '0:04 - 0:08', text: 'Simply upload your video and let our AI do the magic.' },
                     { time: '0:09 - 0:14', text: 'Edit, customize, and export in multiple formats instantly.' },
                   ].map((line, i) => (

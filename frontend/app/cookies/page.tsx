@@ -2,7 +2,7 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import { Cookie } from 'lucide-react'
 
-export const metadata = { title: 'Cookie Policy - SUBIT.AI' }
+export const metadata = { title: 'Cookie Policy - SUBITAI' }
 
 export default function CookiesPage() {
   return (

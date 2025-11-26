@@ -4,7 +4,7 @@ import Footer from '@/components/layout/Footer'
 import Pricing from '@/components/landing/Pricing'
 
 export const metadata: Metadata = {
-  title: 'Pricing | SUBIT.AI',
+  title: 'Pricing | SUBITAI',
   description: 'Flexible pricing plans for creators. Choose the plan that fits your workflow and pay with card or cryptocurrency.',
 }
 

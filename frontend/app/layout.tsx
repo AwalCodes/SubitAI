@@ -17,12 +17,12 @@ const FloatingHelp = dynamic(() => import('@/components/floating-help').then(mod
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'SUBIT.AI - AI-Powered Subtitle Generator',
+  title: 'SUBITAI - AI-Powered Subtitle Generator',
   description: 'Generate professional subtitles for your videos using advanced AI technology. Fast, accurate, and customizable.',
   keywords: ['AI', 'subtitles', 'video', 'transcription', 'Whisper', 'accessibility'],
-  authors: [{ name: 'SUBIT.AI Team' }],
-  creator: 'SUBIT.AI',
-  publisher: 'SUBIT.AI',
+  authors: [{ name: 'SUBITAI Team' }],
+  creator: 'SUBITAI',
+  publisher: 'SUBITAI',
   formatDetection: {
     email: false,
     address: false,
@@ -33,21 +33,21 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: '/',
-    title: 'SUBIT.AI - AI-Powered Subtitle Generator',
+    title: 'SUBITAI - AI-Powered Subtitle Generator',
     description: 'Generate professional subtitles for your videos using advanced AI technology. Fast, accurate, and customizable.',
-    siteName: 'SUBIT.AI',
+    siteName: 'SUBITAI',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'SUBIT.AI - AI-Powered Subtitle Generator',
+        alt: 'SUBITAI - AI-Powered Subtitle Generator',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SUBIT.AI - AI-Powered Subtitle Generator',
+    title: 'SUBITAI - AI-Powered Subtitle Generator',
     description: 'Generate professional subtitles for your videos using advanced AI technology.',
     images: ['/og-image.png'],
     creator: '@subit_ai',

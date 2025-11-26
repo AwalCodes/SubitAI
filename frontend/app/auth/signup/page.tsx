@@ -117,7 +117,7 @@ export default function SignupPage() {
               <Zap className="w-6 h-6 text-white" />
             </div>
             <span className="text-2xl font-bold text-white">
-              SUBIT<span className="text-violet-400">.AI</span>
+              SUBITAI
             </span>
           </Link>
           
@@ -129,7 +129,7 @@ export default function SignupPage() {
           </h1>
           
           <p className="text-slate-400 text-lg mb-8 max-w-md">
-            Join 10,000+ content creators using SUBIT.AI to generate professional subtitles.
+            Join 10,000+ content creators using SUBITAI to generate professional subtitles.
           </p>
 
           <div className="space-y-4">
@@ -154,7 +154,7 @@ export default function SignupPage() {
               <Zap className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold text-white">
-              SUBIT<span className="text-violet-400">.AI</span>
+              SUBITAI
             </span>
           </div>
 

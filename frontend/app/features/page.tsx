@@ -6,7 +6,7 @@ import Pricing from '@/components/landing/Pricing'
 import { Languages, Zap, Palette, Upload, Clock, FileText } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Features | SUBIT.AI',
+  title: 'Features | SUBITAI',
   description: 'Explore the AI subtitle features that help you create polished videos faster.',
 }
 

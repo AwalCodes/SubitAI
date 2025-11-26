@@ -32,7 +32,7 @@ export default function Logo({
       />
       {withText && (
         <span className={cn('text-xl font-semibold tracking-tight text-neutral-900', textClassName)}>
-          SUBIT AI
+          SUBITAI
         </span>
       )}
     </>
