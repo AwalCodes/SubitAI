@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, Suspense } from 'react'
+import { useEffect, Suspense, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { Zap } from 'lucide-react'
+import { Zap, CheckCircle, Sparkles } from 'lucide-react'
 
 // Force dynamic rendering for OAuth callback
 export const dynamic = 'force-dynamic'
@@ -11,12 +11,16 @@ export const dynamic = 'force-dynamic'
 function AuthCallbackContent() {
   const router = useRouter()
   const supabase = createClient()
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
+  const [message, setMessage] = useState('Completing sign in...')
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout | null = null
     
     const handleAuthCallback = async () => {
       try {
+        setMessage('Verifying authentication...')
+        
         // Supabase OAuth returns the session in the URL hash
         // The session is automatically handled by Supabase client
         // We just need to check if we have a session
@@ -24,27 +28,50 @@ function AuthCallbackContent() {
 
         if (error) {
           console.error('Auth callback error:', error)
-          router.push('/auth/login?error=auth_failed')
+          setStatus('error')
+          setMessage('Authentication failed')
+          setTimeout(() => {
+            router.push('/auth/login?error=auth_failed')
+          }, 2000)
           return
         }
 
         if (session?.user) {
-          // User is authenticated, redirect to dashboard
-          router.push('/dashboard')
+          // User is authenticated
+          setStatus('success')
+          setMessage('Sign in successful! Redirecting...')
+          
+          // Small delay to show success state
+          setTimeout(() => {
+            router.push('/dashboard')
+          }, 1000)
         } else {
           // Wait a bit for the session to be processed from URL hash
+          setMessage('Processing authentication...')
           timeoutId = setTimeout(async () => {
             const { data: { session: retrySession } } = await supabase.auth.getSession()
             if (retrySession?.user) {
-              router.push('/dashboard')
+              setStatus('success')
+              setMessage('Sign in successful! Redirecting...')
+              setTimeout(() => {
+                router.push('/dashboard')
+              }, 1000)
             } else {
-              router.push('/auth/login?error=no_session')
+              setStatus('error')
+              setMessage('No session found')
+              setTimeout(() => {
+                router.push('/auth/login?error=no_session')
+              }, 2000)
             }
           }, 1000)
         }
       } catch (error) {
         console.error('Callback error:', error)
-        router.push('/auth/login?error=callback_failed')
+        setStatus('error')
+        setMessage('An error occurred')
+        setTimeout(() => {
+          router.push('/auth/login?error=callback_failed')
+        }, 2000)
       }
     }
 
@@ -60,20 +87,62 @@ function AuthCallbackContent() {
   }, [router])
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-      <div className="text-center">
-        <div className="flex items-center justify-center gap-2 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
-            <Zap className="w-5 h-5 text-white" />
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center relative overflow-hidden">
+      {/* Animated background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-violet-600/20 via-slate-950 to-fuchsia-600/20" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:4rem_4rem]" />
+      <div className="absolute -top-40 -left-40 w-80 h-80 bg-violet-600/30 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-fuchsia-600/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+      
+      <div className="relative z-10 text-center max-w-md mx-auto px-6">
+        {/* Logo */}
+        <div className="flex items-center justify-center gap-3 mb-8">
+          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
+            <Zap className="w-7 h-7 text-white" />
           </div>
-          <span className="text-xl font-bold text-white">
+          <span className="text-2xl font-bold text-white">
             SUBIT<span className="text-violet-400">.AI</span>
           </span>
         </div>
-        <div className="relative">
-          <div className="w-16 h-16 border-4 border-violet-500/20 border-t-violet-500 rounded-full animate-spin mx-auto mb-4" />
+
+        {/* Status indicator */}
+        <div className="mb-6">
+          {status === 'loading' && (
+            <div className="relative w-20 h-20 mx-auto mb-4">
+              <div className="absolute inset-0 border-4 border-violet-500/20 border-t-violet-500 rounded-full animate-spin" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Sparkles className="w-8 h-8 text-violet-400 animate-pulse" />
+              </div>
+            </div>
+          )}
+          {status === 'success' && (
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/30 animate-scale-in">
+              <CheckCircle className="w-10 h-10 text-white" />
+            </div>
+          )}
+          {status === 'error' && (
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-red-500/20 border-2 border-red-500 flex items-center justify-center">
+              <span className="text-3xl text-red-400">✕</span>
+            </div>
+          )}
         </div>
-        <p className="text-slate-400 text-lg">Completing sign in...</p>
+
+        {/* Message */}
+        <h2 className="text-2xl font-bold text-white mb-2">
+          {status === 'loading' && 'Completing Sign In'}
+          {status === 'success' && 'Welcome Back!'}
+          {status === 'error' && 'Authentication Failed'}
+        </h2>
+        <p className="text-slate-400 text-lg">{message}</p>
+
+        {/* Loading dots animation */}
+        {status === 'loading' && (
+          <div className="flex items-center justify-center gap-2 mt-6">
+            <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+            <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+            <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+          </div>
+        )}
       </div>
     </div>
   )

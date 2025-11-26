@@ -228,22 +228,27 @@ export default function UploadPageV2() {
       const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
       const filePath = `${user?.id}/${fileName}`
 
-      // Simulate progress during upload (Supabase doesn't support progress callbacks)
+      // Simulate smooth progress during upload (Supabase doesn't support progress callbacks)
+      // Progress continues smoothly from 5% to 28% over time, then jumps to 30% when done
+      let progressValue = 5
       const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev < 25) {
-            return prev + 2 // Gradually increase to 25%
-          }
-          return prev
-        })
+        progressValue += 0.5 // Increment by 0.5% every 200ms
+        if (progressValue < 28) {
+          setUploadProgress(Math.min(progressValue, 28))
+          const percent = Math.round(progressValue)
+          setProgressMessage(`Uploading video... ${percent}%`)
+        }
       }, 200)
 
-      const { error: uploadError } = await supabase.storage
+      const uploadPromise = supabase.storage
         .from('videos')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false,
         })
+
+      // Wait for upload to complete
+      const { error: uploadError } = await uploadPromise
 
       clearInterval(progressInterval)
 
