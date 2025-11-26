@@ -32,8 +32,13 @@ export default function SettingsPage() {
   }, [user, loading, router])
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.push('/auth/login')
+    try {
+      await supabase.auth.signOut()
+      router.push('/auth/login')
+    } catch (error) {
+      console.error('Sign out error:', error)
+      router.push('/auth/login')
+    }
   }
 
   const handleDeleteAccount = async () => {

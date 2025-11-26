@@ -1,10 +1,10 @@
-'use client'
+ 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { useUser } from '@/lib/providers'
-import { createClient } from '@/lib/supabase'
+ import Link from 'next/link'
+ import { usePathname, useRouter } from 'next/navigation'
+ import { useUser } from '@/lib/providers'
+ import { createClient } from '@/lib/supabase'
 import { Menu, X, Zap, LayoutDashboard, LogOut, User, ChevronDown } from 'lucide-react'
 
 const navLinks = [
@@ -38,9 +38,12 @@ export default function Header() {
   }, [])
 
   const handleSignOut = async () => {
+    setUserMenuOpen(false)
     try {
       await supabase.auth.signOut()
-    } finally {
+      router.push('/auth/login')
+    } catch (error) {
+      console.error('Sign out error:', error)
       router.push('/auth/login')
     }
   }
@@ -134,8 +137,8 @@ export default function Header() {
                         className="flex items-center gap-3 px-4 py-3 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
                       >
                         <LayoutDashboard className="w-4 h-4" />
-                        Dashboard
-                      </Link>
+                    Dashboard
+                  </Link>
                       <Link
                         href="/dashboard/settings"
                         onClick={() => setUserMenuOpen(false)}
@@ -145,7 +148,7 @@ export default function Header() {
                         Settings
                       </Link>
                       <div className="border-t border-slate-100 dark:border-slate-700 mt-2 pt-2">
-                        <button
+                  <button
                           onClick={() => {
                             setUserMenuOpen(false)
                             handleSignOut()
@@ -153,15 +156,15 @@ export default function Header() {
                           className="flex items-center gap-3 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                         >
                           <LogOut className="w-4 h-4" />
-                          Sign out
-                        </button>
+                    Sign out
+                  </button>
                       </div>
                     </div>
-                  </>
+                </>
                 )}
               </div>
-            ) : (
-              <>
+              ) : (
+                <>
                 <Link 
                   href="/auth/login" 
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
@@ -170,17 +173,17 @@ export default function Header() {
                       : 'text-slate-300 hover:text-white'
                   }`}
                 >
-                  Log in
-                </Link>
+                    Log in
+                  </Link>
                 <Link 
                   href="/auth/signup" 
                   className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-all duration-200 hover:-translate-y-0.5"
                 >
                   Get Started
-                </Link>
-              </>
-            )}
-          </div>
+                  </Link>
+                </>
+              )}
+            </div>
 
           {/* Mobile toggle */}
           <button
@@ -221,45 +224,45 @@ export default function Header() {
               {loading ? (
                 <div className="h-12 bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse" />
               ) : user ? (
-                <>
-                  <Link
-                    href="/dashboard"
-                    onClick={() => setMobileOpen(false)}
+                  <>
+                    <Link
+                      href="/dashboard"
+                      onClick={() => setMobileOpen(false)}
                     className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl text-base font-semibold bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white"
-                  >
+                    >
                     <LayoutDashboard className="w-5 h-5" />
                     Go to Dashboard
-                  </Link>
-                  <button
-                    onClick={() => {
-                      setMobileOpen(false)
-                      handleSignOut()
-                    }}
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setMobileOpen(false)
+                        handleSignOut()
+                      }}
                     className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl text-base font-medium text-red-600 bg-red-50 dark:bg-red-500/10"
-                  >
+                    >
                     <LogOut className="w-5 h-5" />
-                    Sign out
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link
-                    href="/auth/login"
-                    onClick={() => setMobileOpen(false)}
+                      Sign out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/auth/login"
+                      onClick={() => setMobileOpen(false)}
                     className="block w-full px-4 py-3 rounded-xl text-center text-base font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 dark:text-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700"
-                  >
-                    Log in
-                  </Link>
-                  <Link
-                    href="/auth/signup"
-                    onClick={() => setMobileOpen(false)}
+                    >
+                      Log in
+                    </Link>
+                    <Link
+                      href="/auth/signup"
+                      onClick={() => setMobileOpen(false)}
                     className="block w-full px-4 py-3 rounded-xl text-center text-base font-semibold bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white"
-                  >
+                    >
                     Get Started Free
-                  </Link>
-                </>
-              )}
-            </div>
+                    </Link>
+                  </>
+                )}
+              </div>
           </div>
         )}
       </div>

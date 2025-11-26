@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import { User } from '@supabase/supabase-js'
 
@@ -13,99 +13,70 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
 
+// Get supabase client once at module level
+const supabase = createClient()
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [subscription, setSubscription] = useState<any>(null)
-  const supabase = createClient()
+  const fetchingRef = useRef(false)
+
+  const fetchSubscription = useCallback(async (userId: string) => {
+    try {
+      // Fetch user's subscription tier from users table
+      const { data: userData } = await supabase
+        .from('users')
+        .select('subscription_tier')
+        .eq('id', userId)
+        .maybeSingle()
+
+      if (userData?.subscription_tier) {
+        const mappedTier = userData.subscription_tier === 'team' ? 'premium' : userData.subscription_tier
+        setSubscription({ plan: mappedTier, status: 'active' })
+        return
+      }
+
+      // Fallback: check billing table
+      const { data: billingData } = await supabase
+        .from('billing')
+        .select('plan, status, current_period_end')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .order('current_period_end', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (billingData?.plan) {
+        const periodEnd = billingData.current_period_end ? new Date(billingData.current_period_end) : null
+        if (!periodEnd || periodEnd > new Date()) {
+          setSubscription({ plan: billingData.plan, status: 'active' })
+          return
+        }
+      }
+
+      setSubscription(null)
+    } catch (error) {
+      console.error('Error fetching subscription:', error)
+      setSubscription(null)
+    }
+  }, [])
 
   const fetchUser = useCallback(async () => {
+    if (fetchingRef.current) return
+    fetchingRef.current = true
+
     try {
-      const { data: { user }, error } = await supabase.auth.getUser()
-      if (error) {
-        console.error('Error getting Supabase user:', error)
-      }
-      setUser(user)
-
-      if (user) {
-        const { data: sessionData } = await supabase.auth.getSession()
-        const accessToken = sessionData.session?.access_token
-        if (accessToken) {
-          localStorage.setItem('access_token', accessToken)
-        } else {
-          localStorage.removeItem('access_token')
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (session?.user) {
+        setUser(session.user)
+        if (session.access_token) {
+          localStorage.setItem('access_token', session.access_token)
         }
-        
-        // Fetch user's subscription tier from users table (this is the source of truth)
-        try {
-          const { data: userData, error: userDataError } = await supabase
-            .from('users')
-            .select('subscription_tier')
-            .eq('id', user.id)
-            .maybeSingle()
-
-          if (userDataError && userDataError.code !== 'PGRST116') {
-            console.error('User data fetch error:', userDataError)
-          }
-
-          // Fetch active billing subscription (for Stripe subscriptions)
-          try {
-            const { data: subscriptionData, error: subscriptionError } = await supabase
-              .from('billing')
-              .select('plan, status, current_period_start, current_period_end, created_at, updated_at')
-              .eq('user_id', user.id)
-              .eq('status', 'active')
-              .order('current_period_end', { ascending: false })
-              .limit(1)
-              .maybeSingle()
-
-            if (subscriptionError && subscriptionError.code !== 'PGRST116') {
-              console.error('Subscription fetch error:', subscriptionError)
-            } else if (subscriptionData) {
-              // Check if subscription is still active
-              if (subscriptionData.current_period_end) {
-                const periodEnd = new Date(subscriptionData.current_period_end)
-                if (periodEnd < new Date()) {
-                  // Subscription expired, fall back to users table
-                  if (userData?.subscription_tier) {
-                    const mappedTier = userData.subscription_tier === 'team' ? 'premium' : userData.subscription_tier
-                    setSubscription({ plan: mappedTier, status: 'active' })
-                  } else {
-                    setSubscription(null)
-                  }
-                } else {
-                  // Use billing plan if active
-                  setSubscription(subscriptionData)
-                }
-              } else {
-                setSubscription(subscriptionData)
-              }
-            } else {
-              // No active billing subscription, use subscription_tier from users table
-              if (userData?.subscription_tier) {
-                // Map "team" to "premium" for consistency with pricing plans
-                const mappedTier = userData.subscription_tier === 'team' ? 'premium' : userData.subscription_tier
-                setSubscription({ plan: mappedTier, status: 'active' })
-              } else {
-                setSubscription(null)
-              }
-            }
-          } catch (error) {
-            console.error('Subscription fetch error:', error)
-            // Fallback to subscription_tier from users table
-            if (userData?.subscription_tier) {
-              // Map "team" to "premium" for consistency with pricing plans
-              const mappedTier = userData.subscription_tier === 'team' ? 'premium' : userData.subscription_tier
-              setSubscription({ plan: mappedTier, status: 'active' })
-            } else {
-              setSubscription(null)
-            }
-          }
-        } catch (error) {
-          console.error('User data fetch error:', error)
-          setSubscription(null)
-        }
+        await fetchSubscription(session.user.id)
       } else {
+        setUser(null)
         setSubscription(null)
         localStorage.removeItem('access_token')
       }
@@ -115,57 +86,57 @@ export function Providers({ children }: { children: React.ReactNode }) {
       setSubscription(null)
     } finally {
       setLoading(false)
+      fetchingRef.current = false
     }
-  }, [supabase])
+  }, [fetchSubscription])
 
   useEffect(() => {
-    let mounted = true
-
     // Initial fetch
     fetchUser()
 
-    // Set up auth state listener (only once)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!mounted) return
-
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
-          setUser(session?.user ?? null)
-          if (session?.access_token) {
-            localStorage.setItem('access_token', session.access_token)
-          } else {
-            localStorage.removeItem('access_token')
-          }
-          // Refetch user data when auth state changes to get updated subscription tier
-          if (session?.user) {
-            await fetchUser()
-          }
-        } else if (event === 'SIGNED_OUT') {
+    // Set up auth state listener
+    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log('Auth event:', event)
+        
+        if (event === 'SIGNED_OUT') {
           setUser(null)
           setSubscription(null)
           localStorage.removeItem('access_token')
-        } else if (event === 'INITIAL_SESSION') {
-          // Handle initial session on page load without extra auth calls
+          setLoading(false)
+        } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           if (session?.user) {
             setUser(session.user)
             if (session.access_token) {
               localStorage.setItem('access_token', session.access_token)
             }
+            // Fetch subscription in background without blocking
+            fetchSubscription(session.user.id)
           }
+          setLoading(false)
+        } else if (event === 'INITIAL_SESSION') {
+          if (session?.user) {
+            setUser(session.user)
+            if (session.access_token) {
+              localStorage.setItem('access_token', session.access_token)
+            }
+            fetchSubscription(session.user.id)
+          }
+          setLoading(false)
         }
       }
     )
 
     return () => {
-      mounted = false
-      subscription.unsubscribe()
+      authSubscription.unsubscribe()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // Only run once on mount - supabase.auth is stable
+  }, [fetchUser, fetchSubscription])
 
-  const refetch = () => {
-    fetchUser()
-  }
+  const refetch = useCallback(() => {
+    if (user?.id) {
+      fetchSubscription(user.id)
+    }
+  }, [user?.id, fetchSubscription])
 
   return (
     <UserContext.Provider value={{ user, loading, subscription, refetch }}>
