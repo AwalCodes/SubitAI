@@ -125,9 +125,12 @@ export async function fetchQuota(): Promise<QuotaInfo> {
   }
 
   return withRetry(async () => {
-    const response = await fetch(`${WORKER_URL}/quota`, {
+    // Add cache-busting parameter to ensure fresh data
+    const url = `${WORKER_URL}/quota?_t=${Date.now()}`;
+    const response = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
       },
     });
 
