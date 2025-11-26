@@ -4,8 +4,8 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
-import { AnimatedCard, AnimatedContainer, AnimatedDiv } from '@/components/ui/animations'
-import { Mail, MessageSquare, Send, Sparkles } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Mail, MessageSquare, Send, Clock, Sparkles, User, ArrowRight } from 'lucide-react'
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', message: '' })
@@ -23,159 +23,162 @@ export default function ContactPage() {
     setSubmitting(false)
   }
   
+  const features = [
+    { icon: Clock, title: 'Quick Response', desc: 'We typically reply within 24 hours' },
+    { icon: MessageSquare, title: 'Expert Support', desc: 'Our technical team is here to help' },
+    { icon: Sparkles, title: '24/7 Available', desc: 'Submit requests anytime' },
+  ]
+  
   return (
-    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-neutral-50">
+    <div className="min-h-screen bg-slate-950">
       <Header />
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <AnimatedContainer className="max-w-3xl mx-auto">
-          {/* Hero Section */}
-          <AnimatedDiv 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-16"
-          >
-            <div className="inline-flex items-center justify-center p-3 bg-subit-50 rounded-full mb-6">
-              <MessageSquare className="w-8 h-8 text-subit-600" />
-            </div>
-            <h1 className="text-4xl sm:text-5xl font-bold text-neutral-900 mb-4">
-              Get in Touch
-            </h1>
-            <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
-              Have questions? Send us a message and we&apos;ll get back to you promptly.
-            </p>
-          </AnimatedDiv>
-
-          {/* Contact Card */}
-          <AnimatedCard
-            delay={0.1}
-            className="bg-white dark:bg-neutral-900 rounded-2xl p-8 md:p-12 shadow-glass border border-neutral-200 dark:border-neutral-800"
-          >
-            <form onSubmit={submit} className="space-y-6">
-              <div>
-                <label htmlFor="name" className="block text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
-                  Full Name
-                </label>
-                <input
-                  id="name"
-                  value={form.name}
-                  onChange={e => setForm({ ...form, name: e.target.value })}
-                  placeholder="John Doe"
-                  className="w-full px-4 py-3 border border-neutral-300 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-subit-500 focus:border-subit-500 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 transition-all"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
-                  Email Address
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  value={form.email}
-                  onChange={e => setForm({ ...form, email: e.target.value })}
-                  placeholder="you@example.com"
-                  className="w-full px-4 py-3 border border-neutral-300 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-subit-500 focus:border-subit-500 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 transition-all"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="message" className="block text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
-                  Your Message
-                </label>
-                <textarea
-                  id="message"
-                  value={form.message}
-                  onChange={e => setForm({ ...form, message: e.target.value })}
-                  placeholder="Tell us how we can help..."
-                  rows={6}
-                  className="w-full px-4 py-3 border border-neutral-300 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-subit-500 focus:border-subit-500 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 resize-none transition-all"
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-subit-500 to-subit-600 hover:from-subit-600 hover:to-subit-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {submitting ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-5 h-5" />
-                    Send Message
-                  </>
-                )}
-              </button>
-            </form>
-
-            <div className="mt-8 pt-8 border-t border-neutral-200 dark:border-neutral-800">
-              <div className="flex items-center justify-center gap-3 text-neutral-600 dark:text-neutral-400">
-                <Mail className="w-5 h-5 text-subit-600 dark:text-subit-400" />
-                <span>Or email us directly at</span>
-                <a 
-                  href="mailto:subit053@gmail.com" 
-                  className="font-semibold text-subit-600 dark:text-subit-400 hover:underline"
-                >
-                  subit053@gmail.com
-                </a>
-              </div>
-            </div>
-          </AnimatedCard>
-
-          {/* Additional Info Cards */}
-          <div className="grid md:grid-cols-3 gap-6 mt-12">
-            <AnimatedCard
-              delay={0.3}
-              className="text-center p-6 bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800"
-            >
-              <div className="inline-flex items-center justify-center p-3 bg-subit-50 dark:bg-subit-900/20 rounded-full mb-4">
-                <Sparkles className="w-6 h-6 text-subit-600 dark:text-subit-400" />
-              </div>
-              <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
-                Quick Response
-              </h3>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                We typically reply within 24 hours
-              </p>
-            </AnimatedCard>
-
-            <AnimatedCard
-              delay={0.4}
-              className="text-center p-6 bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800"
-            >
-              <div className="inline-flex items-center justify-center p-3 bg-subit-50 dark:bg-subit-900/20 rounded-full mb-4">
-                <MessageSquare className="w-6 h-6 text-subit-600 dark:text-subit-400" />
-              </div>
-              <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
-                Expert Support
-              </h3>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                We&apos;d love to hear from your technical team
-              </p>
-            </AnimatedCard>
-
-            <AnimatedCard
-              delay={0.5}
-              className="text-center p-6 bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800"
-            >
-              <div className="inline-flex items-center justify-center p-3 bg-subit-50 dark:bg-subit-900/20 rounded-full mb-4">
-                <Sparkles className="w-6 h-6 text-subit-600 dark:text-subit-400" />
-              </div>
-              <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
-                24/7 Available
-              </h3>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Submit requests anytime
-              </p>
-            </AnimatedCard>
+      <main className="pt-20">
+        {/* Hero Section */}
+        <section className="py-20 relative overflow-hidden">
+          <div className="absolute inset-0">
+            <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-600/20 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-600/20 rounded-full blur-3xl" />
           </div>
-        </AnimatedContainer>
+
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-12"
+            >
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-2xl mb-6 shadow-lg shadow-violet-500/30">
+                <MessageSquare className="w-8 h-8 text-white" />
+              </div>
+              <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4">
+                Get in Touch
+              </h1>
+              <p className="text-xl text-slate-400 max-w-2xl mx-auto">
+                Have questions? Send us a message and we&apos;ll get back to you promptly.
+              </p>
+            </motion.div>
+
+            {/* Contact Form */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="max-w-2xl mx-auto"
+            >
+              <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700">
+                <form onSubmit={submit} className="space-y-5">
+                  <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-2">
+                      Full Name
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <User className="h-5 w-5 text-slate-500" />
+                      </div>
+                      <input
+                        id="name"
+                        value={form.name}
+                        onChange={e => setForm({ ...form, name: e.target.value })}
+                        placeholder="John Doe"
+                        className="w-full pl-12 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 text-white placeholder-slate-500 transition-all"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
+                      Email Address
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Mail className="h-5 w-5 text-slate-500" />
+                      </div>
+                      <input
+                        id="email"
+                        type="email"
+                        value={form.email}
+                        onChange={e => setForm({ ...form, email: e.target.value })}
+                        placeholder="you@example.com"
+                        className="w-full pl-12 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 text-white placeholder-slate-500 transition-all"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="message" className="block text-sm font-medium text-slate-300 mb-2">
+                      Your Message
+                    </label>
+                    <textarea
+                      id="message"
+                      value={form.message}
+                      onChange={e => setForm({ ...form, message: e.target.value })}
+                      placeholder="Tell us how we can help..."
+                      rows={5}
+                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 text-white placeholder-slate-500 resize-none transition-all"
+                      required
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg shadow-violet-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submitting ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-5 h-5" />
+                        Send Message
+                      </>
+                    )}
+                  </button>
+                </form>
+
+                <div className="mt-6 pt-6 border-t border-slate-700">
+                  <div className="flex items-center justify-center gap-3 text-slate-400">
+                    <Mail className="w-5 h-5 text-violet-400" />
+                    <span>Or email us directly at</span>
+                    <a 
+                      href="mailto:subit053@gmail.com" 
+                      className="font-semibold text-violet-400 hover:text-violet-300 transition-colors"
+                    >
+                      subit053@gmail.com
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Feature Cards */}
+              <div className="grid sm:grid-cols-3 gap-4 mt-8">
+                {features.map((feature, i) => (
+                  <motion.div
+                    key={feature.title}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.3 + i * 0.1 }}
+                    className="text-center p-5 bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700"
+                  >
+                    <div className="inline-flex items-center justify-center w-10 h-10 bg-violet-500/10 border border-violet-500/20 rounded-xl mb-3">
+                      <feature.icon className="w-5 h-5 text-violet-400" />
+                    </div>
+                    <h3 className="font-semibold text-white mb-1 text-sm">
+                      {feature.title}
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      {feature.desc}
+                    </p>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </section>
       </main>
       <Footer />
     </div>

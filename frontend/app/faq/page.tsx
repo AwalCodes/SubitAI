@@ -2,9 +2,10 @@
 
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
-import { AnimatedCard, AnimatedContainer, AnimatedDiv } from '@/components/ui/animations'
-import { ChevronDown, HelpCircle } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { ChevronDown, HelpCircle, MessageSquare, ArrowRight } from 'lucide-react'
 import { useState } from 'react'
+import Link from 'next/link'
 
 export default function FAQPage() {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
@@ -20,7 +21,7 @@ export default function FAQPage() {
     },
     { 
       q: 'How is energy calculated?', 
-      a: 'Operations consume energy depending on your plan: Free gets 30/day, Pro gets 300/day, Premium has unlimited. Energy resets daily and unused energy doesn&apos;t carry over.' 
+      a: 'Operations consume energy depending on your plan: Free gets 30/day, Pro gets 300/day, Premium has unlimited. Energy resets daily and unused energy doesn\'t carry over.' 
     },
     { 
       q: 'Do you support crypto payments?', 
@@ -45,87 +46,103 @@ export default function FAQPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-neutral-50">
+    <div className="min-h-screen bg-slate-950">
       <Header />
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <AnimatedContainer className="max-w-4xl mx-auto">
-          {/* Hero section */}
-          <AnimatedDiv 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-16"
-          >
-            <div className="inline-flex items-center justify-center p-3 bg-subit-50 rounded-full mb-6">
-              <HelpCircle className="w-8 h-8 text-subit-600" />
-            </div>
-            <h1 className="text-4xl sm:text-5xl font-bold text-neutral-900 mb-4">
-              Frequently Asked Questions
-            </h1>
-            <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
-              Everything you need to know about SUBIT.AI
-            </p>
-          </AnimatedDiv>
-
-          {/* FAQ List */}
-          <div className="space-y-4">
-            {faqs.map((faq, i) => (
-              <AnimatedCard
-                key={i}
-                delay={i * 0.05}
-                className="overflow-hidden"
-              >
-                <button
-                  onClick={() => setOpenIndex(openIndex === i ? null : i)}
-                  className="w-full flex items-center justify-between p-6 bg-white hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors text-left group"
-                >
-                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 pr-8">
-                    {faq.q}
-                  </h3>
-                  <ChevronDown 
-                    className={`w-5 h-5 text-neutral-500 flex-shrink-0 transition-transform duration-300 ${
-                      openIndex === i ? 'rotate-180 text-subit-600' : 'group-hover:text-subit-600'
-                    }`}
-                  />
-                </button>
-                
-                {openIndex === i && (
-                  <div className="px-6 pb-6 animate-in slide-in-from-top-2 duration-300">
-                    <div className="pt-2 text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                      {faq.a}
-                    </div>
-                  </div>
-                )}
-              </AnimatedCard>
-            ))}
+      <main className="pt-20">
+        {/* Hero Section */}
+        <section className="py-20 relative overflow-hidden">
+          <div className="absolute inset-0">
+            <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-600/20 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-600/20 rounded-full blur-3xl" />
           </div>
 
-          {/* CTA Section */}
-          <AnimatedCard
-            delay={0.6}
-            className="mt-16 bg-gradient-to-r from-subit-500 to-subit-600 p-8 rounded-2xl text-center"
-          >
-            <h2 className="text-2xl font-bold text-white mb-3">
-              Still have questions?
-            </h2>
-            <p className="text-subit-50 mb-6 max-w-md mx-auto">
-              Can&apos;t find the answer you&apos;re looking for? Our support team is here to help.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a 
-                href="/contact" 
-                className="inline-flex items-center justify-center px-6 py-3 bg-white text-subit-600 rounded-lg font-semibold hover:bg-neutral-50 transition-colors"
-              >
-                Contact Support
-              </a>
-              <a 
-                href="/features" 
-                className="inline-flex items-center justify-center px-6 py-3 border-2 border-white text-white rounded-lg font-semibold hover:bg-white/10 transition-colors"
-              >
-                View Features
-              </a>
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-16"
+            >
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-2xl mb-6 shadow-lg shadow-violet-500/30">
+                <HelpCircle className="w-8 h-8 text-white" />
+              </div>
+              <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4">
+                Frequently Asked Questions
+              </h1>
+              <p className="text-xl text-slate-400 max-w-2xl mx-auto">
+                Everything you need to know about SUBIT.AI
+              </p>
+            </motion.div>
+
+            {/* FAQ List */}
+            <div className="max-w-3xl mx-auto space-y-4">
+              {faqs.map((faq, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: i * 0.05 }}
+                  className="overflow-hidden"
+                >
+                  <button
+                    onClick={() => setOpenIndex(openIndex === i ? null : i)}
+                    className="w-full flex items-center justify-between p-5 bg-slate-800/50 backdrop-blur-sm border border-slate-700 hover:border-slate-600 rounded-xl transition-all text-left group"
+                  >
+                    <h3 className="text-base font-semibold text-white pr-8">
+                      {faq.q}
+                    </h3>
+                    <ChevronDown 
+                      className={`w-5 h-5 text-slate-500 flex-shrink-0 transition-transform duration-300 ${
+                        openIndex === i ? 'rotate-180 text-violet-400' : 'group-hover:text-violet-400'
+                      }`}
+                    />
+                  </button>
+                  
+                  {openIndex === i && (
+                    <div className="px-5 pb-5 pt-3 bg-slate-800/30 border border-t-0 border-slate-700 rounded-b-xl -mt-2">
+                      <p className="text-slate-400 leading-relaxed text-sm">
+                        {faq.a}
+                      </p>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
             </div>
-          </AnimatedCard>
-        </AnimatedContainer>
+
+            {/* CTA Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="mt-16 max-w-2xl mx-auto"
+            >
+              <div className="bg-gradient-to-r from-violet-600/20 via-fuchsia-600/20 to-violet-600/20 rounded-2xl p-8 border border-violet-500/20 text-center">
+                <MessageSquare className="w-10 h-10 text-violet-400 mx-auto mb-4" />
+                <h2 className="text-2xl font-bold text-white mb-3">
+                  Still have questions?
+                </h2>
+                <p className="text-slate-400 mb-6 max-w-md mx-auto">
+                  Can&apos;t find the answer you&apos;re looking for? Our support team is here to help.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Link 
+                    href="/contact" 
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-xl font-semibold hover:from-violet-500 hover:to-fuchsia-500 transition-all shadow-lg shadow-violet-500/25"
+                  >
+                    Contact Support
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                  <Link 
+                    href="/features" 
+                    className="inline-flex items-center justify-center px-6 py-3 bg-slate-800 text-white rounded-xl font-semibold border border-slate-700 hover:bg-slate-700 transition-colors"
+                  >
+                    View Features
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
       </main>
       <Footer />
     </div>

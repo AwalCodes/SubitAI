@@ -1,27 +1,48 @@
 import Link from 'next/link'
+import { Home, LayoutDashboard, Zap } from 'lucide-react'
 
 export default function NotFound() {
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-neutral-50 via-white to-subit-50/20 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 px-4">
-      <div className="max-w-md w-full text-center">
-        <p className="text-sm font-semibold text-subit-600 mb-2">404</p>
-        <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-neutral-50 mb-3">
+    <main className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
+      {/* Background */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-600/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-fuchsia-600/20 rounded-full blur-3xl" />
+      </div>
+
+      <div className="max-w-md w-full text-center relative z-10">
+        {/* Logo */}
+        <div className="flex items-center justify-center gap-2 mb-8">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
+            <Zap className="w-5 h-5 text-white" />
+          </div>
+          <span className="text-xl font-bold text-white">
+            SUBIT<span className="text-violet-400">.AI</span>
+          </span>
+        </div>
+
+        <p className="text-7xl font-bold bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent mb-4">
+          404
+        </p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3">
           Page not found
         </h1>
-        <p className="text-neutral-600 dark:text-neutral-400 mb-6">
+        <p className="text-slate-400 mb-8">
           The page you are looking for does not exist or may have been moved.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link
             href="/dashboard"
-            className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-subit-600 text-white font-medium shadow-sm hover:bg-subit-700 transition-colors"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-semibold hover:from-violet-500 hover:to-fuchsia-500 transition-all shadow-lg shadow-violet-500/25"
           >
+            <LayoutDashboard className="w-5 h-5" />
             Go to Dashboard
           </Link>
           <Link
             href="/"
-            className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white font-semibold hover:bg-slate-700 transition-colors"
           >
+            <Home className="w-5 h-5" />
             Back to Home
           </Link>
         </div>
