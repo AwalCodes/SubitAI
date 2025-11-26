@@ -22,6 +22,15 @@ export default function Dashboard() {
   const { user, loading } = useUser()
   const router = useRouter()
   const [projects, setProjects] = useState<Project[]>([])
+  const supabase = createClient()
+
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut()
+    } finally {
+      router.push('/auth/login')
+    }
+  }
   const [projectsLoading, setProjectsLoading] = useState(true)
   const [initialLoad, setInitialLoad] = useState(true)
   const [showOnboarding, setShowOnboarding] = useState(false)
@@ -246,6 +255,13 @@ export default function Dashboard() {
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
               </Link>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="px-5 py-3 rounded-xl border border-white/30 text-white/90 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium"
+              >
+                Sign out
+              </button>
             </div>
           </div>
         </div>

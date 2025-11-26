@@ -1,10 +1,11 @@
-'use client'
+ 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import Logo from '@/components/shared/Logo'
-import { useUser } from '@/lib/providers'
+ import { useState } from 'react'
+ import Link from 'next/link'
+ import { usePathname, useRouter } from 'next/navigation'
+ import Logo from '@/components/shared/Logo'
+ import { useUser } from '@/lib/providers'
+ import { createClient } from '@/lib/supabase'
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -15,8 +16,18 @@ const navLinks = [
 
 export default function Header() {
   const pathname = usePathname()
+  const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
   const { user, loading } = useUser()
+  const supabase = createClient()
+
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut()
+    } finally {
+      router.push('/auth/login')
+    }
+  }
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/'
@@ -47,9 +58,18 @@ export default function Header() {
           {!loading && (
             <div className="hidden md:flex items-center space-x-3">
               {user ? (
-                <Link href="/dashboard" className="btn-primary">
-                  Dashboard
-                </Link>
+                <>
+                  <Link href="/dashboard" className="nav-link">
+                    Dashboard
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="nav-link text-red-500 hover:text-red-600"
+                  >
+                    Sign out
+                  </button>
+                </>
               ) : (
                 <>
                   <Link href="/auth/login" className="nav-link">
@@ -100,13 +120,25 @@ export default function Header() {
             {!loading && (
               <div className="mt-2 flex flex-col space-y-2 border-t border-neutral-100 pt-3">
                 {user ? (
-                  <Link
-                    href="/dashboard"
-                    className="w-full text-center btn-primary"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    Dashboard
-                  </Link>
+                  <>
+                    <Link
+                      href="/dashboard"
+                      className="w-full text-center btn-primary"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      Dashboard
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileOpen(false)
+                        handleSignOut()
+                      }}
+                      className="w-full text-center nav-link px-2 py-2 rounded-lg bg-white text-red-500 hover:text-red-600"
+                    >
+                      Sign out
+                    </button>
+                  </>
                 ) : (
                   <>
                     <Link
