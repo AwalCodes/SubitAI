@@ -310,6 +310,13 @@ export default function Dashboard() {
               <span className="text-sm font-semibold text-white">{remainingEnergy}</span>
               <Crown className="w-3.5 h-3.5 text-amber-400 opacity-0 group-hover:opacity-100 transition-opacity" />
             </Link>
+            <Link
+              href="/dashboard/settings"
+              className="p-2 text-slate-400 hover:text-white transition-colors"
+              title="Settings"
+            >
+              <User className="w-5 h-5" />
+            </Link>
             <button
               onClick={handleSignOut}
               className="p-2 text-slate-400 hover:text-white transition-colors"
