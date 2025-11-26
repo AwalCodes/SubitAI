@@ -105,7 +105,7 @@ const ANIMATION_TYPES = [
 
 export function SubtitleCustomizer({ style, onStyleChange }: SubtitleCustomizerProps) {
   const { user, subscription } = useUser()
-  const tier = subscription?.plan || user?.subscription_tier || 'free'
+  const tier = subscription?.plan || (user as any)?.subscription_tier || 'free'
   const [activeTab, setActiveTab] = useState<'font' | 'color' | 'position' | 'animation'>('font')
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['font']))
   const [customFontFile, setCustomFontFile] = useState<File | null>(null)
