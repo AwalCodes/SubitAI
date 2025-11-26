@@ -8,7 +8,8 @@
     "deploy": "wrangler deploy",
     "deploy:production": "wrangler deploy --env production",
     "tail": "wrangler tail",
-    "test": "vitest"
+    "test": "vitest",
+    "setup:cors": "wrangler secret put ALLOWED_ORIGINS"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.3",

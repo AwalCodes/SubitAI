@@ -4,7 +4,6 @@
  */
 
 import { Hono } from 'hono';
-import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { transcribeAudio } from './services/groq';
 import { validateAuth, getUser } from './services/auth';
@@ -274,24 +273,42 @@ const app = new Hono<{ Bindings: Env }>();
 
 // Middleware
 app.use('*', logger());
+
+// CORS middleware - must be before other routes
 app.use('*', async (c, next) => {
   // Allow multiple origins configured via ALLOWED_ORIGINS env (comma-separated)
   const allowedOrigins = c.env.ALLOWED_ORIGINS
     ? c.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
     : [];
 
+  const origin = c.req.header('Origin') || '';
   const allowAll = allowedOrigins.length === 0;
+  const isAllowedOrigin = allowAll || allowedOrigins.includes(origin);
 
-  const corsMiddleware = cors({
-    origin: allowAll ? ['*'] : allowedOrigins,
-    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization'],
-    exposeHeaders: ['Content-Length'],
-    maxAge: 86400,
-    credentials: allowAll ? false : true,
-  });
+  // Handle preflight OPTIONS request
+  if (c.req.method === 'OPTIONS') {
+    if (isAllowedOrigin) {
+      return c.json(null, 204, {
+        'Access-Control-Allow-Origin': allowAll ? '*' : origin,
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Credentials': allowAll ? 'false' : 'true',
+        'Access-Control-Max-Age': '86400',
+      });
+    } else {
+      return c.json({ error: 'CORS not allowed' }, 403);
+    }
+  }
 
-  return corsMiddleware(c, next);
+  // Apply CORS headers to all responses
+  if (isAllowedOrigin) {
+    c.header('Access-Control-Allow-Origin', allowAll ? '*' : origin);
+    c.header('Access-Control-Allow-Credentials', allowAll ? 'false' : 'true');
+    c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  }
+
+  await next();
 });
 
 // Error handling middleware
