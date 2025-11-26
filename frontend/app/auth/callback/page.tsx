@@ -82,23 +82,3 @@ export default function AuthCallback() {
   )
 }
 
-  return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-      <div className="text-center">
-        <div className="flex items-center justify-center gap-2 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
-            <Zap className="w-5 h-5 text-white" />
-          </div>
-          <span className="text-xl font-bold text-white">
-            SUBIT<span className="text-violet-400">.AI</span>
-          </span>
-        </div>
-        <div className="relative">
-          <div className="w-16 h-16 border-4 border-violet-500/20 border-t-violet-500 rounded-full animate-spin mx-auto mb-4" />
-        </div>
-        <p className="text-slate-400 text-lg">Completing sign in...</p>
-      </div>
-    </div>
-  )
-}
-
