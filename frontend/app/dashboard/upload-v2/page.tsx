@@ -23,6 +23,7 @@ import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { createClient as getBrowserSupabaseClient } from '@/lib/supabase'
 import { getSubscriptionLimits } from '@/lib/utils'
+import { fetchQuota } from '@/lib/api-v2'
 
 // State machine states
 type UploadState = 
@@ -159,6 +160,33 @@ export default function UploadPageV2() {
     if (Number.isFinite(videoSize) && file.size > videoSize) {
       toast.error(`File is too large for your ${planTier} plan. Maximum size is ${maxFileSizeLabel}.`)
       return
+    }
+
+    // Check quota BEFORE starting upload
+    try {
+      setProgressMessage('Checking quota...')
+      const quota = await fetchQuota()
+      
+      // Check if user has enough energy
+      if (!quota.unlimited && quota.remaining !== null && quota.remaining <= 0) {
+        const message = 'You have used all your subtitle energy for today. Please upgrade your plan or try again tomorrow.'
+        setError(message)
+        toast.error(message)
+        return
+      }
+      
+      // Estimate energy cost (typically 10 energy per transcription)
+      const estimatedCost = 10
+      if (!quota.unlimited && quota.remaining !== null && quota.remaining < estimatedCost) {
+        const message = `You don't have enough energy (${quota.remaining} remaining, need ${estimatedCost}). Please upgrade your plan or try again tomorrow.`
+        setError(message)
+        toast.error(message)
+        return
+      }
+    } catch (error: any) {
+      console.error('Failed to check quota:', error)
+      // Don't block if quota check fails - let server handle it
+      toast.error('Failed to check quota. Proceeding anyway...')
     }
 
     // Track the project we create so we can mark it failed on any error

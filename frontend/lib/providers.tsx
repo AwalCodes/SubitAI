@@ -35,37 +35,64 @@ export function Providers({ children }: { children: React.ReactNode }) {
         } else {
           localStorage.removeItem('access_token')
         }
-        // Fetch user subscription (optional - don't block on this)
+        
+        // Fetch user's subscription tier from users table (this is the source of truth)
         try {
-          const { data: subscriptionData, error: subscriptionError } = await supabase
-            .from('billing')
-            .select('plan, status, current_period_start, current_period_end, created_at, updated_at')
-            .eq('user_id', user.id)
-            .eq('status', 'active')
-            .order('current_period_end', { ascending: false })
-            .limit(1)
+          const { data: userData, error: userDataError } = await supabase
+            .from('users')
+            .select('subscription_tier')
+            .eq('id', user.id)
             .maybeSingle()
 
-          if (subscriptionError && subscriptionError.code !== 'PGRST116') {
-            console.error('Subscription fetch error:', subscriptionError)
-            setSubscription(null)
-          } else if (subscriptionData) {
-            // Check if subscription is still active
-            if (subscriptionData.current_period_end) {
-              const periodEnd = new Date(subscriptionData.current_period_end)
-              if (periodEnd < new Date()) {
-                setSubscription(null)
+          if (userDataError && userDataError.code !== 'PGRST116') {
+            console.error('User data fetch error:', userDataError)
+          }
+
+          // Fetch active billing subscription (for Stripe subscriptions)
+          try {
+            const { data: subscriptionData, error: subscriptionError } = await supabase
+              .from('billing')
+              .select('plan, status, current_period_start, current_period_end, created_at, updated_at')
+              .eq('user_id', user.id)
+              .eq('status', 'active')
+              .order('current_period_end', { ascending: false })
+              .limit(1)
+              .maybeSingle()
+
+            if (subscriptionError && subscriptionError.code !== 'PGRST116') {
+              console.error('Subscription fetch error:', subscriptionError)
+            } else if (subscriptionData) {
+              // Check if subscription is still active
+              if (subscriptionData.current_period_end) {
+                const periodEnd = new Date(subscriptionData.current_period_end)
+                if (periodEnd < new Date()) {
+                  setSubscription(null)
+                } else {
+                  // Use billing plan if active, otherwise use subscription_tier from users table
+                  setSubscription(subscriptionData)
+                }
               } else {
                 setSubscription(subscriptionData)
               }
             } else {
-              setSubscription(subscriptionData)
+              // No active billing subscription, use subscription_tier from users table
+              if (userData?.subscription_tier) {
+                setSubscription({ plan: userData.subscription_tier, status: 'active' })
+              } else {
+                setSubscription(null)
+              }
             }
-          } else {
-            setSubscription(null)
+          } catch (error) {
+            console.error('Subscription fetch error:', error)
+            // Fallback to subscription_tier from users table
+            if (userData?.subscription_tier) {
+              setSubscription({ plan: userData.subscription_tier, status: 'active' })
+            } else {
+              setSubscription(null)
+            }
           }
         } catch (error) {
-          console.error('Subscription fetch error:', error)
+          console.error('User data fetch error:', error)
           setSubscription(null)
         }
       } else {
