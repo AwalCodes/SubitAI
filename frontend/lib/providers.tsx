@@ -119,10 +119,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, [supabase])
 
   useEffect(() => {
+    let mounted = true
+
+    // Initial fetch
     fetchUser()
 
+    // Set up auth state listener (only once)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) return
+
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
           setUser(session?.user ?? null)
           if (session?.access_token) {
@@ -150,8 +156,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
       }
     )
 
-    return () => subscription.unsubscribe()
-  }, [fetchUser, supabase.auth])
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run once on mount - supabase.auth is stable
 
   const refetch = () => {
     fetchUser()
