@@ -119,6 +119,35 @@ export default function UploadPageV2() {
       setUploadProgress(0)
       setProgressMessage('Creating project...')
 
+      // Ensure user profile exists in public.users table
+      // This handles cases where the trigger might not have fired
+      const { data: userProfile, error: userCheckError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', user?.id)
+        .maybeSingle()
+
+      if (userCheckError) {
+        console.error('Error checking user profile:', userCheckError)
+        throw new Error('Failed to verify user account')
+      }
+
+      // If user doesn't exist in public.users, create it
+      if (!userProfile) {
+        const { error: createUserError } = await supabase
+          .from('users')
+          .insert({
+            id: user?.id,
+            email: user?.email || '',
+            subscription_tier: 'free',
+          })
+
+        if (createUserError) {
+          console.error('Error creating user profile:', createUserError)
+          throw new Error('Failed to create user profile. Please try signing out and back in.')
+        }
+      }
+
       // Create project in database first
       const { data: projectData, error: projectError } = await supabase
         .from('projects')
@@ -131,7 +160,10 @@ export default function UploadPageV2() {
         .select()
         .single()
 
-      if (projectError) throw projectError
+      if (projectError) {
+        console.error('Project creation error:', projectError)
+        throw projectError
+      }
 
       const newProjectId = projectData.id
       createdProjectId = newProjectId

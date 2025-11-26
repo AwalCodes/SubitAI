@@ -228,11 +228,12 @@ async function getQuotaSummary(
   env: Env,
 ): Promise<QuotaSummary> {
   const tier = await getEffectiveSubscriptionTier(userId, env);
-  const { dailyEnergy } = getSubscriptionLimits(tier || 'free');
+  const limits = getSubscriptionLimits(tier || 'free');
+  const { dailyEnergy } = limits;
 
   if (!Number.isFinite(dailyEnergy)) {
     return {
-      tier,
+      tier: tier || 'free',
       limit: Number.POSITIVE_INFINITY,
       usedToday: 0,
       remaining: Number.POSITIVE_INFINITY,
@@ -243,7 +244,7 @@ async function getQuotaSummary(
   const remaining = Math.max(0, dailyEnergy - usedToday);
 
   return {
-    tier,
+    tier: tier || 'free',
     limit: dailyEnergy,
     usedToday,
     remaining,
@@ -359,16 +360,17 @@ app.get('/quota', async (c) => {
     }
 
     const tier = await getEffectiveSubscriptionTier(user.id, c.env);
-    const limits = getSubscriptionLimits(tier || 'free');
+    const effectiveTier = tier || 'free';
+    const limits = getSubscriptionLimits(effectiveTier);
 
     const summary = await getQuotaSummary(user.id, c.env);
 
     return c.json({
       success: true,
       dailyLimit: Number.isFinite(summary.limit) ? summary.limit : null,
-      usedToday: summary.usedToday,
+      usedToday: summary.usedToday || 0,
       remaining: Number.isFinite(summary.remaining) ? summary.remaining : null,
-      subscriptionTier: summary.tier || 'free',
+      subscriptionTier: effectiveTier,
       unlimited: !Number.isFinite(summary.limit),
       timestamp: new Date().toISOString(),
     });
