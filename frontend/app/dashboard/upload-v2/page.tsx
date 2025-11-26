@@ -63,14 +63,65 @@ export default function UploadPageV2() {
     ? `${Math.round(videoSize / (1024 * 1024))}MB`
     : 'No size limit'
 
+  // Get video duration from file
+  const getVideoDuration = (file: File): Promise<number> => {
+    return new Promise((resolve, reject) => {
+      if (file.type.startsWith('video/')) {
+        const video = document.createElement('video')
+        video.preload = 'metadata'
+        video.onloadedmetadata = () => {
+          window.URL.revokeObjectURL(video.src)
+          resolve(video.duration)
+        }
+        video.onerror = () => {
+          window.URL.revokeObjectURL(video.src)
+          reject(new Error('Failed to load video metadata'))
+        }
+        video.src = URL.createObjectURL(file)
+      } else if (file.type.startsWith('audio/')) {
+        const audio = document.createElement('audio')
+        audio.preload = 'metadata'
+        audio.onloadedmetadata = () => {
+          window.URL.revokeObjectURL(audio.src)
+          resolve(audio.duration)
+        }
+        audio.onerror = () => {
+          window.URL.revokeObjectURL(audio.src)
+          reject(new Error('Failed to load audio metadata'))
+        }
+        audio.src = URL.createObjectURL(file)
+      } else {
+        reject(new Error('File is not a video or audio file'))
+      }
+    })
+  }
+
   // File selection handler
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       const selectedFile = acceptedFiles[0]
 
       if (Number.isFinite(videoSize) && selectedFile.size > videoSize) {
         toast.error(`File is too large for your ${planTier} plan. Maximum size is ${maxFileSizeLabel}.`)
         return
+      }
+
+      // Check video duration BEFORE setting file
+      try {
+        const duration = await getVideoDuration(selectedFile)
+        const { videoLength } = getSubscriptionLimits(planTier)
+        
+        if (Number.isFinite(videoLength) && duration > videoLength) {
+          const maxMinutes = Math.floor(videoLength / 60)
+          const actualMinutes = Math.floor(duration / 60)
+          toast.error(
+            `Video duration (${actualMinutes} min) exceeds your ${planTier} plan limit (${maxMinutes} min). Please upgrade your plan or use a shorter video.`
+          )
+          return
+        }
+      } catch (error) {
+        console.warn('Could not get video duration:', error)
+        // Continue anyway - duration will be checked on server
       }
 
       setFile(selectedFile)
@@ -169,17 +220,32 @@ export default function UploadPageV2() {
       createdProjectId = newProjectId
       setProjectId(newProjectId)
 
-      // Upload video to storage
+      // Upload video to storage with progress tracking
       setProgressMessage('Uploading video...')
+      setUploadProgress(5) // Start at 5% to show immediate feedback
+      
       const fileExt = file.name.split('.').pop()
       const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
       const filePath = `${user?.id}/${fileName}`
 
+      // Upload with progress tracking
       const { error: uploadError } = await supabase.storage
         .from('videos')
-        .upload(filePath, file)
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+          onUploadProgress: (progress) => {
+            // Map storage upload progress (0-100) to our progress range (5-30%)
+            const uploadProgress = 5 + Math.round((progress.loaded / progress.total) * 25)
+            setUploadProgress(uploadProgress)
+            setProgressMessage(`Uploading video... ${Math.round((progress.loaded / progress.total) * 100)}%`)
+          }
+        })
 
       if (uploadError) throw uploadError
+      
+      setUploadProgress(30) // Upload complete, move to 30%
+      setProgressMessage('Video uploaded successfully')
 
       // Get a signed URL so the video can be played from a private bucket
       const { data: signedUrlData, error: signedUrlError } = await supabase.storage
@@ -201,7 +267,8 @@ export default function UploadPageV2() {
 
       // Start transcription
       setState('transcribing')
-      setProgressMessage('Analyzing audio...')
+      setProgressMessage('Starting transcription...')
+      setUploadProgress(30) // Start transcription at 30%
 
       const result = await transcribeFile({
         file,
@@ -209,7 +276,9 @@ export default function UploadPageV2() {
         format: 'srt,vtt,json',
         projectId: newProjectId,
         onProgress: (progress, message) => {
-          setUploadProgress(progress)
+          // Map transcription progress (0-100) to our progress range (30-95%)
+          const transcriptionProgress = 30 + Math.round((progress / 100) * 65)
+          setUploadProgress(transcriptionProgress)
           if (message) setProgressMessage(message)
         },
       })
