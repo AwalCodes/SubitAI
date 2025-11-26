@@ -46,18 +46,24 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         }
       })
 
       if (error) {
-        toast.error(error.message)
+        toast.error(error.message || 'Failed to initiate Google login')
       }
-    } catch (error) {
-      toast.error('An error occurred during Google login')
+      // Note: User will be redirected to Google, then back to callback
+    } catch (error: any) {
+      console.error('Google login error:', error)
+      toast.error(error?.message || 'An error occurred during Google login')
     }
   }
 

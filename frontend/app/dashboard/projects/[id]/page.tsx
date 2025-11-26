@@ -20,7 +20,10 @@ import {
   ChevronLeft,
   Languages,
   Share2,
-  Zap
+  Zap,
+  ChevronDown,
+  FileText,
+  FileJson
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
@@ -70,6 +73,7 @@ export default function ProjectDetailPage() {
   const rafRef = useRef<number | null>(null)
   const [activeSegment, setActiveSegment] = useState<number | null>(null)
   const [activeWord, setActiveWord] = useState<{ segment: number; word: number } | null>(null)
+  const [showExportMenu, setShowExportMenu] = useState(false)
 
   useEffect(() => {
     if (!userLoading && !user) {
@@ -359,30 +363,113 @@ export default function ProjectDetailPage() {
     }
   }
 
-  const handleDownloadSRT = async () => {
-    if (!project) return
+  // Helper function to format timestamp
+  const formatTimestamp = (seconds: number, format: 'srt' | 'vtt'): string => {
+    const h = Math.floor(seconds / 3600)
+    const m = Math.floor((seconds % 3600) / 60)
+    const s = Math.floor(seconds % 60)
+    const ms = Math.floor((seconds % 1) * 1000)
+    const sep = format === 'srt' ? ',' : '.'
+    const pad = (num: number, size: number = 2) => String(num).padStart(size, '0')
+    return `${pad(h)}:${pad(m)}:${pad(s)}${sep}${pad(ms, 3)}`
+  }
 
+  // Generate SRT content
+  const generateSRT = (segments: Subtitle[]): string => {
+    return segments.map((seg, idx) => {
+      const start = formatTimestamp(seg.start, 'srt')
+      const end = formatTimestamp(seg.end, 'srt')
+      return `${idx + 1}\n${start} --> ${end}\n${seg.text}\n`
+    }).join('\n')
+  }
+
+  // Generate VTT content
+  const generateVTT = (segments: Subtitle[]): string => {
+    const lines = ['WEBVTT\n']
+    segments.forEach((seg, idx) => {
+      const start = formatTimestamp(seg.start, 'vtt')
+      const end = formatTimestamp(seg.end, 'vtt')
+      lines.push(`${idx + 1}\n${start} --> ${end}\n${seg.text}\n`)
+    })
+    return lines.join('\n')
+  }
+
+  // Generate TXT content (plain text, no timestamps)
+  const generateTXT = (segments: Subtitle[]): string => {
+    return segments.map(seg => seg.text).join('\n\n')
+  }
+
+  // Generate JSON content
+  const generateJSON = (segments: Subtitle[]): string => {
+    return JSON.stringify({
+      segments: segments.map(seg => ({
+        start: seg.start,
+        end: seg.end,
+        text: seg.text
+      }))
+    }, null, 2)
+  }
+
+  // Download function
+  const downloadFile = (content: string, filename: string, mimeType: string) => {
+    const blob = new Blob([content], { type: mimeType })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.click()
+    window.URL.revokeObjectURL(url)
+  }
+
+  const handleDownloadSRT = async () => {
+    if (!project || subtitles.length === 0) return
+    setShowExportMenu(false)
     try {
-      const supabase = createClient()
-      const { data: subtitleData, error } = await supabase
-        .from('subtitles')
-        .select('srt_data')
-        .eq('project_id', project.id)
-        .single()
-      
-      if (error) throw error
-      
-      const blob = new Blob([subtitleData.srt_data], { type: 'text/plain' })
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${project.title}.srt`
-      a.click()
-      window.URL.revokeObjectURL(url)
+      const srtContent = generateSRT(subtitles)
+      downloadFile(srtContent, `${project.title}.srt`, 'text/plain')
       toast.success('SRT file downloaded!')
     } catch (error: any) {
       console.error('Download error:', error)
       toast.error('Failed to download SRT file')
+    }
+  }
+
+  const handleDownloadVTT = async () => {
+    if (!project || subtitles.length === 0) return
+    setShowExportMenu(false)
+    try {
+      const vttContent = generateVTT(subtitles)
+      downloadFile(vttContent, `${project.title}.vtt`, 'text/vtt')
+      toast.success('VTT file downloaded!')
+    } catch (error: any) {
+      console.error('Download error:', error)
+      toast.error('Failed to download VTT file')
+    }
+  }
+
+  const handleDownloadTXT = async () => {
+    if (!project || subtitles.length === 0) return
+    setShowExportMenu(false)
+    try {
+      const txtContent = generateTXT(subtitles)
+      downloadFile(txtContent, `${project.title}.txt`, 'text/plain')
+      toast.success('TXT file downloaded!')
+    } catch (error: any) {
+      console.error('Download error:', error)
+      toast.error('Failed to download TXT file')
+    }
+  }
+
+  const handleDownloadJSON = async () => {
+    if (!project || subtitles.length === 0) return
+    setShowExportMenu(false)
+    try {
+      const jsonContent = generateJSON(subtitles)
+      downloadFile(jsonContent, `${project.title}.json`, 'application/json')
+      toast.success('JSON file downloaded!')
+    } catch (error: any) {
+      console.error('Download error:', error)
+      toast.error('Failed to download JSON file')
     }
   }
 
@@ -604,13 +691,54 @@ export default function ProjectDetailPage() {
                     <Save className="w-4 h-4" />
                     <span>{saving ? 'Saving...' : 'Save Changes'}</span>
                   </button>
-                  <button
-                    onClick={handleDownloadSRT}
-                    className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-white/10 border border-white/40 rounded-lg text-white hover:bg-white/20 transition-colors"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>Download SRT</span>
-                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowExportMenu(!showExportMenu)}
+                      className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-white/10 border border-white/40 rounded-lg text-white hover:bg-white/20 transition-colors"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Export</span>
+                      <ChevronDown className={`w-4 h-4 transition-transform ${showExportMenu ? 'rotate-180' : ''}`} />
+                    </button>
+                    {showExportMenu && (
+                      <>
+                        <div 
+                          className="fixed inset-0 z-10" 
+                          onClick={() => setShowExportMenu(false)}
+                        />
+                        <div className="absolute right-0 top-full mt-2 w-56 bg-slate-800 rounded-xl border border-slate-700 shadow-xl z-20 py-2">
+                          <button
+                            onClick={handleDownloadSRT}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-700 transition-colors text-white"
+                          >
+                            <FileText className="w-4 h-4 text-blue-400" />
+                            <span className="text-sm font-medium">Download SRT</span>
+                          </button>
+                          <button
+                            onClick={handleDownloadVTT}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-700 transition-colors text-white"
+                          >
+                            <FileText className="w-4 h-4 text-violet-400" />
+                            <span className="text-sm font-medium">Download VTT</span>
+                          </button>
+                          <button
+                            onClick={handleDownloadTXT}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-700 transition-colors text-white"
+                          >
+                            <FileText className="w-4 h-4 text-emerald-400" />
+                            <span className="text-sm font-medium">Download TXT</span>
+                          </button>
+                          <button
+                            onClick={handleDownloadJSON}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-700 transition-colors text-white"
+                          >
+                            <FileJson className="w-4 h-4 text-amber-400" />
+                            <span className="text-sm font-medium">Download JSON</span>
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </>
               )}
               <button
@@ -770,11 +898,52 @@ export default function ProjectDetailPage() {
         {/* Download and Next Steps */}
         {project.status === 'completed' && subtitles.length > 0 && (
           <div className="grid md:grid-cols-3 gap-6 mt-8">
-            <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 p-6">
-              <h3 className="font-semibold text-gray-900 dark:text-neutral-100 mb-3">Download Options</h3>
-              <div className="space-y-3">
-                <button onClick={handleDownloadSRT} className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">Download SRT File</button>
-                <button disabled className="w-full py-2.5 bg-gray-200 text-gray-700 rounded-lg cursor-not-allowed">Download VTT File</button>
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700 p-6">
+              <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
+                <Download className="w-5 h-5 text-violet-400" />
+                Export Subtitles
+              </h3>
+              <div className="space-y-2">
+                <button 
+                  onClick={handleDownloadSRT} 
+                  className="w-full flex items-center justify-between px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors group"
+                >
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-4 h-4 text-blue-400" />
+                    <span className="text-sm font-medium">SRT</span>
+                  </div>
+                  <span className="text-xs text-slate-400 group-hover:text-white">SubRip</span>
+                </button>
+                <button 
+                  onClick={handleDownloadVTT} 
+                  className="w-full flex items-center justify-between px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors group"
+                >
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-4 h-4 text-violet-400" />
+                    <span className="text-sm font-medium">VTT</span>
+                  </div>
+                  <span className="text-xs text-slate-400 group-hover:text-white">WebVTT</span>
+                </button>
+                <button 
+                  onClick={handleDownloadTXT} 
+                  className="w-full flex items-center justify-between px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors group"
+                >
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-4 h-4 text-emerald-400" />
+                    <span className="text-sm font-medium">TXT</span>
+                  </div>
+                  <span className="text-xs text-slate-400 group-hover:text-white">Plain Text</span>
+                </button>
+                <button 
+                  onClick={handleDownloadJSON} 
+                  className="w-full flex items-center justify-between px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors group"
+                >
+                  <div className="flex items-center gap-3">
+                    <FileJson className="w-4 h-4 text-amber-400" />
+                    <span className="text-sm font-medium">JSON</span>
+                  </div>
+                  <span className="text-xs text-slate-400 group-hover:text-white">Data Format</span>
+                </button>
               </div>
             </div>
             <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 p-6">
