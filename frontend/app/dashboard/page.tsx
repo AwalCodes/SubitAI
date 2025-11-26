@@ -3,11 +3,12 @@
 import { useEffect, useState } from 'react'
 import { useUser } from '@/lib/providers'
 import { useRouter } from 'next/navigation'
-import { Plus, Video, Clock, CheckCircle, AlertCircle, Zap, ArrowRight, Sparkles, LayoutDashboard, Settings, LogOut, Home, FolderOpen, TrendingUp } from 'lucide-react'
+import { Plus, Video, Clock, CheckCircle, AlertCircle, Zap, ArrowRight, Sparkles, LayoutDashboard, Settings, LogOut, Home, FolderOpen, TrendingUp, Trash2, Crown } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
 import { OnboardingModal } from '@/components/onboarding-modal'
 import { fetchQuota, type QuotaInfo } from '@/lib/api-v2'
+import toast from 'react-hot-toast'
 
 interface Project {
   id: string
@@ -179,6 +180,32 @@ export default function Dashboard() {
     })
   }
 
+  const handleDeleteProject = async (e: React.MouseEvent, projectId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    if (!confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', projectId)
+        .eq('user_id', user?.id)
+
+      if (error) throw error
+
+      toast.success('Project deleted successfully')
+      // Refresh projects list
+      await fetchProjects()
+    } catch (error: any) {
+      console.error('Failed to delete project:', error)
+      toast.error(error?.message || 'Failed to delete project')
+    }
+  }
+
   // Show loading only if user auth is still loading, not if projects are loading
   if (loading) {
     return (
@@ -292,10 +319,14 @@ export default function Dashboard() {
             <span className="text-lg font-bold text-white">SUBIT<span className="text-violet-400">.AI</span></span>
           </Link>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-500/10 border border-violet-500/20 rounded-lg">
+            <Link 
+              href="/pricing"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-500/10 border border-violet-500/20 rounded-lg hover:bg-violet-500/20 transition-colors group"
+            >
               <Zap className="w-4 h-4 text-amber-400" />
               <span className="text-sm font-semibold text-white">{remainingEnergy}</span>
-            </div>
+              <Crown className="w-3.5 h-3.5 text-amber-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </Link>
             <button
               onClick={handleSignOut}
               className="p-2 text-slate-400 hover:text-white transition-colors"
@@ -335,7 +366,7 @@ export default function Dashboard() {
             {stats.map((stat, index) => (
               <div
                 key={stat.label}
-                className="group bg-slate-900/50 backdrop-blur-sm rounded-2xl p-5 border border-slate-800 hover:border-slate-700 transition-all duration-300"
+                className="group bg-slate-900/50 backdrop-blur-sm rounded-2xl p-5 border border-slate-800 hover:border-slate-700 transition-all duration-300 relative"
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div className={`p-2.5 rounded-xl bg-gradient-to-br ${stat.gradient} group-hover:scale-110 transition-transform duration-300`}>
@@ -343,7 +374,19 @@ export default function Dashboard() {
                   </div>
                   <span className="text-sm font-medium text-slate-400">{stat.label}</span>
                 </div>
-                <p className="text-3xl font-bold text-white">{stat.value}</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-3xl font-bold text-white">{stat.value}</p>
+                  {stat.label === 'Energy' && (
+                    <Link 
+                      href="/pricing"
+                      onClick={(e) => e.stopPropagation()}
+                      className="ml-2 p-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 transition-colors group/upgrade"
+                      title="Upgrade plan"
+                    >
+                      <Crown className="w-4 h-4 text-amber-400 group-hover/upgrade:scale-110 transition-transform" />
+                    </Link>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -381,45 +424,54 @@ export default function Dashboard() {
             ) : (
               <div className="divide-y divide-slate-800">
                 {projects.map((project) => (
-                  <Link key={project.id} href={`/dashboard/projects/${project.id}`}>
-                    <div className="group p-5 hover:bg-slate-800/30 transition-all duration-200 cursor-pointer">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
-                            {getStatusIcon(project.status)}
-                          </div>
-                          <div>
-                            <h3 className="text-base font-semibold text-white group-hover:text-violet-400 transition-colors">
-                              {project.title}
-                            </h3>
-                            <div className="flex items-center gap-3 text-sm text-slate-500 mt-0.5">
-                              <span>{formatDate(project.created_at)}</span>
-                              {project.video_duration && (
-                                <span className="flex items-center gap-1">
-                                  <Clock className="w-3 h-3" />
-                                  {Math.round(project.video_duration / 60)}m
-                                </span>
-                              )}
+                  <div key={project.id} className="group relative">
+                    <Link href={`/dashboard/projects/${project.id}`}>
+                      <div className="p-5 hover:bg-slate-800/30 transition-all duration-200 cursor-pointer">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+                              {getStatusIcon(project.status)}
+                            </div>
+                            <div>
+                              <h3 className="text-base font-semibold text-white group-hover:text-violet-400 transition-colors">
+                                {project.title}
+                              </h3>
+                              <div className="flex items-center gap-3 text-sm text-slate-500 mt-0.5">
+                                <span>{formatDate(project.created_at)}</span>
+                                {project.video_duration && (
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {Math.round(project.video_duration / 60)}m
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 ${
-                            project.status === 'completed' 
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                              : project.status === 'processing' 
-                              ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' 
-                              : project.status === 'failed' 
-                              ? 'bg-red-500/10 text-red-400 border border-red-500/20'
-                              : 'bg-slate-800 text-slate-400'
-                          }`}>
-                            {getStatusText(project.status)}
-                          </span>
-                          <ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-violet-400 group-hover:translate-x-1 transition-all" />
+                          <div className="flex items-center gap-3">
+                            <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 ${
+                              project.status === 'completed' 
+                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                                : project.status === 'processing' 
+                                ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' 
+                                : project.status === 'failed' 
+                                ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                                : 'bg-slate-800 text-slate-400'
+                            }`}>
+                              {getStatusText(project.status)}
+                            </span>
+                            <button
+                              onClick={(e) => handleDeleteProject(e, project.id)}
+                              className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-all opacity-0 group-hover:opacity-100"
+                              title="Delete project"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                            <ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-violet-400 group-hover:translate-x-1 transition-all" />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </Link>
+                    </Link>
+                  </div>
                 ))}
               </div>
             )}
