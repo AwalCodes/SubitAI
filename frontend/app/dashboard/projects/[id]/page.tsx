@@ -153,12 +153,17 @@ export default function ProjectDetailPage() {
 
     setGenerating(true)
     let pollCount = 0
+    let cancelled = false
     const maxPolls = 240 // 20 minutes at 5 second intervals (model download can take time)
     const projectId = project.id
     
     console.log('Starting subtitle polling for project:', projectId)
     
     const pollInterval = setInterval(async () => {
+      if (cancelled) {
+        clearInterval(pollInterval)
+        return
+      }
       try {
         pollCount++
         console.log(`Polling attempt ${pollCount}/${maxPolls} for project ${projectId}`)
@@ -248,6 +253,7 @@ export default function ProjectDetailPage() {
     
     return () => {
       console.log('Cleaning up polling interval')
+      cancelled = true
       clearInterval(pollInterval)
     }
   }, [project, subtitles.length])

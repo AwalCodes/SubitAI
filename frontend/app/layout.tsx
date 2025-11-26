@@ -4,8 +4,15 @@ import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import { Providers } from '@/lib/providers'
 import { ThemeProvider } from '@/components/providers/theme-provider'
-import { CommandPalette } from '@/components/command-palette'
-import { FloatingHelp } from '@/components/floating-help'
+import dynamic from 'next/dynamic'
+
+// Lazy load heavy components
+const CommandPalette = dynamic(() => import('@/components/command-palette').then(mod => ({ default: mod.CommandPalette })), {
+  ssr: false,
+})
+const FloatingHelp = dynamic(() => import('@/components/floating-help').then(mod => ({ default: mod.FloatingHelp })), {
+  ssr: false,
+})
 
 const inter = Inter({ subsets: ['latin'] })
 

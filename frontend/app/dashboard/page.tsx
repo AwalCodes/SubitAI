@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useUser } from '@/lib/providers'
 import { useRouter } from 'next/navigation'
 import { Plus, Video, Clock, CheckCircle, AlertCircle, Zap, ArrowRight, Sparkles, LayoutDashboard, Settings, LogOut, Home, FolderOpen, TrendingUp, Trash2, Crown } from 'lucide-react'
@@ -72,7 +72,7 @@ export default function Dashboard() {
     }
     
     fetchProjects()
-  }, [user])
+  }, [fetchProjects])
 
   useEffect(() => {
     if (!user) return
@@ -119,14 +119,16 @@ export default function Dashboard() {
     ? quota.remaining
     : 0
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
+    if (!user?.id) return
+    
     try {
       setProjectsLoading(true)
       const supabase = createClient()
       const { data: projects, error } = await supabase
         .from('projects')
         .select('id, title, status, created_at, video_duration')
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(10)
       
@@ -140,7 +142,7 @@ export default function Dashboard() {
       setProjectsLoading(false)
       setInitialLoad(false)
     }
-  }
+  }, [user?.id])
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -221,7 +223,7 @@ export default function Dashboard() {
     )
   }
 
-  const stats = [
+  const stats = useMemo(() => [
     {
       label: 'Total Projects',
       value: projects.length,
@@ -246,7 +248,7 @@ export default function Dashboard() {
       icon: Zap,
       gradient: 'from-violet-500 to-fuchsia-600'
     }
-  ]
+  ], [projects, remainingEnergy])
 
   const sidebarLinks = [
     { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', active: true },

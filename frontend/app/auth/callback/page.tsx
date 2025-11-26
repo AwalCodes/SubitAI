@@ -13,6 +13,8 @@ function AuthCallbackContent() {
   const supabase = createClient()
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout | null = null
+    
     const handleAuthCallback = async () => {
       try {
         // Supabase OAuth returns the session in the URL hash
@@ -31,7 +33,7 @@ function AuthCallbackContent() {
           router.push('/dashboard')
         } else {
           // Wait a bit for the session to be processed from URL hash
-          setTimeout(async () => {
+          timeoutId = setTimeout(async () => {
             const { data: { session: retrySession } } = await supabase.auth.getSession()
             if (retrySession?.user) {
               router.push('/dashboard')
@@ -47,6 +49,13 @@ function AuthCallbackContent() {
     }
 
     handleAuthCallback()
+    
+    // Cleanup function
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
 
