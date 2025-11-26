@@ -328,22 +328,22 @@ export default function UploadPageV2() {
   const canProcess = state === 'file_selected' && title.trim().length > 0
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-subit-50/20 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
+    <div className="min-h-screen bg-slate-950">
       {/* Header */}
-      <div className="bg-gradient-to-r from-subit-600 via-subit-500 to-subit-400 border-b border-subit-300/20">
+      <div className="bg-gradient-to-r from-violet-600/20 via-fuchsia-600/10 to-transparent border-b border-slate-800">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="text-white">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
                 Generate Subtitles
               </h1>
-              <p className="text-subit-50 text-base sm:text-lg">
+              <p className="text-slate-400 text-base sm:text-lg">
                 Upload your video and get AI-powered subtitles instantly
               </p>
             </div>
             <Link href="/dashboard">
-              <button className="px-4 sm:px-6 py-2 sm:py-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl text-white hover:bg-white/20 transition-all duration-200 text-sm sm:text-base">
-                Back to Dashboard
+              <button className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-white transition-all duration-200 text-sm font-medium">
+                ← Back to Dashboard
               </button>
             </Link>
           </div>
@@ -359,26 +359,26 @@ export default function UploadPageV2() {
               {...getRootProps()}
               className={`border-2 border-dashed rounded-2xl p-8 sm:p-12 md:p-16 text-center cursor-pointer transition-all duration-300 ${
                 isDragActive
-                  ? 'border-subit-500 bg-gradient-to-br from-subit-50 to-blue-50 dark:from-subit-900/30 dark:to-blue-900/30 scale-[1.02] shadow-glow'
-                  : 'border-neutral-300 dark:border-neutral-700 hover:border-subit-400 dark:hover:border-subit-500 hover:bg-neutral-50/50 dark:hover:bg-neutral-800/50 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm'
+                  ? 'border-violet-500 bg-violet-500/10 scale-[1.02]'
+                  : 'border-slate-700 hover:border-violet-500/50 bg-slate-900/50 hover:bg-slate-800/50'
               }`}
             >
               <input {...getInputProps()} />
               <div className="relative inline-block mb-4 sm:mb-6">
-                <div className="absolute inset-0 bg-gradient-to-br from-subit-500 to-subit-600 rounded-full opacity-20 blur-xl scale-150 animate-pulse" />
-                <Cloud className={`relative w-16 h-16 sm:w-20 sm:h-20 ${isDragActive ? 'text-subit-600' : 'text-neutral-400'} transition-colors`} />
+                <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-full opacity-20 blur-xl scale-150 animate-pulse" />
+                <Cloud className={`relative w-16 h-16 sm:w-20 sm:h-20 ${isDragActive ? 'text-violet-400' : 'text-slate-500'} transition-colors`} />
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-2 sm:mb-3">
+              <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3">
                 {isDragActive ? '🎉 Drop your file here!' : 'Drag and drop your file'}
               </h3>
-              <p className="text-base sm:text-lg text-neutral-600 dark:text-neutral-400 mb-4 sm:mb-6">
+              <p className="text-base sm:text-lg text-slate-400 mb-4 sm:mb-6">
                 or click to browse
               </p>
-              <div className="inline-flex items-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-subit-50 border border-subit-200 rounded-xl text-subit-700 font-medium text-sm sm:text-base">
+              <div className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-xl text-white font-medium text-sm sm:text-base shadow-lg shadow-violet-500/25">
                 <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span>Choose File</span>
               </div>
-              <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-4 sm:mt-6">
+              <p className="text-xs sm:text-sm text-slate-500 mt-4 sm:mt-6">
                 Audio: MP3, WAV, OGG, FLAC • Video: MP4, MOV, AVI, WEBM, MKV (Max {maxFileSizeLabel})
               </p>
             </div>
@@ -386,14 +386,13 @@ export default function UploadPageV2() {
 
           {/* File Selected */}
           {(state === 'file_selected' || isProcessing || state === 'success' || state === 'error') && file && (
-            <div className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm rounded-2xl border border-neutral-200/50 dark:border-neutral-800/50 shadow-lg p-6 sm:p-8 space-y-6">
+            <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800 p-6 sm:p-8 space-y-6">
               
               {/* File Info */}
-              <div className="flex items-start justify-between p-4 sm:p-6 bg-gradient-to-r from-subit-50 to-blue-50 dark:from-subit-900/30 dark:to-blue-900/30 rounded-xl border border-subit-100 dark:border-subit-800">
-                <div className="flex items-start space-x-3 sm:space-x-4 flex-1 min-w-0">
+              <div className="flex items-start justify-between p-4 sm:p-5 bg-slate-800/50 rounded-xl border border-slate-700">
+                <div className="flex items-start gap-4 flex-1 min-w-0">
                   <div className="relative flex-shrink-0">
-                    <div className="absolute inset-0 bg-subit-500 rounded-xl opacity-20 blur-lg" />
-                    <div className="relative p-3 sm:p-4 bg-subit-500 rounded-xl shadow-lg">
+                    <div className="p-3 sm:p-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl shadow-lg shadow-violet-500/30">
                       {file.type.startsWith('video/') ? (
                         <Video className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                       ) : (
@@ -402,19 +401,19 @@ export default function UploadPageV2() {
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-neutral-900 dark:text-neutral-100 text-base sm:text-lg mb-1 truncate">
+                    <h3 className="font-bold text-white text-base sm:text-lg mb-1 truncate">
                       {file.name}
                     </h3>
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
-                      <span className="flex items-center">
-                        <Cloud className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                    <div className="flex flex-wrap items-center gap-3 text-sm text-slate-400">
+                      <span className="flex items-center gap-1">
+                        <Cloud className="w-4 h-4" />
                         {formatFileSize(file.size)}
                       </span>
-                      <span className="flex items-center">
+                      <span className="flex items-center gap-1">
                         {file.type.startsWith('video/') ? (
-                          <><Video className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />Video</>
+                          <><Video className="w-4 h-4" />Video</>
                         ) : (
-                          <><FileAudio className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />Audio</>
+                          <><FileAudio className="w-4 h-4" />Audio</>
                         )}
                       </span>
                     </div>
@@ -423,7 +422,7 @@ export default function UploadPageV2() {
                 {!isProcessing && state !== 'success' && (
                   <button
                     onClick={handleReset}
-                    className="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-xl text-red-500 hover:text-red-600 transition-all flex-shrink-0"
+                    className="p-2 hover:bg-red-500/10 rounded-xl text-red-400 hover:text-red-300 transition-all flex-shrink-0"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -433,7 +432,7 @@ export default function UploadPageV2() {
               {/* Title Input */}
               {(state === 'file_selected') && (
                 <div className="space-y-2">
-                  <label htmlFor="title" className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                  <label htmlFor="title" className="block text-sm font-semibold text-slate-300">
                     Project Title *
                   </label>
                   <input
@@ -442,7 +441,7 @@ export default function UploadPageV2() {
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Enter a title for your project"
-                    className="w-full px-4 py-3 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-subit-500 focus:border-subit-500 transition-all bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 text-sm sm:text-base"
+                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all text-white placeholder-slate-500 text-sm sm:text-base"
                     autoFocus
                   />
                 </div>
@@ -450,21 +449,21 @@ export default function UploadPageV2() {
 
               {/* Progress */}
               {isProcessing && (
-                <div className="p-4 sm:p-6 bg-gradient-to-r from-blue-50 to-subit-50 dark:from-blue-900/30 dark:to-subit-900/30 border border-blue-200 dark:border-blue-800 rounded-xl space-y-4">
+                <div className="p-5 bg-violet-500/10 border border-violet-500/20 rounded-xl space-y-4">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Loader className="w-5 h-5 text-subit-600 dark:text-subit-400 animate-spin flex-shrink-0" />
-                      <span className="text-sm sm:text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                    <div className="flex items-center gap-2">
+                      <Loader className="w-5 h-5 text-violet-400 animate-spin flex-shrink-0" />
+                      <span className="text-sm sm:text-base font-semibold text-white">
                         {progressMessage || 'Processing...'}
                       </span>
                     </div>
-                    <span className="text-base sm:text-lg font-bold text-subit-600 dark:text-subit-400">
+                    <span className="text-lg font-bold text-violet-400">
                       {uploadProgress}%
                     </span>
                   </div>
-                  <div className="relative w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2 sm:h-3 overflow-hidden">
+                  <div className="relative w-full bg-slate-700 rounded-full h-2 overflow-hidden">
                     <div
-                      className="absolute inset-0 bg-gradient-to-r from-subit-500 to-blue-500 h-2 sm:h-3 rounded-full transition-all duration-500 ease-out"
+                      className="absolute inset-0 bg-gradient-to-r from-violet-500 to-fuchsia-500 h-2 rounded-full transition-all duration-500 ease-out"
                       style={{ width: `${uploadProgress}%` }}
                     />
                   </div>
@@ -473,14 +472,14 @@ export default function UploadPageV2() {
 
               {/* Success State */}
               {state === 'success' && (
-                <div className="p-4 sm:p-6 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 border border-green-200 dark:border-green-800 rounded-xl">
-                  <div className="flex items-center space-x-3">
-                    <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400 flex-shrink-0" />
+                <div className="p-5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-8 h-8 text-emerald-400 flex-shrink-0" />
                     <div>
-                      <h4 className="font-bold text-green-900 dark:text-green-100 text-base sm:text-lg">
+                      <h4 className="font-bold text-white text-base sm:text-lg">
                         Success!
                       </h4>
-                      <p className="text-sm sm:text-base text-green-700 dark:text-green-200">
+                      <p className="text-sm text-emerald-300">
                         Subtitles generated. Redirecting...
                       </p>
                     </div>
@@ -490,14 +489,14 @@ export default function UploadPageV2() {
 
               {/* Error State */}
               {state === 'error' && error && (
-                <div className="p-4 sm:p-6 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/30 dark:to-orange-900/30 border border-red-200 dark:border-red-800 rounded-xl space-y-4">
-                  <div className="flex items-start space-x-3">
-                    <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                <div className="p-5 bg-red-500/10 border border-red-500/20 rounded-xl space-y-4">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-6 h-6 text-red-400 flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
-                      <h4 className="font-bold text-red-900 dark:text-red-100 mb-1 text-base sm:text-lg">
+                      <h4 className="font-bold text-white mb-1">
                         Processing Failed
                       </h4>
-                      <p className="text-sm sm:text-base text-red-700 dark:text-red-200">
+                      <p className="text-sm text-red-300">
                         {error}
                       </p>
                     </div>
@@ -505,7 +504,7 @@ export default function UploadPageV2() {
                   {retryCountRef.current < MAX_RETRIES && (
                     <button
                       onClick={handleRetry}
-                      className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition-all duration-200 flex items-center justify-center space-x-2 text-sm sm:text-base"
+                      className="w-full sm:w-auto px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 text-sm"
                     >
                       <RefreshCw className="w-4 h-4" />
                       <span>Retry ({retryCountRef.current + 1}/{MAX_RETRIES})</span>
@@ -519,7 +518,7 @@ export default function UploadPageV2() {
                 <button
                   onClick={handleProcess}
                   disabled={!canProcess}
-                  className="w-full py-3 sm:py-4 bg-gradient-to-r from-subit-500 to-subit-600 text-white rounded-xl font-bold text-base sm:text-lg hover:shadow-glow-lg disabled:from-neutral-400 disabled:to-neutral-500 disabled:cursor-not-allowed transition-all duration-200 transform hover:-translate-y-0.5 flex items-center justify-center space-x-2"
+                  className="w-full py-4 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white rounded-xl font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2"
                 >
                   <PlayCircle className="w-5 h-5" />
                   <span>Generate Subtitles</span>
