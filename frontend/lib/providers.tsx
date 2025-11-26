@@ -66,9 +66,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
               if (subscriptionData.current_period_end) {
                 const periodEnd = new Date(subscriptionData.current_period_end)
                 if (periodEnd < new Date()) {
-                  setSubscription(null)
+                  // Subscription expired, fall back to users table
+                  if (userData?.subscription_tier) {
+                    const mappedTier = userData.subscription_tier === 'team' ? 'premium' : userData.subscription_tier
+                    setSubscription({ plan: mappedTier, status: 'active' })
+                  } else {
+                    setSubscription(null)
+                  }
                 } else {
-                  // Use billing plan if active, otherwise use subscription_tier from users table
+                  // Use billing plan if active
                   setSubscription(subscriptionData)
                 }
               } else {
@@ -77,7 +83,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
             } else {
               // No active billing subscription, use subscription_tier from users table
               if (userData?.subscription_tier) {
-                setSubscription({ plan: userData.subscription_tier, status: 'active' })
+                // Map "team" to "premium" for consistency with pricing plans
+                const mappedTier = userData.subscription_tier === 'team' ? 'premium' : userData.subscription_tier
+                setSubscription({ plan: mappedTier, status: 'active' })
               } else {
                 setSubscription(null)
               }
@@ -86,7 +94,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
             console.error('Subscription fetch error:', error)
             // Fallback to subscription_tier from users table
             if (userData?.subscription_tier) {
-              setSubscription({ plan: userData.subscription_tier, status: 'active' })
+              // Map "team" to "premium" for consistency with pricing plans
+              const mappedTier = userData.subscription_tier === 'team' ? 'premium' : userData.subscription_tier
+              setSubscription({ plan: mappedTier, status: 'active' })
             } else {
               setSubscription(null)
             }

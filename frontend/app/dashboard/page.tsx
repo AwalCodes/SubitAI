@@ -19,7 +19,7 @@ interface Project {
 }
 
 export default function Dashboard() {
-  const { user, loading } = useUser()
+  const { user, loading, subscription } = useUser()
   const router = useRouter()
   const [projects, setProjects] = useState<Project[]>([])
   const supabase = createClient()
@@ -278,7 +278,11 @@ export default function Dashboard() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white truncate group-hover:text-violet-400 transition-colors">{user?.email}</p>
-              <p className="text-xs text-slate-500">Free Plan</p>
+              <p className="text-xs text-slate-500">
+                {subscription?.plan === 'premium' ? 'Premium Plan' : 
+                 subscription?.plan === 'pro' ? 'Pro Plan' : 
+                 'Free Plan'}
+              </p>
             </div>
             <Settings className="w-4 h-4 text-slate-500 group-hover:text-violet-400 transition-colors opacity-0 group-hover:opacity-100" />
           </Link>
