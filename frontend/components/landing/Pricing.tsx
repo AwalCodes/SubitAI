@@ -16,14 +16,10 @@ const plans = [
     features: [
       '30 energy per day',
       'AI subtitle generation',
-      'Basic font customization',
-      'SRT/VTT export',
+      'SRT/VTT/TXT/JSON export',
       '5-minute video limit'
     ],
-    limitations: [
-      'Advanced positioning',
-      'Priority support'
-    ],
+    limitations: [],
     cta: 'Get Started Free',
     popular: false,
     gradient: 'from-slate-600 to-slate-700',
@@ -38,9 +34,6 @@ const plans = [
     features: [
       '300 energy per day',
       'Everything in Free',
-      'Full font library',
-      'Advanced color options',
-      'Basic positioning',
       '30-minute video limit',
       'Email support'
     ],
@@ -59,10 +52,6 @@ const plans = [
     features: [
       'Unlimited energy',
       'Everything in Pro',
-      'Custom font uploads',
-      'Gradient colors',
-      'Free positioning',
-      'Animation effects',
       'No video limits',
       'Priority support'
     ],

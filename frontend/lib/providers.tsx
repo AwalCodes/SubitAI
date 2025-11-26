@@ -112,13 +112,17 @@ export function Providers({ children }: { children: React.ReactNode }) {
     fetchUser()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
           setUser(session?.user ?? null)
           if (session?.access_token) {
             localStorage.setItem('access_token', session.access_token)
           } else {
             localStorage.removeItem('access_token')
+          }
+          // Refetch user data when auth state changes to get updated subscription tier
+          if (session?.user) {
+            await fetchUser()
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null)

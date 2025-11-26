@@ -28,7 +28,6 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
-import { SubtitleCustomizer, type SubtitleStyle } from '@/components/subtitle-customizer'
 
 interface Subtitle {
   id: number
@@ -90,17 +89,6 @@ export default function ProjectDetailPage() {
   const [activeWord, setActiveWord] = useState<{ segment: number; word: number } | null>(null)
   const [showExportMenu, setShowExportMenu] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
-  const [subtitleStyle, setSubtitleStyle] = useState<SubtitleStyle>({
-    fontFamily: 'Arial, sans-serif',
-    fontSize: 24,
-    fontColor: '#FFFFFF',
-    backgroundColor: '#000000',
-    outlineColor: '#000000',
-    outlineWidth: 2,
-    position: { x: 50, y: 90 },
-    alignment: 'center',
-    animation: { type: null, duration: 0.5 }
-  })
   
   // Detect if file is audio or video
   const isAudio = project ? isAudioFile(project.video_filename, project.video_url) : false
@@ -878,44 +866,8 @@ export default function ProjectDetailPage() {
                       </video>
                       {/* Subtitle Overlay */}
                       {subtitles.length > 0 && activeSegment !== null && (
-                        <div
-                          className="absolute inset-0 pointer-events-none flex items-end justify-center pb-8 px-4"
-                          style={{
-                            left: `${subtitleStyle.position.x}%`,
-                            bottom: `${100 - subtitleStyle.position.y}%`,
-                            transform: 'translateX(-50%)',
-                            textAlign: subtitleStyle.alignment
-                          }}
-                        >
-                          <div
-                            className="px-4 py-2 rounded-lg max-w-[90%]"
-                            style={{
-                              fontFamily: subtitleStyle.fontFamily,
-                              fontSize: `${subtitleStyle.fontSize}px`,
-                              color: subtitleStyle.fontColor.startsWith('linear-gradient') 
-                                ? undefined 
-                                : subtitleStyle.fontColor,
-                              background: subtitleStyle.backgroundColor !== 'transparent'
-                                ? subtitleStyle.backgroundColor
-                                : undefined,
-                              WebkitTextStroke: `${subtitleStyle.outlineWidth}px ${subtitleStyle.outlineColor}`,
-                              textShadow: subtitleStyle.outlineWidth > 0
-                                ? `0 0 ${subtitleStyle.outlineWidth * 2}px ${subtitleStyle.outlineColor}`
-                                : undefined,
-                              backgroundImage: subtitleStyle.fontColor.startsWith('linear-gradient')
-                                ? subtitleStyle.fontColor
-                                : undefined,
-                              WebkitBackgroundClip: subtitleStyle.fontColor.startsWith('linear-gradient')
-                                ? 'text'
-                                : undefined,
-                              WebkitTextFillColor: subtitleStyle.fontColor.startsWith('linear-gradient')
-                                ? 'transparent'
-                                : undefined,
-                              animation: subtitleStyle.animation?.type
-                                ? `${subtitleStyle.animation.type} ${subtitleStyle.animation.duration}s ease-in-out`
-                                : undefined
-                            }}
-                          >
+                        <div className="absolute inset-0 pointer-events-none flex items-end justify-center pb-8 px-4">
+                          <div className="px-4 py-2 rounded-lg bg-black/70 text-white text-lg font-medium max-w-[90%] text-center">
                             {subtitles[activeSegment]?.text}
                           </div>
                         </div>
@@ -1022,16 +974,6 @@ export default function ProjectDetailPage() {
             </div>
           </div>
         </div>
-
-        {/* Subtitle Customization Panel */}
-        {subtitles.length > 0 && (
-          <div className="mt-8">
-            <SubtitleCustomizer
-              style={subtitleStyle}
-              onStyleChange={setSubtitleStyle}
-            />
-          </div>
-        )}
 
         {/* Next Steps - Export section removed since it's in header */}
         {project.status === 'completed' && subtitles.length > 0 && (
