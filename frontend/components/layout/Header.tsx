@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Logo from '@/components/shared/Logo'
+import { useUser } from '@/lib/providers'
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -15,6 +16,7 @@ const navLinks = [
 export default function Header() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const { user, loading } = useUser()
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/'
@@ -42,14 +44,24 @@ export default function Header() {
           </nav>
 
           {/* Desktop Auth */}
-          <div className="hidden md:flex items-center space-x-3">
-            <Link href="/auth/login" className="nav-link">
-              Log in
-            </Link>
-            <Link href="/auth/signup" className="btn-primary">
-              Sign up
-            </Link>
-          </div>
+          {!loading && (
+            <div className="hidden md:flex items-center space-x-3">
+              {user ? (
+                <Link href="/dashboard" className="btn-primary">
+                  Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link href="/auth/login" className="nav-link">
+                    Log in
+                  </Link>
+                  <Link href="/auth/signup" className="btn-primary">
+                    Sign up
+                  </Link>
+                </>
+              )}
+            </div>
+          )}
 
           {/* Mobile toggle placeholder */}
           <button
@@ -85,22 +97,36 @@ export default function Header() {
                 </Link>
               ))}
             </nav>
-            <div className="mt-2 flex flex-col space-y-2 border-t border-neutral-100 pt-3">
-              <Link
-                href="/auth/login"
-                className="w-full text-center nav-link px-2 py-2 rounded-lg bg-white"
-                onClick={() => setMobileOpen(false)}
-              >
-                Log in
-              </Link>
-              <Link
-                href="/auth/signup"
-                className="w-full text-center btn-primary"
-                onClick={() => setMobileOpen(false)}
-              >
-                Sign up
-              </Link>
-            </div>
+            {!loading && (
+              <div className="mt-2 flex flex-col space-y-2 border-t border-neutral-100 pt-3">
+                {user ? (
+                  <Link
+                    href="/dashboard"
+                    className="w-full text-center btn-primary"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                ) : (
+                  <>
+                    <Link
+                      href="/auth/login"
+                      className="w-full text-center nav-link px-2 py-2 rounded-lg bg-white"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      Log in
+                    </Link>
+                    <Link
+                      href="/auth/signup"
+                      className="w-full text-center btn-primary"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      Sign up
+                    </Link>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

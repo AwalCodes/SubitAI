@@ -9,6 +9,7 @@ import { getSubscriptionLimits } from '@/lib/utils'
 const plans = [
   {
     name: 'Free',
+    slug: 'free',
     description: 'Perfect for getting started',
     price: 0,
     period: 'month',
@@ -22,12 +23,13 @@ const plans = [
       'Advanced positioning',
       'Shadow & animation effects'
     ],
-    cta: 'Get Started',
+    cta: 'Get Started Free',
     popular: false,
     color: 'from-gray-400 to-gray-500'
   },
   {
     name: 'Pro',
+    slug: 'pro',
     description: 'For content creators',
     price: 10,
     period: 'month',
@@ -41,12 +43,13 @@ const plans = [
     limitations: [
       'Advanced shadow & animation'
     ],
-    cta: 'Subscribe with Crypto',
+    cta: 'Upgrade to Pro',
     popular: true,
     color: 'from-subit-500 to-subit-600'
   },
   {
     name: 'Premium',
+    slug: 'premium',
     description: 'For professionals',
     price: 50,
     period: 'month',
@@ -60,7 +63,7 @@ const plans = [
       'No video upload limits'
     ],
     limitations: [],
-    cta: 'Subscribe with Crypto',
+    cta: 'Upgrade to Premium',
     popular: false,
     color: 'from-purple-500 to-purple-600'
   }
@@ -115,7 +118,7 @@ export default function Pricing() {
             Choose the Right Plan for You
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Pay with cryptocurrency and get access to all our powerful subtitle generation features
+            Pay with card or cryptocurrency and get access to all our powerful subtitle generation features
           </p>
         </motion.div>
 
@@ -180,7 +183,7 @@ export default function Pricing() {
                 </div>
 
                 {/* CTA */}
-                <Link href={plan.price === 0 ? '/auth/signup' : '/pricing'}>
+                <Link href={plan.price === 0 ? '/auth/signup' : `/checkout/${plan.slug}`}>
                   <Button 
                     className={`w-full ${
                       plan.popular 
