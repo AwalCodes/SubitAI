@@ -116,7 +116,7 @@ function AuthCallbackContent() {
             </div>
           )}
           {status === 'success' && (
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/30 animate-scale-in">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/30 animate-pulse">
               <CheckCircle className="w-10 h-10 text-white" />
             </div>
           )}
