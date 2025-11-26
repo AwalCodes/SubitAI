@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useUser } from '@/lib/providers'
 import { useRouter } from 'next/navigation'
-import { Plus, Video, Clock, CheckCircle, AlertCircle, Zap, ArrowRight, Sparkles, LayoutDashboard, Settings, LogOut, Home, FolderOpen, TrendingUp, Trash2, Crown } from 'lucide-react'
+import { Plus, Video, Clock, CheckCircle, AlertCircle, Zap, ArrowRight, Sparkles, LayoutDashboard, Settings, LogOut, Home, FolderOpen, TrendingUp, Trash2, Crown, User } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
 import { OnboardingModal } from '@/components/onboarding-modal'
@@ -269,15 +269,19 @@ export default function Dashboard() {
 
         {/* User Section */}
         <div className="p-4 border-t border-slate-800">
-          <div className="flex items-center gap-3 px-3 py-2 mb-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white font-bold">
+          <Link 
+            href="/dashboard/settings"
+            className="flex items-center gap-3 px-3 py-2 mb-3 rounded-xl hover:bg-slate-800/50 transition-all duration-200 cursor-pointer group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white font-bold group-hover:scale-105 transition-transform">
               {user?.email?.charAt(0).toUpperCase() || 'U'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">{user?.email}</p>
+              <p className="text-sm font-medium text-white truncate group-hover:text-violet-400 transition-colors">{user?.email}</p>
               <p className="text-xs text-slate-500">Free Plan</p>
             </div>
-          </div>
+            <Settings className="w-4 h-4 text-slate-500 group-hover:text-violet-400 transition-colors opacity-0 group-hover:opacity-100" />
+          </Link>
           <button
             onClick={handleSignOut}
             className="flex items-center gap-2 w-full px-4 py-2.5 rounded-xl text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
