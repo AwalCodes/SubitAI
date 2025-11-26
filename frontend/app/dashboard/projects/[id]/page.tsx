@@ -1023,6 +1023,16 @@ export default function ProjectDetailPage() {
           </div>
         </div>
 
+        {/* Subtitle Customization Panel */}
+        {subtitles.length > 0 && (
+          <div className="mt-8">
+            <SubtitleCustomizer
+              style={subtitleStyle}
+              onStyleChange={setSubtitleStyle}
+            />
+          </div>
+        )}
+
         {/* Next Steps - Export section removed since it's in header */}
         {project.status === 'completed' && subtitles.length > 0 && (
           <div className="grid md:grid-cols-2 gap-6 mt-8">
