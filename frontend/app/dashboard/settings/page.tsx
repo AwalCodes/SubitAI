@@ -9,9 +9,21 @@ import { createClient } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 
 export default function SettingsPage() {
-  const { user, loading } = useUser()
+  const { user, loading, subscription } = useUser()
   const router = useRouter()
   const supabase = createClient()
+
+  const planName = subscription?.plan === 'premium' || subscription?.plan === 'team' 
+    ? 'Premium Plan' 
+    : subscription?.plan === 'pro' 
+    ? 'Pro Plan' 
+    : 'Free Plan'
+  
+  const planEnergy = subscription?.plan === 'premium' || subscription?.plan === 'team'
+    ? 'Unlimited energy'
+    : subscription?.plan === 'pro'
+    ? '300 energy per day'
+    : '30 energy per day'
 
   useEffect(() => {
     if (!loading && !user) {
@@ -100,15 +112,17 @@ export default function SettingsPage() {
             <div className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-white font-semibold">Free Plan</p>
-                  <p className="text-slate-400 text-sm">30 energy per day</p>
+                  <p className="text-white font-semibold">{planName}</p>
+                  <p className="text-slate-400 text-sm">{planEnergy}</p>
                 </div>
-                <Link
-                  href="/pricing"
-                  className="px-5 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-medium transition-colors"
-                >
-                  Upgrade
-                </Link>
+                {(subscription?.plan === 'free' || !subscription) && (
+                  <Link
+                    href="/pricing"
+                    className="px-5 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-medium transition-colors"
+                  >
+                    Upgrade
+                  </Link>
+                )}
               </div>
             </div>
           </div>

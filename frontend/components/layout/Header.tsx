@@ -20,8 +20,14 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
-  const { user, loading } = useUser()
+  const { user, loading, subscription } = useUser()
   const supabase = createClient()
+
+  const planName = subscription?.plan === 'premium' || subscription?.plan === 'team' 
+    ? 'Premium Plan' 
+    : subscription?.plan === 'pro' 
+    ? 'Pro Plan' 
+    : 'Free Plan'
 
   useEffect(() => {
     const handleScroll = () => {
@@ -120,7 +126,7 @@ export default function Header() {
                     <div className="absolute right-0 top-full mt-2 w-56 py-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 z-20">
                       <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
                         <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{user.email}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Free Plan</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{planName}</p>
                       </div>
                       <Link
                         href="/dashboard"
