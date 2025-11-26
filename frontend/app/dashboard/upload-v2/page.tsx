@@ -220,7 +220,7 @@ export default function UploadPageV2() {
       createdProjectId = newProjectId
       setProjectId(newProjectId)
 
-      // Upload video to storage with progress tracking
+      // Upload video to storage
       setProgressMessage('Uploading video...')
       setUploadProgress(5) // Start at 5% to show immediate feedback
       
@@ -228,19 +228,24 @@ export default function UploadPageV2() {
       const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
       const filePath = `${user?.id}/${fileName}`
 
-      // Upload with progress tracking
+      // Simulate progress during upload (Supabase doesn't support progress callbacks)
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev < 25) {
+            return prev + 2 // Gradually increase to 25%
+          }
+          return prev
+        })
+      }, 200)
+
       const { error: uploadError } = await supabase.storage
         .from('videos')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false,
-          onUploadProgress: (progress) => {
-            // Map storage upload progress (0-100) to our progress range (5-30%)
-            const uploadProgress = 5 + Math.round((progress.loaded / progress.total) * 25)
-            setUploadProgress(uploadProgress)
-            setProgressMessage(`Uploading video... ${Math.round((progress.loaded / progress.total) * 100)}%`)
-          }
         })
+
+      clearInterval(progressInterval)
 
       if (uploadError) throw uploadError
       
