@@ -22,7 +22,14 @@ async def upload_video(
 ):
     """Upload video file and create project"""
     try:
+        supabase = get_supabase_client()
+        if supabase is None:
+            raise HTTPException(status_code=503, detail="Database service unavailable")
+        
         # Validate file
+        if not file.filename:
+            raise HTTPException(status_code=400, detail="Filename is required")
+        
         if not video_service.validate_video_file(file.filename, file.size):
             raise HTTPException(status_code=400, detail="Invalid video file format or size")
         
@@ -56,7 +63,6 @@ async def upload_video(
             )
         
         # Create project in database
-        supabase = get_supabase_client()
         project_data = {
             "user_id": user["id"],
             "title": title or file.filename,
@@ -98,6 +104,8 @@ async def get_projects(
     """Get user's projects"""
     try:
         supabase = get_supabase_client()
+        if supabase is None:
+            raise HTTPException(status_code=503, detail="Database service unavailable")
         
         result = supabase.table("projects")\
             .select("*, subtitles(*)")\
@@ -125,6 +133,8 @@ async def get_project(
     """Get specific project details"""
     try:
         supabase = get_supabase_client()
+        if supabase is None:
+            raise HTTPException(status_code=503, detail="Database service unavailable")
         
         result = supabase.table("projects")\
             .select("*, subtitles(*)")\
@@ -168,6 +178,8 @@ async def update_project(
     """Update project information"""
     try:
         supabase = get_supabase_client()
+        if supabase is None:
+            raise HTTPException(status_code=503, detail="Database service unavailable")
         
         # Check if project exists and belongs to user
         existing = supabase.table("projects")\
@@ -208,6 +220,8 @@ async def delete_project(
     """Delete project and associated files"""
     try:
         supabase = get_supabase_client()
+        if supabase is None:
+            raise HTTPException(status_code=503, detail="Database service unavailable")
         
         # Get project details
         project_result = supabase.table("projects")\

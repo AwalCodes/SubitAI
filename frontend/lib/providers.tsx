@@ -41,19 +41,32 @@ export function Providers({ children }: { children: React.ReactNode }) {
             .from('billing')
             .select('plan, status, current_period_start, current_period_end, created_at, updated_at')
             .eq('user_id', user.id)
+            .eq('status', 'active')
+            .order('current_period_end', { ascending: false })
+            .limit(1)
             .maybeSingle()
 
           if (subscriptionError && subscriptionError.code !== 'PGRST116') {
-            throw subscriptionError
-          }
-
-          if (subscriptionData) {
-            setSubscription(subscriptionData)
+            console.error('Subscription fetch error:', subscriptionError)
+            setSubscription(null)
+          } else if (subscriptionData) {
+            // Check if subscription is still active
+            if (subscriptionData.current_period_end) {
+              const periodEnd = new Date(subscriptionData.current_period_end)
+              if (periodEnd < new Date()) {
+                setSubscription(null)
+              } else {
+                setSubscription(subscriptionData)
+              }
+            } else {
+              setSubscription(subscriptionData)
+            }
           } else {
             setSubscription(null)
           }
         } catch (error) {
           console.error('Subscription fetch error:', error)
+          setSubscription(null)
         }
       } else {
         setSubscription(null)

@@ -183,7 +183,7 @@ export default function UploadPageV2() {
       })
 
       // Save subtitles to database
-      await supabase
+      const { error: subtitleError } = await supabase
         .from('subtitles')
         .insert({
           project_id: newProjectId,
@@ -197,14 +197,24 @@ export default function UploadPageV2() {
           language: result.language,
         })
 
+      if (subtitleError) {
+        console.error('Failed to save subtitles:', subtitleError)
+        throw new Error('Failed to save subtitles to database')
+      }
+
       // Update project status
-      await supabase
+      const { error: updateError } = await supabase
         .from('projects')
         .update({
           status: 'completed',
           video_duration: Math.floor(result.duration),
         })
         .eq('id', newProjectId)
+
+      if (updateError) {
+        console.error('Failed to update project status:', updateError)
+        throw new Error('Failed to update project status')
+      }
 
       setState('success')
       setUploadProgress(100)

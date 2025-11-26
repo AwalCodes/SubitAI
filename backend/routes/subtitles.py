@@ -18,6 +18,9 @@ async def process_video_transcription(project_id: str, video_filename: str, user
     """Background task to transcribe video and save subtitles"""
     try:
         supabase = get_supabase_client()
+        if supabase is None:
+            logger.error("Supabase client not available")
+            return
         
         logger.info(f"Starting transcription for project {project_id}")
         
@@ -58,12 +61,13 @@ async def process_video_transcription(project_id: str, video_filename: str, user
         # Update project status to failed
         try:
             supabase = get_supabase_client()
-            supabase.table("projects")\
-                .update({"status": "failed"})\
-                .eq("id", project_id)\
-                .execute()
-        except:
-            pass
+            if supabase is not None:
+                supabase.table("projects")\
+                    .update({"status": "failed"})\
+                    .eq("id", project_id)\
+                    .execute()
+        except Exception as update_error:
+            logger.error(f"Failed to update project status: {update_error}")
 
 @router.post("/generate/{project_id}")
 async def generate_subtitles(
@@ -75,6 +79,8 @@ async def generate_subtitles(
     """Generate subtitles for a project using Whisper AI"""
     try:
         supabase = get_supabase_client()
+        if supabase is None:
+            raise HTTPException(status_code=503, detail="Database service unavailable")
         
         # Get project details
         project_result = supabase.table("projects")\

@@ -8,7 +8,11 @@ import { createClient as getBrowserSupabaseClient } from '@/lib/supabase';
 const WORKER_URL = process.env.NEXT_PUBLIC_WORKER_URL || 'http://localhost:8787';
 
 if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PUBLIC_WORKER_URL) {
-  throw new Error('NEXT_PUBLIC_WORKER_URL must be set in production');
+  if (typeof window === 'undefined') {
+    throw new Error('NEXT_PUBLIC_WORKER_URL must be set in production');
+  } else {
+    console.error('NEXT_PUBLIC_WORKER_URL is not set in production');
+  }
 }
 
 // Reuse the single browser Supabase client to avoid multiple GoTrueClient instances

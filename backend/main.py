@@ -48,13 +48,17 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS middleware - Allow all origins for testing (restrict in production)
+# CORS middleware - Restrict origins in production
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+if allowed_origins == ["*"] and os.getenv("ENVIRONMENT") == "production":
+    logger.warning("CORS is set to allow all origins in production - this is insecure!")
+    
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins - update with specific domains for production
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 # Include routers

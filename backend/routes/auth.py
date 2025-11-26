@@ -18,6 +18,8 @@ async def get_current_user_info(user: dict = Depends(get_current_user)):
     """Get current user information"""
     try:
         supabase = get_supabase_client()
+        if supabase is None:
+            raise HTTPException(status_code=503, detail="Database service unavailable")
         
         # Get user profile from database
         result = supabase.table("users").select("*").eq("id", user["id"]).execute()
@@ -42,6 +44,8 @@ async def update_user_profile(
     """Update user profile information"""
     try:
         supabase = get_supabase_client()
+        if supabase is None:
+            raise HTTPException(status_code=503, detail="Database service unavailable")
         
         # Update user profile
         result = supabase.table("users").update(profile_data).eq("id", user["id"]).execute()

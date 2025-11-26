@@ -95,7 +95,12 @@ async def create_checkout_session(
 ):
     """Create Stripe checkout session for subscription"""
     try:
+        if not stripe.api_key:
+            raise HTTPException(status_code=500, detail="Stripe not configured")
+        
         supabase = get_supabase_client()
+        if supabase is None:
+            raise HTTPException(status_code=503, detail="Database service unavailable")
         
         # Get or create Stripe customer
         customer_id = await _get_or_create_stripe_customer(user)
@@ -135,7 +140,12 @@ async def create_portal_session(
 ):
     """Create Stripe customer portal session"""
     try:
+        if not stripe.api_key:
+            raise HTTPException(status_code=500, detail="Stripe not configured")
+        
         supabase = get_supabase_client()
+        if supabase is None:
+            raise HTTPException(status_code=503, detail="Database service unavailable")
         
         # Get Stripe customer ID
         customer_id = await _get_or_create_stripe_customer(user)
@@ -162,6 +172,8 @@ async def get_subscription(
     """Get user's current subscription"""
     try:
         supabase = get_supabase_client()
+        if supabase is None:
+            raise HTTPException(status_code=503, detail="Database service unavailable")
         
         # Get billing information
         result = supabase.table("billing")\
@@ -241,7 +253,12 @@ async def stripe_webhook(request: Request):
 async def _get_or_create_stripe_customer(user: dict) -> str:
     """Get or create Stripe customer for user"""
     try:
+        if not stripe.api_key:
+            raise ValueError("Stripe not configured")
+        
         supabase = get_supabase_client()
+        if supabase is None:
+            raise ValueError("Database service unavailable")
         
         # Check if user already has a Stripe customer ID
         result = supabase.table("users")\
@@ -277,7 +294,14 @@ async def _handle_checkout_completed(session):
     """Handle successful checkout completion"""
     try:
         supabase = get_supabase_client()
-        user_id = session['metadata']['user_id']
+        if supabase is None:
+            logger.error("Database service unavailable for checkout completion")
+            return
+        
+        user_id = session.get('metadata', {}).get('user_id')
+        if not user_id:
+            logger.error("No user_id in checkout session metadata")
+            return
         
         # Get subscription details
         subscription = stripe.Subscription.retrieve(session['subscription'])
@@ -316,6 +340,9 @@ async def _handle_subscription_updated(subscription):
     """Handle subscription updates"""
     try:
         supabase = get_supabase_client()
+        if supabase is None:
+            logger.error("Database service unavailable for subscription update")
+            return
         
         # Update billing record
         supabase.table("billing")\
@@ -336,6 +363,9 @@ async def _handle_subscription_deleted(subscription):
     """Handle subscription cancellation"""
     try:
         supabase = get_supabase_client()
+        if supabase is None:
+            logger.error("Database service unavailable for subscription deletion")
+            return
         
         # Update billing record
         supabase.table("billing")\

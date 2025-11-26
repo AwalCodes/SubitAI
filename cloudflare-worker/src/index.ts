@@ -74,39 +74,59 @@ function getSubscriptionLimits(tier: SubscriptionTier): QuotaLimits {
 }
 
 async function getTodayUsageEnergy(userId: string, env: Env): Promise<number> {
-  const startOfDay = new Date();
-  startOfDay.setUTCHours(0, 0, 0, 0);
+  try {
+    const startOfDay = new Date();
+    startOfDay.setUTCHours(0, 0, 0, 0);
 
-  const url = new URL(`${env.SUPABASE_URL}/rest/v1/usage_tracking`);
-  url.searchParams.set('user_id', `eq.${userId}`);
-  url.searchParams.set('created_at', `gte.${startOfDay.toISOString()}`);
-  url.searchParams.set('select', 'energy_cost');
+    const url = new URL(`${env.SUPABASE_URL}/rest/v1/usage_tracking`);
+    url.searchParams.set('user_id', `eq.${userId}`);
+    url.searchParams.set('created_at', `gte.${startOfDay.toISOString()}`);
+    url.searchParams.set('select', 'energy_cost');
 
-  const res = await fetch(url.toString(), {
-    headers: {
-      apikey: env.SUPABASE_SERVICE_KEY,
-      Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-    },
-  });
+    const res = await fetch(url.toString(), {
+      headers: {
+        apikey: env.SUPABASE_SERVICE_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+        'Content-Type': 'application/json',
+      },
+    });
 
-  if (!res.ok) {
-    const text = await res.text();
-    console.error('Failed to fetch usage:', res.status, text);
-    throw new Error('Failed to fetch usage');
+    if (!res.ok) {
+      const text = await res.text().catch(() => 'Unknown error');
+      console.error('Failed to fetch usage:', res.status, text);
+      // Return 0 instead of throwing to allow quota check to continue
+      return 0;
+    }
+
+    let rows: Array<{ energy_cost: number | null }>;
+    try {
+      rows = (await res.json()) as Array<{ energy_cost: number | null }>;
+    } catch (error) {
+      console.error('Failed to parse usage response:', error);
+      return 0;
+    }
+
+    return rows.reduce((sum, row) => {
+      const cost = row.energy_cost ?? 0;
+      // Never allow negative usage to decrease total energy used
+      return sum + (cost > 0 ? cost : 0);
+    }, 0);
+  } catch (error) {
+    console.error('Error in getTodayUsageEnergy:', error);
+    // Return 0 to allow processing to continue
+    return 0;
   }
-
-  const rows = (await res.json()) as Array<{ energy_cost: number | null }>;
-  return rows.reduce((sum, row) => {
-    const cost = row.energy_cost ?? 0;
-    // Never allow negative usage to decrease total energy used
-    return sum + (cost > 0 ? cost : 0);
-  }, 0);
 }
 
 async function getEffectiveSubscriptionTier(userId: string, env: Env): Promise<SubscriptionTier> {
   try {
+    if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+      console.error('Invalid userId provided to getEffectiveSubscriptionTier');
+      return 'free';
+    }
+
     const url = new URL(`${env.SUPABASE_URL}/rest/v1/billing`);
-    url.searchParams.set('user_id', `eq.${userId}`);
+    url.searchParams.set('user_id', `eq.${userId.trim()}`);
     url.searchParams.set('status', 'eq.active');
     url.searchParams.set('order', 'current_period_end.desc');
     url.searchParams.set('limit', '1');
@@ -116,28 +136,40 @@ async function getEffectiveSubscriptionTier(userId: string, env: Env): Promise<S
       headers: {
         apikey: env.SUPABASE_SERVICE_KEY,
         Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+        'Content-Type': 'application/json',
       },
     });
 
     if (!res.ok) {
-      const text = await res.text();
+      const text = await res.text().catch(() => 'Unknown error');
       console.error('Failed to fetch billing info:', res.status, text);
       return 'free';
     }
 
-    const rows = (await res.json()) as Array<{
+    let rows: Array<{
       plan: SubscriptionTier;
       status: string;
       current_period_end: string | null;
     }>;
 
-    if (!rows.length) {
+    try {
+      rows = (await res.json()) as Array<{
+        plan: SubscriptionTier;
+        status: string;
+        current_period_end: string | null;
+      }>;
+    } catch (error) {
+      console.error('Failed to parse billing response:', error);
+      return 'free';
+    }
+
+    if (!rows || !rows.length) {
       return 'free';
     }
 
     const record = rows[0];
 
-    if (record.status !== 'active') {
+    if (!record || record.status !== 'active') {
       return 'free';
     }
 
@@ -162,28 +194,33 @@ async function recordUsage(
   env: Env,
   projectId?: string | null,
 ): Promise<void> {
-  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/usage_tracking`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      apikey: env.SUPABASE_SERVICE_KEY,
-      Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-      Prefer: 'return=minimal',
-    },
-    body: JSON.stringify([
-      {
-        user_id: userId,
-        project_id: projectId ?? null,
-        action_type: actionType,
-        energy_cost: energyCost,
+  try {
+    const res = await fetch(`${env.SUPABASE_URL}/rest/v1/usage_tracking`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: env.SUPABASE_SERVICE_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+        Prefer: 'return=minimal',
       },
-    ]),
-  });
+      body: JSON.stringify([
+        {
+          user_id: userId,
+          project_id: projectId ?? null,
+          action_type: actionType,
+          energy_cost: energyCost,
+        },
+      ]),
+    });
 
-  if (!res.ok) {
-    const text = await res.text();
-    console.error('Failed to record usage:', res.status, text);
-    throw new Error('Failed to record usage');
+    if (!res.ok) {
+      const text = await res.text().catch(() => 'Unknown error');
+      console.error('Failed to record usage:', res.status, text);
+      throw new Error(`Failed to record usage: ${res.status}`);
+    }
+  } catch (error) {
+    console.error('Error recording usage:', error);
+    throw error;
   }
 }
 

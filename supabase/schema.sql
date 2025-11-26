@@ -86,6 +86,24 @@ CREATE TABLE public.client_error_logs (
 );
 
 -- Storage policies for Supabase Storage
+-- Note: These policies require the storage.objects table to exist and RLS to be enabled
+-- If storage.objects doesn't exist, these will fail - that's expected for Supabase Storage
+
+-- Enable RLS on storage.objects if not already enabled
+DO $$ 
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'storage' AND tablename = 'objects') THEN
+        ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+    END IF;
+END $$;
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can upload their own videos" ON storage.objects;
+DROP POLICY IF EXISTS "Users can view their own videos" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete their own videos" ON storage.objects;
+DROP POLICY IF EXISTS "Users can update their own videos" ON storage.objects;
+
+-- Create storage policies
 CREATE POLICY "Users can upload their own videos" ON storage.objects
     FOR INSERT WITH CHECK (bucket_id = 'videos' AND auth.uid()::text = (storage.foldername(name))[1]);
 
@@ -94,6 +112,9 @@ CREATE POLICY "Users can view their own videos" ON storage.objects
 
 CREATE POLICY "Users can delete their own videos" ON storage.objects
     FOR DELETE USING (bucket_id = 'videos' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+CREATE POLICY "Users can update their own videos" ON storage.objects
+    FOR UPDATE USING (bucket_id = 'videos' AND auth.uid()::text = (storage.foldername(name))[1]);
 
 -- RLS Policies
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
@@ -209,10 +230,18 @@ CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- Create storage buckets
-INSERT INTO storage.buckets (id, name, public) VALUES ('videos', 'videos', false);
-INSERT INTO storage.buckets (id, name, public) VALUES ('subtitles', 'subtitles', false);
-INSERT INTO storage.buckets (id, name, public) VALUES ('exports', 'exports', false);
+-- Create storage buckets (only if they don't exist)
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('videos', 'videos', false)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('subtitles', 'subtitles', false)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('exports', 'exports', false)
+ON CONFLICT (id) DO NOTHING;
 
 -- Indexes for performance
 CREATE INDEX idx_projects_user_id ON public.projects(user_id);

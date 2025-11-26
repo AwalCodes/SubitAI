@@ -11,7 +11,6 @@ from fastapi import HTTPException
 import aiofiles
 import ffmpeg
 from services.supabase_client import get_supabase_client
-from storage3.utils import StorageException
 
 try:
     from httpx import Response
@@ -44,7 +43,7 @@ class VideoService:
                     file=file,
                     file_options={"content-type": "video/mp4"}
                 )
-            except StorageException as storage_error:
+            except Exception as storage_error:
                 logger.error(f"Supabase storage error: {storage_error}")
                 raise HTTPException(status_code=400, detail="Failed to upload video")
 

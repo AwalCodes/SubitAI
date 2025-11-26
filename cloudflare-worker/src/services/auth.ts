@@ -37,15 +37,27 @@ export async function getUser(
     });
 
     if (!response.ok) {
-      console.error('Supabase auth failed:', response.status);
+      const errorText = await response.text().catch(() => 'Unknown error');
+      console.error('Supabase auth failed:', response.status, errorText);
       return null;
     }
 
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch (error) {
+      console.error('Failed to parse auth response:', error);
+      return null;
+    }
+    
+    if (!data || !data.id) {
+      console.error('Invalid auth response data');
+      return null;
+    }
     
     return {
       id: data.id,
-      email: data.email,
+      email: data.email || '',
       subscription_tier: data.user_metadata?.subscription_tier || 'free',
     };
 

@@ -58,7 +58,12 @@ def verify_jwt_token(token: str) -> dict:
     """Verify JWT token with Supabase"""
     try:
         supabase = get_supabase_client()
+        if supabase is None:
+            logger.error("Supabase client not initialized")
+            raise ValueError("Supabase client not available")
         user = supabase.auth.get_user(token)
+        if user is None or user.user is None:
+            raise ValueError("Invalid token response")
         return user
     except Exception as e:
         logger.error(f"JWT verification failed: {e}")
@@ -67,7 +72,11 @@ def verify_jwt_token(token: str) -> dict:
 def get_user_from_token(token: str) -> dict:
     """Get user data from JWT token"""
     try:
+        if not token or not isinstance(token, str) or token.strip() == "":
+            raise ValueError("Token is required")
         user_data = verify_jwt_token(token)
+        if user_data is None or user_data.user is None:
+            raise ValueError("Invalid user data")
         return user_data.user.dict()
     except Exception as e:
         logger.error(f"Failed to get user from token: {e}")
