@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Zap } from 'lucide-react'
 
+// Force dynamic rendering for OAuth callback
+export const dynamic = 'force-dynamic'
+
 function AuthCallbackContent() {
   const router = useRouter()
   const supabase = createClient()
