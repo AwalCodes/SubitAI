@@ -1,6 +1,11 @@
 -- Enable RLS on client_error_logs table
 ALTER TABLE public.client_error_logs ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist (to avoid conflicts)
+DROP POLICY IF EXISTS "Authenticated users can insert error logs" ON public.client_error_logs;
+DROP POLICY IF EXISTS "Service role can read all error logs" ON public.client_error_logs;
+DROP POLICY IF EXISTS "Service role can insert error logs" ON public.client_error_logs;
+
 -- Policy: Allow authenticated users to insert error logs (for client-side error reporting)
 CREATE POLICY "Authenticated users can insert error logs" ON public.client_error_logs
     FOR INSERT 
