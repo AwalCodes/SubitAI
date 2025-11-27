@@ -1,0 +1,13 @@
+# robots.txt for subitai.com
+User-agent: *
+Allow: /
+
+# Disallow private/auth pages from indexing
+Disallow: /dashboard/
+Disallow: /auth/
+Disallow: /api/
+Disallow: /checkout/
+
+# Allow search engines to find the sitemap
+Sitemap: https://subitai.com/sitemap.xml
+

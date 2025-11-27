@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { ChevronDown, HelpCircle, MessageSquare, ArrowRight } from 'lucide-react'
 import { useState } from 'react'
 import Link from 'next/link'
+import { FAQSchema } from '@/components/seo/structured-data'
 
 export default function FAQPage() {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
@@ -45,8 +46,11 @@ export default function FAQPage() {
     },
   ]
 
+  const faqSchemaData = faqs.map(f => ({ question: f.q, answer: f.a }))
+
   return (
     <div className="min-h-screen bg-slate-950">
+      <FAQSchema faqs={faqSchemaData} />
       <Header />
       <main className="pt-20">
         {/* Hero Section */}

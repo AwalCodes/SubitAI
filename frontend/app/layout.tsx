@@ -4,6 +4,7 @@ import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import { Providers } from '@/lib/providers'
 import { ThemeProvider } from '@/components/providers/theme-provider'
+import { OrganizationSchema, WebsiteSchema, SoftwareApplicationSchema } from '@/components/seo/structured-data'
 import dynamic from 'next/dynamic'
 
 // Lazy load heavy components
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://subitai.com'),
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
@@ -66,8 +67,13 @@ export const metadata: Metadata = {
     title: 'SUBITAI - AI-Powered Subtitle Generator',
     description: 'Generate professional subtitles for your videos using advanced AI technology.',
     images: ['/og-image.png'],
-    creator: '@subit_ai',
+    site: '@subitai',
+    creator: '@subitai',
   },
+  alternates: {
+    canonical: 'https://subitai.com',
+  },
+  category: 'technology',
   robots: {
     index: true,
     follow: true,
@@ -91,6 +97,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
+      <head>
+        <OrganizationSchema />
+        <WebsiteSchema />
+        <SoftwareApplicationSchema />
+      </head>
       <body className={`${inter.className} h-full antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <Providers>

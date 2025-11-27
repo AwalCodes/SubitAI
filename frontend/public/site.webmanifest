@@ -1,7 +1,7 @@
 {
-  "name": "SUBITAI",
+  "name": "SUBITAI - AI Subtitle Generator",
   "short_name": "SUBITAI",
-  "description": "AI-Powered Subtitle Generator",
+  "description": "Generate professional subtitles for your videos using advanced AI technology",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",
@@ -14,12 +14,21 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
   "theme_color": "#7c3aed",
   "background_color": "#020617",
   "display": "standalone",
   "start_url": "/",
-  "scope": "/"
+  "scope": "/",
+  "id": "subitai-app",
+  "orientation": "portrait-primary",
+  "categories": ["productivity", "utilities"]
 }
 

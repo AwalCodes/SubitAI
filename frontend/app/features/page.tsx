@@ -6,8 +6,17 @@ import Pricing from '@/components/landing/Pricing'
 import { Languages, Zap, Palette, Upload, Clock, FileText } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Features | SUBITAI',
-  description: 'Explore the AI subtitle features that help you create polished videos faster.',
+  title: 'Features | SUBITAI - AI Subtitle Generator Capabilities',
+  description: 'Explore powerful AI subtitle features: 50+ language support, real-time transcription, multiple export formats, team collaboration, and seamless integrations.',
+  keywords: ['subtitle features', 'AI transcription features', 'video subtitle tools', 'automatic captions'],
+  openGraph: {
+    title: 'Features | SUBITAI',
+    description: 'Powerful AI-powered subtitle generation features for every creator.',
+    url: 'https://subitai.com/features',
+  },
+  alternates: {
+    canonical: 'https://subitai.com/features',
+  },
 }
 
 const featureHighlights = [

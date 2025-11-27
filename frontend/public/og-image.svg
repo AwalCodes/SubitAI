@@ -1,0 +1,40 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#020617"/>
+      <stop offset="100%" style="stop-color:#0f172a"/>
+    </linearGradient>
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7c3aed"/>
+      <stop offset="100%" style="stop-color:#c026d3"/>
+    </linearGradient>
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#a78bfa"/>
+      <stop offset="100%" style="stop-color:#e879f9"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGrad)"/>
+  
+  <!-- Decorative circles -->
+  <circle cx="200" cy="100" r="300" fill="#7c3aed" fill-opacity="0.1"/>
+  <circle cx="1000" cy="530" r="250" fill="#c026d3" fill-opacity="0.1"/>
+  
+  <!-- Logo icon -->
+  <rect x="500" y="150" width="80" height="80" rx="16" fill="url(#logoGrad)"/>
+  <path d="M548 175L524 215H544L536 255L560 215H540L548 175Z" fill="white" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+  
+  <!-- Brand name -->
+  <text x="600" y="270" text-anchor="start" font-family="Arial, sans-serif" font-size="72" font-weight="bold" fill="white">SUBITAI</text>
+  
+  <!-- Tagline -->
+  <text x="600" y="340" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" fill="#94a3b8">AI-Powered Subtitle Generator</text>
+  
+  <!-- Features -->
+  <text x="600" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" fill="#64748b">Fast • Accurate • 50+ Languages • Free Tier</text>
+  
+  <!-- URL -->
+  <text x="600" y="560" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" fill="url(#textGrad)">subitai.com</text>
+</svg>
+
