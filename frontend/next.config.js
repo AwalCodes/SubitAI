@@ -4,6 +4,8 @@ const nextConfig = {
     domains: [
       'localhost',
       'subit-ai.vercel.app',
+      'subitai.com',
+      'www.subitai.com',
       'supabase.co',
       'images.unsplash.com'
     ],
@@ -39,6 +41,13 @@ const nextConfig = {
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-XSS-Protection', value: '1; mode=block' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
       },
     ];
