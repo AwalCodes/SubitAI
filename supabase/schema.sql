@@ -122,6 +122,7 @@ ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subtitles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.billing ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.usage_tracking ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.client_error_logs ENABLE ROW LEVEL SECURITY;
 
 -- Users policies
 CREATE POLICY "Users can view own profile" ON public.users
@@ -188,6 +189,22 @@ CREATE POLICY "Users can view own usage" ON public.usage_tracking
 CREATE POLICY "System can create usage records" ON public.usage_tracking
     FOR INSERT WITH CHECK (true);
 
+-- Client error logs policies
+CREATE POLICY "Authenticated users can insert error logs" ON public.client_error_logs
+    FOR INSERT 
+    TO authenticated
+    WITH CHECK (true);
+
+CREATE POLICY "Service role can read all error logs" ON public.client_error_logs
+    FOR SELECT 
+    TO service_role
+    USING (true);
+
+CREATE POLICY "Service role can insert error logs" ON public.client_error_logs
+    FOR INSERT 
+    TO service_role
+    WITH CHECK (true);
+
 -- Functions for updated_at timestamps
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -251,10 +268,16 @@ VALUES ('exports', 'exports', false)
 ON CONFLICT (id) DO NOTHING;
 
 -- Indexes for performance
-CREATE INDEX idx_projects_user_id ON public.projects(user_id);
-CREATE INDEX idx_projects_status ON public.projects(status);
-CREATE INDEX idx_subtitles_project_id ON public.subtitles(project_id);
-CREATE INDEX idx_billing_user_id ON public.billing(user_id);
-CREATE INDEX idx_usage_tracking_user_id ON public.usage_tracking(user_id);
-CREATE INDEX idx_usage_tracking_created_at ON public.usage_tracking(created_at);
-CREATE INDEX idx_client_error_logs_created_at ON public.client_error_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_projects_user_id ON public.projects(user_id);
+CREATE INDEX IF NOT EXISTS idx_projects_status ON public.projects(status);
+CREATE INDEX IF NOT EXISTS idx_projects_created_at ON public.projects(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_subtitles_project_id ON public.subtitles(project_id);
+CREATE INDEX IF NOT EXISTS idx_billing_user_id ON public.billing(user_id);
+CREATE INDEX IF NOT EXISTS idx_billing_status ON public.billing(status);
+CREATE INDEX IF NOT EXISTS idx_usage_tracking_user_id ON public.usage_tracking(user_id);
+CREATE INDEX IF NOT EXISTS idx_usage_tracking_created_at ON public.usage_tracking(created_at);
+CREATE INDEX IF NOT EXISTS idx_usage_tracking_project_id ON public.usage_tracking(project_id);
+CREATE INDEX IF NOT EXISTS idx_client_error_logs_created_at ON public.client_error_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_client_error_logs_path ON public.client_error_logs(path);
+CREATE INDEX IF NOT EXISTS idx_client_error_logs_name ON public.client_error_logs(name);
+CREATE INDEX IF NOT EXISTS idx_client_error_logs_created_name ON public.client_error_logs(created_at DESC, name);
