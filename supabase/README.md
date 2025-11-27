@@ -55,9 +55,27 @@ After applying the migration, verify:
   - `billing.status` (for filtering subscriptions)
   - `usage_tracking.project_id` (for project-specific queries)
 
+## Additional Security Fixes
+
+### Function Search Path Security
+- ✅ Fixed `update_updated_at_column()` function - Added `SET search_path = public, pg_temp`
+- ✅ Fixed `handle_new_user()` function - Added `SET search_path = public, pg_temp`
+- Prevents SQL injection via search_path manipulation
+
+### Leaked Password Protection
+To enable HaveIBeenPwned.org password checking:
+
+1. Go to **Supabase Dashboard** → **Authentication** → **Settings**
+2. Scroll to **Password Protection** section
+3. Enable **"Check passwords against HaveIBeenPwned database"**
+4. Click **Save**
+
+This will prevent users from using compromised passwords that have been leaked in data breaches.
+
 ## Notes
 
 - The migration uses `IF NOT EXISTS` to prevent errors if indexes already exist
 - Policies allow authenticated users to log errors (needed for client-side error reporting)
 - Service role has full access for admin/debugging purposes
+- Functions now have immutable `search_path` to prevent SQL injection attacks
 

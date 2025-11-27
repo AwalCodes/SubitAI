@@ -26,3 +26,40 @@ CREATE INDEX IF NOT EXISTS idx_client_error_logs_name ON public.client_error_log
 -- Performance: Add composite index for common queries (date + name filtering)
 CREATE INDEX IF NOT EXISTS idx_client_error_logs_created_name ON public.client_error_logs(created_at DESC, name);
 
+-- Fix function search_path security issues
+-- Update update_updated_at_column function to set search_path
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER 
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$;
+
+-- Update handle_new_user function to set search_path
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER 
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+    INSERT INTO public.users (id, email, full_name, avatar_url, subscription_tier)
+    VALUES (
+        NEW.id,
+        COALESCE(NEW.email, ''),
+        NEW.raw_user_meta_data->>'full_name',
+        NEW.raw_user_meta_data->>'avatar_url',
+        'free'
+    )
+    ON CONFLICT (id) DO UPDATE SET
+        email = COALESCE(EXCLUDED.email, users.email),
+        updated_at = NOW();
+    RETURN NEW;
+END;
+$$;
+
