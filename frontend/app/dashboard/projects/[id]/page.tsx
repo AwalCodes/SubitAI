@@ -28,6 +28,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
+import SubtitleEditor, { SubtitleStyle } from '@/components/subtitle-editor/SubtitleEditor'
 
 interface Subtitle {
   id: number
@@ -72,7 +73,7 @@ const isAudioFile = (filename?: string, url?: string): boolean => {
 export default function ProjectDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const { user, loading: userLoading } = useUser()
+  const { user, loading: userLoading, subscription } = useUser()
   const [project, setProject] = useState<Project | null>(null)
   const [subtitles, setSubtitles] = useState<Subtitle[]>([])
   const [loading, setLoading] = useState(true)
@@ -359,16 +360,21 @@ export default function ProjectDetailPage() {
     }
   }
 
-  const handleSaveAll = async () => {
+  const handleSaveAll = async (updatedSubtitles: Subtitle[], style?: SubtitleStyle) => {
     if (!project) return
 
     try {
       setSaving(true)
-      const updateData = {
+      const updateData: any = {
         json_data: {
-          segments: subtitles,
+          segments: updatedSubtitles || subtitles,
           language: project.subtitles?.[0]?.language || 'en'
         }
+      }
+      
+      // Add style to json_data if provided
+      if (style) {
+        updateData.json_data.style = style
       }
       
       const supabase = createClient()
@@ -378,6 +384,12 @@ export default function ProjectDetailPage() {
         .eq('project_id', project.id)
       
       if (error) throw error
+      
+      // Update local state
+      if (updatedSubtitles) {
+        setSubtitles(updatedSubtitles)
+      }
+      
       toast.success('Subtitles saved successfully!')
     } catch (error: any) {
       console.error('Save error:', error)
@@ -797,183 +809,198 @@ export default function ProjectDetailPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Media Player (Video or Audio) */}
-          <div>
-            <div className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm rounded-2xl border border-neutral-200/60 dark:border-neutral-800/60 p-6 sm:p-7 shadow-lg">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-neutral-100 mb-4">
-                {isAudio ? 'Audio Preview' : 'Video Preview'}
-              </h2>
-              {isAudio ? (
-                <div className="bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 rounded-lg p-8 sm:p-12">
-                  <div className="flex flex-col items-center justify-center space-y-6">
-                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg">
-                      <FileAudio className="w-12 h-12 text-white" />
-                    </div>
-                    {project.video_url ? (
-                      <audio
-                        key={project.video_url}
-                        src={project.video_url}
-                        controls
-                        className="w-full max-w-md"
-                        ref={audioRef}
-                        onPlay={() => {
-                          if (rafRef.current) cancelAnimationFrame(rafRef.current)
-                          rafRef.current = requestAnimationFrame(tick)
-                        }}
-                        onPause={() => {
-                          if (rafRef.current) cancelAnimationFrame(rafRef.current)
-                          rafRef.current = null
-                        }}
-                        onError={(e) => {
-                          console.error('Audio playback error:', e)
-                          toast.error('Failed to load audio. Please refresh the page.')
-                        }}
-                      >
-                        Your browser does not support the audio tag.
-                      </audio>
-                    ) : (
-                      <div className="text-center text-slate-400">
-                        <p>Audio file not available</p>
+        {/* Subtitle Editor - Full Width */}
+        {subtitles.length > 0 && project.status === 'completed' ? (
+          <div className="mb-8">
+            <SubtitleEditor
+              subtitles={subtitles}
+              videoUrl={project.video_url}
+              videoDuration={project.video_duration || 0}
+              onSave={handleSaveAll}
+              subscriptionTier={(subscription?.plan as 'free' | 'pro' | 'premium') || 'free'}
+              isAudio={isAudio}
+              savedStyle={project.subtitles?.[0]?.json_data?.style as SubtitleStyle | undefined}
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Media Player (Video or Audio) */}
+            <div>
+              <div className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm rounded-2xl border border-neutral-200/60 dark:border-neutral-800/60 p-6 sm:p-7 shadow-lg">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-neutral-100 mb-4">
+                  {isAudio ? 'Audio Preview' : 'Video Preview'}
+                </h2>
+                {isAudio ? (
+                  <div className="bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 rounded-lg p-8 sm:p-12">
+                    <div className="flex flex-col items-center justify-center space-y-6">
+                      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg">
+                        <FileAudio className="w-12 h-12 text-white" />
                       </div>
-                    )}
-                    {project.title && (
-                      <div className="text-center">
-                        <p className="text-sm text-slate-400">Now Playing</p>
-                        <p className="text-lg font-semibold text-white mt-1">{project.title}</p>
+                      {project.video_url ? (
+                        <audio
+                          key={project.video_url}
+                          src={project.video_url}
+                          controls
+                          className="w-full max-w-md"
+                          ref={audioRef}
+                          onPlay={() => {
+                            if (rafRef.current) cancelAnimationFrame(rafRef.current)
+                            rafRef.current = requestAnimationFrame(tick)
+                          }}
+                          onPause={() => {
+                            if (rafRef.current) cancelAnimationFrame(rafRef.current)
+                            rafRef.current = null
+                          }}
+                          onError={(e) => {
+                            console.error('Audio playback error:', e)
+                            toast.error('Failed to load audio. Please refresh the page.')
+                          }}
+                        >
+                          Your browser does not support the audio tag.
+                        </audio>
+                      ) : (
+                        <div className="text-center text-slate-400">
+                          <p>Audio file not available</p>
+                        </div>
+                      )}
+                      {project.title && (
+                        <div className="text-center">
+                          <p className="text-sm text-slate-400">Now Playing</p>
+                          <p className="text-lg font-semibold text-white mt-1">{project.title}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="aspect-video bg-black rounded-lg overflow-hidden relative">
+                    {project.video_url ? (
+                      <>
+                        <video
+                          key={project.video_url}
+                          src={project.video_url}
+                          controls
+                          className="w-full h-full"
+                          ref={videoRef}
+                          onPlay={handlePlay}
+                          onPause={handlePause}
+                          onError={(e) => {
+                            console.error('Video playback error:', e)
+                            toast.error('Failed to load video. Please refresh the page.')
+                          }}
+                        >
+                          Your browser does not support the video tag.
+                        </video>
+                        {/* Subtitle Overlay */}
+                        {subtitles.length > 0 && activeSegment !== null && (
+                          <div className="absolute inset-0 pointer-events-none flex items-end justify-center pb-8 px-4">
+                            <div className="px-4 py-2 rounded-lg bg-black/70 text-white text-lg font-medium max-w-[90%] text-center">
+                              {subtitles[activeSegment]?.text}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-white">
+                        <Video className="w-16 h-16 opacity-50" />
                       </div>
                     )}
                   </div>
-                </div>
-              ) : (
-                <div className="aspect-video bg-black rounded-lg overflow-hidden relative">
-                  {project.video_url ? (
-                    <>
-                      <video
-                        key={project.video_url} // Force re-render when URL changes
-                        src={project.video_url}
-                        controls
-                        className="w-full h-full"
-                        ref={videoRef}
-                        onPlay={handlePlay}
-                        onPause={handlePause}
-                        onError={(e) => {
-                          console.error('Video playback error:', e)
-                          toast.error('Failed to load video. Please refresh the page.')
-                        }}
-                      >
-                        Your browser does not support the video tag.
-                      </video>
-                      {/* Subtitle Overlay */}
-                      {subtitles.length > 0 && activeSegment !== null && (
-                        <div className="absolute inset-0 pointer-events-none flex items-end justify-center pb-8 px-4">
-                          <div className="px-4 py-2 rounded-lg bg-black/70 text-white text-lg font-medium max-w-[90%] text-center">
-                            {subtitles[activeSegment]?.text}
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-white">
-                      <Video className="w-16 h-16 opacity-50" />
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Subtitles Editor */}
-          <div>
-            <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-neutral-100">Subtitles</h2>
-                {subtitles.length === 0 && !generating && (
-                  <button
-                    onClick={handleGenerateSubtitles}
-                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    <Languages className="w-4 h-4" />
-                    <span>Generate Subtitles</span>
-                  </button>
                 )}
               </div>
+            </div>
 
-              {generating && (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                  <p className="text-gray-600">Generating subtitles... This may take a few minutes.</p>
+            {/* Subtitles List */}
+            <div>
+              <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-neutral-100">Subtitles</h2>
+                  {subtitles.length === 0 && !generating && (
+                    <button
+                      onClick={handleGenerateSubtitles}
+                      className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <Languages className="w-4 h-4" />
+                      <span>Generate Subtitles</span>
+                    </button>
+                  )}
                 </div>
-              )}
 
-              {subtitles.length > 0 && (
-                <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
-                  {subtitles.map((subtitle, index) => {
-                    const words = getSegmentWords(subtitle)
-                    const isActiveSeg = activeSegment === index
-                    return (
-                      <div
-                        key={index}
-                        className={`border rounded-xl p-4 sm:p-5 transition-colors ${
-                          isActiveSeg
-                            ? 'border-subit-300 dark:border-subit-500 bg-subit-50/80 dark:bg-subit-900/20 shadow-sm'
-                            : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:border-subit-300 dark:hover:border-subit-500 hover:bg-neutral-50 dark:hover:bg-neutral-900/80'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <span className="text-sm text-gray-600">
-                            {formatTime(subtitle.start)} → {formatTime(subtitle.end)}
-                          </span>
-                          <div className="flex items-center space-x-2">
-                            {editingIndex === index ? (
-                              <button onClick={handleSaveEdit} className="p-1 text-green-600 hover:bg-green-50 rounded">
-                                <CheckCircle className="w-4 h-4" />
+                {generating && (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                    <p className="text-gray-600">Generating subtitles... This may take a few minutes.</p>
+                  </div>
+                )}
+
+                {subtitles.length > 0 && (
+                  <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
+                    {subtitles.map((subtitle, index) => {
+                      const words = getSegmentWords(subtitle)
+                      const isActiveSeg = activeSegment === index
+                      return (
+                        <div
+                          key={index}
+                          className={`border rounded-xl p-4 sm:p-5 transition-colors ${
+                            isActiveSeg
+                              ? 'border-subit-300 dark:border-subit-500 bg-subit-50/80 dark:bg-subit-900/20 shadow-sm'
+                              : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:border-subit-300 dark:hover:border-subit-500 hover:bg-neutral-50 dark:hover:bg-neutral-900/80'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <span className="text-sm text-gray-600">
+                              {formatTime(subtitle.start)} → {formatTime(subtitle.end)}
+                            </span>
+                            <div className="flex items-center space-x-2">
+                              {editingIndex === index ? (
+                                <button onClick={handleSaveEdit} className="p-1 text-green-600 hover:bg-green-50 rounded">
+                                  <CheckCircle className="w-4 h-4" />
+                                </button>
+                              ) : (
+                                <button onClick={() => handleEditSubtitle(index)} className="p-1 text-blue-600 hover:bg-blue-50 rounded">
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                              )}
+                              <button onClick={() => handleDeleteSubtitle(index)} className="p-1 text-red-600 hover:bg-red-50 rounded">
+                                <Trash2 className="w-4 h-4" />
                               </button>
-                            ) : (
-                              <button onClick={() => handleEditSubtitle(index)} className="p-1 text-blue-600 hover:bg-blue-50 rounded">
-                                <Edit className="w-4 h-4" />
-                              </button>
-                            )}
-                            <button onClick={() => handleDeleteSubtitle(index)} className="p-1 text-red-600 hover:bg-red-50 rounded">
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            </div>
                           </div>
+                          {editingIndex === index ? (
+                            <textarea
+                              value={editText}
+                              onChange={(e) => setEditText(e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-subit-500 focus:border-transparent bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100"
+                              rows={2}
+                            />
+                          ) : (
+                            <p className="text-gray-900 dark:text-neutral-200 leading-7">
+                              {subtitle.text || words.map((w, wi) => {
+                                const on = activeWord && activeWord.segment === index && activeWord.word === wi
+                                return (
+                                  <span key={wi} className={on ? 'bg-yellow-200 rounded px-0.5' : ''}>{w.text}</span>
+                                )
+                              }).join('') || '[No text]'}
+                            </p>
+                          )}
                         </div>
-                        {editingIndex === index ? (
-                          <textarea
-                            value={editText}
-                            onChange={(e) => setEditText(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-subit-500 focus:border-transparent bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100"
-                            rows={2}
-                          />
-                        ) : (
-                          <p className="text-gray-900 dark:text-neutral-200 leading-7">
-                            {subtitle.text || words.map((w, wi) => {
-                              const on = activeWord && activeWord.segment === index && activeWord.word === wi
-                              return (
-                                <span key={wi} className={on ? 'bg-yellow-200 rounded px-0.5' : ''}>{w.text}</span>
-                              )
-                            }).join('') || '[No text]'}
-                          </p>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
+                      )
+                    })}
+                  </div>
+                )}
 
-              {subtitles.length === 0 && !generating && (
-                <div className="text-center py-12">
-                  <Languages className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-100 mb-2">No subtitles yet</h3>
-                  <p className="text-gray-600 dark:text-neutral-400 mb-4">
-                    Generate AI-powered subtitles for your video
-                  </p>
-                </div>
-              )}
+                {subtitles.length === 0 && !generating && (
+                  <div className="text-center py-12">
+                    <Languages className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-100 mb-2">No subtitles yet</h3>
+                    <p className="text-gray-600 dark:text-neutral-400 mb-4">
+                      Generate AI-powered subtitles for your video
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Next Steps - Export section removed since it's in header */}
         {project.status === 'completed' && subtitles.length > 0 && (
