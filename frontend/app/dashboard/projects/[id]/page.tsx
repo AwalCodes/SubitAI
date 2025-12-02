@@ -360,7 +360,7 @@ export default function ProjectDetailPage() {
     }
   }
 
-  const handleSaveAll = async (updatedSubtitles: Subtitle[], style?: SubtitleStyle) => {
+  const handleSaveAll = async (updatedSubtitles?: Subtitle[], style?: SubtitleStyle) => {
     if (!project) return
 
     try {
@@ -397,6 +397,10 @@ export default function ProjectDetailPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleSaveAllClick = () => {
+    handleSaveAll()
   }
 
   // Helper function to format timestamp
@@ -721,7 +725,7 @@ export default function ProjectDetailPage() {
               {subtitles.length > 0 && (
                 <>
                   <button
-                    onClick={handleSaveAll}
+                    onClick={handleSaveAllClick}
                     disabled={saving}
                     className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-white text-subit-600 rounded-lg font-medium hover:bg-subit-50 transition-colors disabled:opacity-50"
                   >
