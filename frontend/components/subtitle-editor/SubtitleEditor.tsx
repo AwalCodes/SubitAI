@@ -157,7 +157,7 @@ export default function SubtitleEditor({
   }, [editingSubtitles])
 
   useEffect(() => {
-    if (!isPlaying || !videoRef.current) return
+    if (!isPlaying || !videoRef.current || isAudio) return
 
     const drawSubtitles = () => {
       const canvas = canvasRef.current
@@ -186,7 +186,7 @@ export default function SubtitleEditor({
         cancelAnimationFrame(animationFrameRef.current)
       }
     }
-  }, [isPlaying, editingSubtitles, style])
+  }, [isPlaying, editingSubtitles, style, isAudio])
 
   const drawSubtitleOnCanvas = (
     ctx: CanvasRenderingContext2D,
