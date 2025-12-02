@@ -52,6 +52,7 @@ interface Project {
     json_data: {
       segments: Subtitle[]
       language: string
+      style?: SubtitleStyle
     }
     language: string
   }>
@@ -823,7 +824,7 @@ export default function ProjectDetailPage() {
               onSave={handleSaveAll}
               subscriptionTier={(subscription?.plan as 'free' | 'pro' | 'premium') || 'free'}
               isAudio={isAudio}
-              savedStyle={project.subtitles?.[0]?.json_data?.style as SubtitleStyle | undefined}
+              savedStyle={project.subtitles?.[0]?.json_data?.style}
             />
           </div>
         ) : (
