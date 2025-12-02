@@ -165,6 +165,13 @@ export default function SubtitleEditor({
     return () => clearInterval(interval)
   }, [editingSubtitles])
 
+  // Set video volume when it changes
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.volume = isMuted ? 0 : volume
+    }
+  }, [volume, isMuted])
+
   useEffect(() => {
     if (!isPlaying || !videoRef.current || isAudio) return
 
@@ -504,7 +511,6 @@ export default function SubtitleEditor({
                       canvas.height = video.videoHeight
                     }
                   }}
-                  volume={volume}
                   muted={isMuted}
                 />
                 <canvas
