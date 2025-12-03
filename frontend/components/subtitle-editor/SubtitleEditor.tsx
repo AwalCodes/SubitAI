@@ -531,21 +531,67 @@ export default function SubtitleEditor({
       return
     }
 
+    if (!videoUrl || isAudio) {
+      toast.error('Video not available for export')
+      return
+    }
+
+    try {
+      setExporting(true)
+      const exportToast = toast.loading('Exporting video with subtitles as MP4... This may take a few minutes.')
+
+      // Use server-side processing for fast, high-quality MP4 export
+      const formData = new FormData()
+      formData.append('videoUrl', videoUrl)
+      formData.append('subtitles', JSON.stringify(editingSubtitles))
+      formData.append('style', JSON.stringify(style))
+
+      const response = await fetch('/api/export-video', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        if (data.comingSoon) {
+          // Fallback to client-side export if server-side not configured
+          toast.loading('Server-side export not configured. Using client-side export (slower)...', { id: exportToast })
+          await handleClientSideExport(exportToast)
+          return
+        }
+        throw new Error(data.error || 'Export failed')
+      }
+
+      // Server-side export succeeded - download the file
+      if (data.videoUrl) {
+        const a = document.createElement('a')
+        a.href = data.videoUrl
+        a.download = `subtitle-video-${Date.now()}.mp4`
+        a.click()
+        toast.success('Video exported successfully as MP4!', { id: exportToast })
+      } else {
+        throw new Error('No video URL returned from server')
+      }
+
+    } catch (error: any) {
+      console.error('Export error:', error)
+      toast.error(error.message || 'Failed to export video. Please try again later.', { duration: 5000 })
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const handleClientSideExport = async (exportToast: string) => {
+    // Fallback: Original client-side export (slow, WebM only)
     const video = videoRef.current
     const canvas = canvasRef.current
     
     if (!video || !canvas || isAudio) {
-      toast.error('Video or canvas not available')
-      return
+      throw new Error('Video or canvas not available for client-side export')
     }
 
-    // Note: Browser MediaRecorder API only supports WebM format
-    // For MP4 export, server-side processing with FFmpeg would be required
-    // We export as high-quality WebM which can be converted to MP4 on the server if needed
-
     try {
-      setExporting(true)
-      const exportToast = toast.loading('Exporting video with subtitles... This may take a while.')
 
       // Create a hidden canvas for composition - use original video dimensions for best quality
       const exportCanvas = document.createElement('canvas')
