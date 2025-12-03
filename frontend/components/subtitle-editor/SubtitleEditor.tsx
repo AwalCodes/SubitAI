@@ -539,6 +539,10 @@ export default function SubtitleEditor({
       return
     }
 
+    // Note: Browser MediaRecorder API only supports WebM format
+    // For MP4 export, server-side processing with FFmpeg would be required
+    // We export as high-quality WebM which can be converted to MP4 on the server if needed
+
     try {
       setExporting(true)
       const exportToast = toast.loading('Exporting video with subtitles... This may take a while.')
@@ -644,16 +648,59 @@ export default function SubtitleEditor({
         if (e.data.size > 0) chunks.push(e.data)
       }
 
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         const fileExtension = isMP4 ? 'mp4' : 'webm'
         const blob = new Blob(chunks, { type: mimeType })
+        
+        // For WebM files, we can attempt server-side conversion to MP4
+        // For now, export as high-quality WebM
+        if (!isMP4) {
+          // Check if server-side MP4 conversion is available
+          try {
+            toast.loading('Converting to MP4 format...', { id: exportToast })
+            
+            const formData = new FormData()
+            formData.append('video', blob, 'video.webm')
+            formData.append('subtitles', JSON.stringify(editingSubtitles))
+            formData.append('style', JSON.stringify(style))
+            
+            const response = await fetch('/api/convert-to-mp4', {
+              method: 'POST',
+              body: formData,
+            })
+            
+            if (response.ok) {
+              const mp4Blob = await response.blob()
+              const url = URL.createObjectURL(mp4Blob)
+              const a = document.createElement('a')
+              a.href = url
+              a.download = `subtitle-video-${Date.now()}.mp4`
+              a.click()
+              URL.revokeObjectURL(url)
+              toast.success('Video exported as MP4!', { id: exportToast })
+              return
+            }
+          } catch (error) {
+            console.log('MP4 conversion not available, using WebM export')
+          }
+        }
+        
+        // Fallback to direct download (WebM or MP4 if supported)
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
         a.download = `subtitle-video-${Date.now()}.${fileExtension}`
         a.click()
         URL.revokeObjectURL(url)
-        toast.success(`Video exported successfully as ${fileExtension.toUpperCase()}!`, { id: exportToast })
+        
+        if (!isMP4) {
+          toast.success(
+            `Video exported as high-quality WebM! Note: Browsers only support WebM format. You can convert to MP4 using online tools or VLC player.`,
+            { id: exportToast, duration: 7000 }
+          )
+        } else {
+          toast.success(`Video exported successfully as MP4!`, { id: exportToast })
+        }
       }
 
       mediaRecorder.start()
@@ -704,10 +751,10 @@ export default function SubtitleEditor({
                 updateProgress()
               }
               
-              // Small delay to prevent overwhelming the browser
-              setTimeout(() => {
+              // Use requestAnimationFrame for smoother, non-blocking frame processing
+              requestAnimationFrame(() => {
                 drawFrame().then(resolve).catch(resolve)
-              }, frameTime * 1000) // Delay based on frame time for smooth playback
+              })
             } catch (error) {
               console.error('Frame drawing error:', error)
               processingVideo.removeEventListener('seeked', seekHandler)
