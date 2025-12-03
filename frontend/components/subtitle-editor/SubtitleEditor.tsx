@@ -211,16 +211,23 @@ export default function SubtitleEditor({
     if (!mediaElement) return
 
     const updateTime = () => {
-      setCurrentTime(mediaElement.currentTime)
+      const newTime = mediaElement.currentTime
+      setCurrentTime(newTime)
       const segIdx = editingSubtitles.findIndex(
-        s => mediaElement.currentTime >= s.start && mediaElement.currentTime <= s.end
+        s => newTime >= s.start && newTime <= s.end
       )
-      setActiveSegment(segIdx >= 0 ? segIdx : null)
+      const newActiveSegment = segIdx >= 0 ? segIdx : null
+      setActiveSegment(newActiveSegment)
+      
+      // Trigger canvas re-render on time change
+      requestAnimationFrame(() => {
+        renderSubtitles()
+      })
     }
 
-    const interval = setInterval(updateTime, 100)
+    const interval = setInterval(updateTime, 50) // Update more frequently for smoother preview
     return () => clearInterval(interval)
-  }, [editingSubtitles])
+  }, [editingSubtitles, renderSubtitles])
 
   // Set video volume when it changes
   useEffect(() => {
@@ -250,44 +257,56 @@ export default function SubtitleEditor({
     }
   }, [videoUrl, isAudio])
 
-  // Draw subtitles on canvas - works when playing or paused
+  // Real-time subtitle rendering function
+  const renderSubtitles = useCallback(() => {
+    const canvas = canvasRef.current
+    const video = videoRef.current
+    if (!canvas || !video || video.readyState < 1 || isAudio) return
+
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    // Ensure canvas matches video dimensions
+    if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+      canvas.width = video.videoWidth || 1920
+      canvas.height = video.videoHeight || 1080
+    }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+    // Find active subtitle segment
+    const activeSeg = editingSubtitles.find(
+      s => video.currentTime >= s.start && video.currentTime <= s.end
+    )
+
+    if (activeSeg) {
+      const elapsed = isPlaying ? video.currentTime - activeSeg.start : 0
+      drawSubtitleOnCanvas(ctx, canvas, activeSeg.text, style, elapsed)
+    }
+  }, [editingSubtitles, style, isAudio, isPlaying, currentTime])
+
+  // Trigger immediate re-render when subtitles or style change (REAL-TIME)
+  useEffect(() => {
+    if (!videoRef.current || isAudio) return
+    // Use requestAnimationFrame to ensure DOM is ready
+    requestAnimationFrame(() => {
+      renderSubtitles()
+    })
+  }, [editingSubtitles, style, renderSubtitles, isAudio]) // Re-render on subtitle/style changes
+
+  // Draw subtitles on canvas - animation loop when playing
   useEffect(() => {
     if (!videoRef.current || isAudio) return
 
     const drawSubtitles = () => {
-      const canvas = canvasRef.current
-      const video = videoRef.current
-      if (!canvas || !video || video.readyState < 1) return
-
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return
-
-      // Ensure canvas matches video dimensions
-      if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
-        canvas.width = video.videoWidth || 1920
-        canvas.height = video.videoHeight || 1080
-      }
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-      const activeSeg = editingSubtitles.find(
-        s => video.currentTime >= s.start && video.currentTime <= s.end
-      )
-
-      if (activeSeg) {
-        const elapsed = isPlaying ? video.currentTime - activeSeg.start : 0
-        drawSubtitleOnCanvas(ctx, canvas, activeSeg.text, style, elapsed)
-      }
+      renderSubtitles()
 
       if (isPlaying) {
         animationFrameRef.current = requestAnimationFrame(drawSubtitles)
       }
     }
 
-    // Draw immediately (for paused state)
-    drawSubtitles()
-
-    // Continue animation when playing
+    // Start animation loop when playing
     if (isPlaying) {
       animationFrameRef.current = requestAnimationFrame(drawSubtitles)
     }
@@ -297,7 +316,7 @@ export default function SubtitleEditor({
         cancelAnimationFrame(animationFrameRef.current)
       }
     }
-  }, [isPlaying, editingSubtitles, style, isAudio, currentTime])
+  }, [isPlaying, currentTime, renderSubtitles, isAudio]) // Animation loop
 
   const drawSubtitleOnCanvas = (
     ctx: CanvasRenderingContext2D,
@@ -534,17 +553,40 @@ export default function SubtitleEditor({
         throw new Error('Could not get canvas context')
       }
 
-      // Create a video element for processing
+      // Create a video element for processing with CORS
       const processingVideo = document.createElement('video')
       processingVideo.src = videoUrl
       processingVideo.crossOrigin = 'anonymous'
+      processingVideo.preload = 'auto'
+      processingVideo.muted = true // Required for autoplay
       
-      await new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Video loading timeout'))
+        }, 30000) // 30 second timeout
+
         processingVideo.onloadedmetadata = () => {
+          clearTimeout(timeout)
           processingVideo.currentTime = 0
-          resolve(null)
+          resolve()
         }
-        processingVideo.onerror = reject
+        processingVideo.onerror = (e) => {
+          clearTimeout(timeout)
+          console.error('Video load error:', e)
+          reject(new Error('Failed to load video for export. CORS may be blocking.'))
+        }
+        
+        // Force load
+        processingVideo.load()
+      })
+      
+      // Wait for video to be ready
+      await new Promise<void>((resolve) => {
+        if (processingVideo.readyState >= 2) {
+          resolve()
+        } else {
+          processingVideo.oncanplay = () => resolve()
+        }
       })
 
       // Create MediaRecorder from canvas stream
@@ -577,40 +619,56 @@ export default function SubtitleEditor({
       const frameTime = 1 / fps
       let currentTime = 0
 
-      const drawFrame = async () => {
+      const drawFrame = async (): Promise<void> => {
         if (currentTime >= duration) {
           mediaRecorder.stop()
           return
         }
 
-        processingVideo.currentTime = currentTime
-        await new Promise((resolve) => {
-          processingVideo.onseeked = () => {
-            // Draw video frame
-            exportCtx.drawImage(processingVideo, 0, 0, exportCanvas.width, exportCanvas.height)
-            
-            // Draw subtitle
-            const activeSeg = editingSubtitles.find(
-              s => currentTime >= s.start && currentTime <= s.end
-            )
-            if (activeSeg) {
-              drawSubtitleOnCanvas(exportCtx, exportCanvas, activeSeg.text, style, currentTime - activeSeg.start)
+        return new Promise<void>((resolve) => {
+          const seekHandler = () => {
+            try {
+              // Draw video frame
+              exportCtx.drawImage(processingVideo, 0, 0, exportCanvas.width, exportCanvas.height)
+              
+              // Draw subtitle
+              const activeSeg = editingSubtitles.find(
+                s => currentTime >= s.start && currentTime <= s.end
+              )
+              if (activeSeg) {
+                drawSubtitleOnCanvas(exportCtx, exportCanvas, activeSeg.text, style, currentTime - activeSeg.start)
+              }
+
+              processingVideo.removeEventListener('seeked', seekHandler)
+              currentTime += frameTime
+              
+              // Continue drawing after a brief delay
+              setTimeout(() => {
+                drawFrame().then(resolve).catch(resolve)
+              }, 10)
+            } catch (error) {
+              console.error('Frame drawing error:', error)
+              processingVideo.removeEventListener('seeked', seekHandler)
+              resolve()
             }
-
-            currentTime += frameTime
-            resolve(null)
           }
-        })
 
-        // Continue drawing
-        setTimeout(drawFrame, 0)
+          processingVideo.addEventListener('seeked', seekHandler, { once: true })
+          processingVideo.currentTime = currentTime
+        })
       }
 
       await drawFrame()
 
     } catch (error: any) {
       console.error('Export error:', error)
-      toast.error(error.message || 'Failed to export video. Client-side export may not be supported. Please try the download options for subtitle files.', { duration: 6000 })
+      const errorMsg = error.message || 'Failed to export video'
+      
+      if (errorMsg.includes('CORS') || errorMsg.includes('cross-origin')) {
+        toast.error('Video export failed due to CORS restrictions. The video file needs to allow cross-origin access. For now, please use the subtitle download options (SRT/VTT).', { duration: 8000 })
+      } else {
+        toast.error(`Export failed: ${errorMsg}. Client-side video export has limitations. Please try the subtitle file download options (SRT/VTT) instead.`, { duration: 6000 })
+      }
     } finally {
       setExporting(false)
     }
@@ -711,6 +769,7 @@ export default function SubtitleEditor({
                 <video
                   ref={videoRef}
                   src={videoUrl}
+                  crossOrigin="anonymous"
                   className="w-full h-full object-contain"
                   onPlay={() => setIsPlaying(true)}
                   onPause={() => setIsPlaying(false)}
@@ -1369,16 +1428,16 @@ function EditPanel({
                     </button>
                   </div>
                 </div>
-                <textarea
-                  value={subtitle.text}
-                  onChange={(e) => {
-                    const updated = [...subtitles]
-                    updated[index].text = e.target.value
-                    setSubtitles(updated)
-                  }}
-                  className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 resize-none text-sm"
-                  rows={2}
-                />
+              <textarea
+                value={subtitle.text}
+                onChange={(e) => {
+                  const updated = [...subtitles]
+                  updated[index].text = e.target.value
+                  setSubtitles(updated)
+                }}
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 resize-none text-sm"
+                rows={2}
+              />
                 <div className="flex items-center justify-between mt-2">
                   <button
                     onClick={() => handleRemoveSubtitle(index)}
