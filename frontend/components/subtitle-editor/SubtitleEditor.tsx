@@ -667,14 +667,8 @@ export default function SubtitleEditor({
       ffmpeg.terminate()
 
       // Convert to blob and download - handle FileData type properly
-      let blob: Blob
-      if (data instanceof Uint8Array) {
-        // Create a new ArrayBuffer from the Uint8Array
-        const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
-        blob = new Blob([buffer], { type: 'video/mp4' })
-      } else {
-        blob = new Blob([data as string], { type: 'video/mp4' })
-      }
+      // FFmpeg readFile returns Uint8Array for binary files
+      const blob = new Blob([data as Uint8Array], { type: 'video/mp4' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
