@@ -218,16 +218,11 @@ export default function SubtitleEditor({
       )
       const newActiveSegment = segIdx >= 0 ? segIdx : null
       setActiveSegment(newActiveSegment)
-      
-      // Trigger canvas re-render on time change
-      requestAnimationFrame(() => {
-        renderSubtitles()
-      })
     }
 
     const interval = setInterval(updateTime, 50) // Update more frequently for smoother preview
     return () => clearInterval(interval)
-  }, [editingSubtitles, renderSubtitles])
+  }, [editingSubtitles])
 
   // Set video volume when it changes
   useEffect(() => {
@@ -257,7 +252,7 @@ export default function SubtitleEditor({
     }
   }, [videoUrl, isAudio])
 
-  // Real-time subtitle rendering function
+  // Real-time subtitle rendering function - always reads current time directly
   const renderSubtitles = useCallback(() => {
     const canvas = canvasRef.current
     const video = videoRef.current
@@ -274,27 +269,31 @@ export default function SubtitleEditor({
 
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    // Find active subtitle segment
+    // Find active subtitle segment - always use video.currentTime directly for real-time updates
+    const currentVideoTime = video.currentTime
     const activeSeg = editingSubtitles.find(
-      s => video.currentTime >= s.start && video.currentTime <= s.end
+      s => currentVideoTime >= s.start && currentVideoTime <= s.end
     )
 
     if (activeSeg) {
-      const elapsed = isPlaying ? video.currentTime - activeSeg.start : 0
+      const elapsed = isPlaying ? currentVideoTime - activeSeg.start : 0
       drawSubtitleOnCanvas(ctx, canvas, activeSeg.text, style, elapsed)
     }
-  }, [editingSubtitles, style, isAudio, isPlaying, currentTime])
+  }, [editingSubtitles, style, isAudio, isPlaying])
 
-  // Trigger immediate re-render when subtitles or style change (REAL-TIME)
+  // REAL-TIME: Trigger immediate re-render when subtitles or style change
   useEffect(() => {
     if (!videoRef.current || isAudio) return
-    // Use requestAnimationFrame to ensure DOM is ready
-    requestAnimationFrame(() => {
+    
+    // Force immediate render on any subtitle/style change
+    const timeoutId = setTimeout(() => {
       renderSubtitles()
-    })
-  }, [editingSubtitles, style, renderSubtitles, isAudio]) // Re-render on subtitle/style changes
+    }, 0)
+    
+    return () => clearTimeout(timeoutId)
+  }, [editingSubtitles, style, renderSubtitles, isAudio])
 
-  // Draw subtitles on canvas - animation loop when playing
+  // Animation loop when playing
   useEffect(() => {
     if (!videoRef.current || isAudio) return
 
@@ -306,7 +305,6 @@ export default function SubtitleEditor({
       }
     }
 
-    // Start animation loop when playing
     if (isPlaying) {
       animationFrameRef.current = requestAnimationFrame(drawSubtitles)
     }
@@ -316,7 +314,7 @@ export default function SubtitleEditor({
         cancelAnimationFrame(animationFrameRef.current)
       }
     }
-  }, [isPlaying, currentTime, renderSubtitles, isAudio]) // Animation loop
+  }, [isPlaying, renderSubtitles, isAudio])
 
   const drawSubtitleOnCanvas = (
     ctx: CanvasRenderingContext2D,
