@@ -153,6 +153,7 @@ export default function SubtitleEditor({
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [volume, setVolume] = useState(1)
   const [isMuted, setIsMuted] = useState(false)
+  const [videoAspectRatio, setVideoAspectRatio] = useState<number | null>(null)
 
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -542,14 +543,22 @@ export default function SubtitleEditor({
       setExporting(true)
       const exportToast = toast.loading('Exporting video with subtitles... This may take a while.')
 
-      // Create a hidden canvas for composition
+      // Create a hidden canvas for composition - use original video dimensions for best quality
       const exportCanvas = document.createElement('canvas')
       exportCanvas.width = video.videoWidth || 1920
       exportCanvas.height = video.videoHeight || 1080
-      const exportCtx = exportCanvas.getContext('2d')
+      const exportCtx = exportCanvas.getContext('2d', { 
+        alpha: false, // No transparency for better performance
+        desynchronized: true, // Better performance
+        willReadFrequently: false
+      })
       if (!exportCtx) {
         throw new Error('Could not get canvas context')
       }
+      
+      // Enable high-quality rendering
+      exportCtx.imageSmoothingEnabled = true
+      exportCtx.imageSmoothingQuality = 'high'
 
       // Create a video element for processing with CORS
       const processingVideo = document.createElement('video')
@@ -587,11 +596,48 @@ export default function SubtitleEditor({
         }
       })
 
-      // Create MediaRecorder from canvas stream
-      const stream = exportCanvas.captureStream(30) // 30 FPS
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'video/webm;codecs=vp9',
-      })
+      // Check for supported MIME types - Note: MP4 is rarely supported by MediaRecorder
+      // Most browsers only support WebM. For true MP4, server-side processing is needed.
+      const getSupportedMimeType = (): string => {
+        const types = [
+          'video/webm;codecs=vp9', // Best quality WebM
+          'video/webm;codecs=vp8',
+          'video/webm',
+          'video/mp4', // Rarely supported
+        ]
+        
+        for (const type of types) {
+          if (MediaRecorder.isTypeSupported(type)) {
+            return type
+          }
+        }
+        return 'video/webm' // Fallback
+      }
+
+      const mimeType = getSupportedMimeType()
+      const isMP4 = mimeType.includes('mp4')
+      
+      // Note: Browser MediaRecorder API typically only supports WebM format
+      // For true MP4 export, server-side processing with FFmpeg would be needed
+      if (isMP4) {
+        console.warn('MP4 export is rare in browsers - may fallback to WebM')
+      }
+      
+      // Create MediaRecorder from canvas stream with maximum quality
+      // Use 30 FPS for smoother, more reliable export
+      const stream = exportCanvas.captureStream(30)
+      
+      // Calculate bitrate based on resolution for optimal quality
+      const pixels = exportCanvas.width * exportCanvas.height
+      // Higher bitrate for better quality: 8-12 Mbps range
+      const bitrate = Math.max(8000000, Math.min(12000000, pixels * 3))
+      
+      const options: MediaRecorderOptions = {
+        mimeType,
+        videoBitsPerSecond: bitrate,
+      }
+      
+      const mediaRecorder = new MediaRecorder(stream, options)
 
       const chunks: Blob[] = []
       mediaRecorder.ondataavailable = (e) => {
@@ -599,23 +645,32 @@ export default function SubtitleEditor({
       }
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'video/webm' })
+        const fileExtension = isMP4 ? 'mp4' : 'webm'
+        const blob = new Blob(chunks, { type: mimeType })
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = `subtitle-video-${Date.now()}.webm`
+        a.download = `subtitle-video-${Date.now()}.${fileExtension}`
         a.click()
         URL.revokeObjectURL(url)
-        toast.success('Video exported successfully!', { id: exportToast })
+        toast.success(`Video exported successfully as ${fileExtension.toUpperCase()}!`, { id: exportToast })
       }
 
       mediaRecorder.start()
 
-      // Draw frames
+      // Draw frames with optimal quality and timing
       const duration = video.duration
-      const fps = 30
+      const fps = 30 // Consistent 30 FPS for smooth export
       const frameTime = 1 / fps
       let currentTime = 0
+      let frameCount = 0
+      const totalFrames = Math.ceil(duration * fps)
+
+      // Update progress
+      const updateProgress = () => {
+        const progress = Math.round((frameCount / totalFrames) * 100)
+        toast.loading(`Exporting video... ${progress}%`, { id: exportToast })
+      }
 
       const drawFrame = async (): Promise<void> => {
         if (currentTime >= duration) {
@@ -626,7 +681,10 @@ export default function SubtitleEditor({
         return new Promise<void>((resolve) => {
           const seekHandler = () => {
             try {
-              // Draw video frame
+              // Clear and draw video frame with high quality
+              exportCtx.clearRect(0, 0, exportCanvas.width, exportCanvas.height)
+              exportCtx.imageSmoothingEnabled = true
+              exportCtx.imageSmoothingQuality = 'high'
               exportCtx.drawImage(processingVideo, 0, 0, exportCanvas.width, exportCanvas.height)
               
               // Draw subtitle
@@ -639,11 +697,17 @@ export default function SubtitleEditor({
 
               processingVideo.removeEventListener('seeked', seekHandler)
               currentTime += frameTime
+              frameCount++
               
-              // Continue drawing after a brief delay
+              // Update progress every 10 frames
+              if (frameCount % 10 === 0) {
+                updateProgress()
+              }
+              
+              // Small delay to prevent overwhelming the browser
               setTimeout(() => {
                 drawFrame().then(resolve).catch(resolve)
-              }, 10)
+              }, frameTime * 1000) // Delay based on frame time for smooth playback
             } catch (error) {
               console.error('Frame drawing error:', error)
               processingVideo.removeEventListener('seeked', seekHandler)
@@ -656,6 +720,7 @@ export default function SubtitleEditor({
         })
       }
 
+      updateProgress()
       await drawFrame()
 
     } catch (error: any) {
@@ -752,7 +817,13 @@ export default function SubtitleEditor({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
         {/* Video Preview - Left Side (2/3 width) */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="bg-black rounded-lg overflow-hidden shadow-2xl relative" style={{ aspectRatio: '16/9' }}>
+          <div 
+            className="bg-black rounded-lg overflow-hidden shadow-2xl relative" 
+            style={{ 
+              aspectRatio: videoAspectRatio ? `${videoAspectRatio}` : '16/9',
+              maxHeight: '80vh'
+            }}
+          >
             {isAudio ? (
               <div className="flex items-center justify-center h-full bg-gradient-to-br from-violet-900 to-fuchsia-900">
                 <div className="text-center">
@@ -778,6 +849,9 @@ export default function SubtitleEditor({
                     if (canvas && video && video.videoWidth && video.videoHeight) {
                       canvas.width = video.videoWidth
                       canvas.height = video.videoHeight
+                      // Calculate and set aspect ratio
+                      const aspectRatio = video.videoWidth / video.videoHeight
+                      setVideoAspectRatio(aspectRatio)
                     }
                   }}
                   muted={isMuted}
