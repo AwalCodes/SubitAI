@@ -22,7 +22,10 @@ import {
   SkipBack,
   SkipForward,
   Volume2,
-  VolumeX
+  VolumeX,
+  Plus,
+  Minus,
+  Split
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -45,6 +48,8 @@ export interface SubtitleStyle {
   padding: number
   letterSpacing: number
   lineHeight: number
+  displayMode: 'line-by-line' | 'multiple-lines' | 'word-by-word' | 'character-by-character'
+  maxLines: number
 }
 
 export interface Subtitle {
@@ -84,6 +89,8 @@ const DEFAULT_STYLE: SubtitleStyle = {
   padding: 12,
   letterSpacing: 0,
   lineHeight: 1.4,
+  displayMode: 'line-by-line',
+  maxLines: 2,
 }
 
 const FONT_OPTIONS = [
@@ -123,7 +130,18 @@ export default function SubtitleEditor({
   isAudio = false,
   savedStyle,
 }: SubtitleEditorProps) {
-  const [style, setStyle] = useState<SubtitleStyle>(savedStyle || DEFAULT_STYLE)
+  // Merge saved style with defaults to ensure all fields are present
+  const [style, setStyle] = useState<SubtitleStyle>(() => {
+    if (savedStyle) {
+      return {
+        ...DEFAULT_STYLE,
+        ...savedStyle,
+        displayMode: savedStyle.displayMode || DEFAULT_STYLE.displayMode,
+        maxLines: savedStyle.maxLines || DEFAULT_STYLE.maxLines,
+      }
+    }
+    return DEFAULT_STYLE
+  })
   const [editingSubtitles, setEditingSubtitles] = useState<Subtitle[]>(subtitles)
   const [activePanel, setActivePanel] = useState<'style' | 'edit'>('style')
   const [isPlaying, setIsPlaying] = useState(false)
@@ -149,6 +167,45 @@ export default function SubtitleEditor({
     setEditingSubtitles(subtitles)
   }, [subtitles])
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Prevent shortcuts when typing in inputs
+      if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') {
+        return
+      }
+
+      // Spacebar to play/pause
+      if (e.code === 'Space') {
+        e.preventDefault()
+        if (isPlaying) {
+          handlePause()
+        } else {
+          handlePlay()
+        }
+      }
+
+      // Arrow keys for seeking
+      if (e.code === 'ArrowLeft') {
+        e.preventDefault()
+        handleSkip(-5)
+      }
+      if (e.code === 'ArrowRight') {
+        e.preventDefault()
+        handleSkip(5)
+      }
+
+      // Ctrl/Cmd + S to save
+      if ((e.ctrlKey || e.metaKey) && e.code === 'KeyS') {
+        e.preventDefault()
+        handleSave()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [isPlaying, currentTime])
+
   useEffect(() => {
     const mediaElement = videoRef.current
     if (!mediaElement) return
@@ -172,13 +229,35 @@ export default function SubtitleEditor({
     }
   }, [volume, isMuted])
 
+  // Update canvas dimensions when video metadata loads
   useEffect(() => {
-    if (!isPlaying || !videoRef.current || isAudio) return
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    if (!video || !canvas || isAudio) return
+
+    const updateCanvasSize = () => {
+      if (video.videoWidth && video.videoHeight) {
+        canvas.width = video.videoWidth
+        canvas.height = video.videoHeight
+      }
+    }
+
+    video.addEventListener('loadedmetadata', updateCanvasSize)
+    if (video.readyState >= 1) updateCanvasSize()
+
+    return () => {
+      video.removeEventListener('loadedmetadata', updateCanvasSize)
+    }
+  }, [videoUrl, isAudio])
+
+  // Draw subtitles on canvas - works when playing or paused
+  useEffect(() => {
+    if (!videoRef.current || isAudio) return
 
     const drawSubtitles = () => {
       const canvas = canvasRef.current
       const video = videoRef.current
-      if (!canvas || !video || video.readyState < 2) return
+      if (!canvas || !video || video.readyState < 1) return
 
       const ctx = canvas.getContext('2d')
       if (!ctx) return
@@ -196,64 +275,108 @@ export default function SubtitleEditor({
       )
 
       if (activeSeg) {
-        drawSubtitleOnCanvas(ctx, canvas, activeSeg.text, style)
+        const elapsed = isPlaying ? video.currentTime - activeSeg.start : 0
+        drawSubtitleOnCanvas(ctx, canvas, activeSeg.text, style, elapsed)
       }
 
+      if (isPlaying) {
+        animationFrameRef.current = requestAnimationFrame(drawSubtitles)
+      }
+    }
+
+    // Draw immediately (for paused state)
+    drawSubtitles()
+
+    // Continue animation when playing
+    if (isPlaying) {
       animationFrameRef.current = requestAnimationFrame(drawSubtitles)
     }
 
-    drawSubtitles()
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current)
       }
     }
-  }, [isPlaying, editingSubtitles, style, isAudio])
+  }, [isPlaying, editingSubtitles, style, isAudio, currentTime])
 
   const drawSubtitleOnCanvas = (
     ctx: CanvasRenderingContext2D,
     canvas: HTMLCanvasElement,
     text: string,
-    style: SubtitleStyle
+    style: SubtitleStyle,
+    elapsed: number = 0
   ) => {
     ctx.save()
 
-    // Set font
-    ctx.font = `${style.fontWeight} ${style.fontSize}px ${style.fontFamily}, sans-serif`
-    ctx.textAlign = style.textAlign
+    // Set font - use actual pixel size, not scaled
+    const fontSize = style.fontSize
+    ctx.font = `${style.fontWeight} ${fontSize}px ${style.fontFamily}, sans-serif`
+    ctx.textAlign = style.textAlign === 'center' ? 'center' : style.textAlign === 'left' ? 'left' : 'right'
     ctx.textBaseline = 'middle'
+    ctx.letterSpacing = `${style.letterSpacing}px`
 
-    // Calculate position
-    let x = canvas.width / 2
-    let y = canvas.height - style.verticalOffset
-
-    if (style.position === 'center') {
-      y = canvas.height / 2
-    } else if (style.position === 'top') {
-      y = style.verticalOffset
+    // Process text based on display mode
+    let displayText = text
+    if (style.displayMode === 'word-by-word' || style.displayMode === 'character-by-character') {
+      const words = text.split(' ')
+      const chars = text.split('')
+      const duration = 0.5 // Animation duration in seconds
+      const progress = Math.min(elapsed / duration, 1)
+      
+      if (style.displayMode === 'word-by-word') {
+        const wordCount = Math.ceil(words.length * progress)
+        displayText = words.slice(0, wordCount).join(' ')
+      } else {
+        const charCount = Math.ceil(chars.length * progress)
+        displayText = chars.slice(0, charCount).join('')
+      }
     }
 
-    x += style.horizontalOffset
+    // Split text into lines if needed
+    const lines = style.displayMode === 'multiple-lines' 
+      ? wrapText(ctx, displayText, canvas.width * 0.8, style.maxLines)
+      : [displayText]
 
-    // Measure text
-    const metrics = ctx.measureText(text)
-    const textWidth = metrics.width
-    const textHeight = style.fontSize * style.lineHeight
+    // Calculate position
+    let baseX = canvas.width / 2
+    let baseY = canvas.height - style.verticalOffset
 
-    // Draw background
-    if (style.backgroundColor && style.backgroundOpacity > 0) {
+    if (style.position === 'center') {
+      baseY = canvas.height / 2
+    } else if (style.position === 'top') {
+      baseY = style.verticalOffset
+    }
+
+    baseX += style.horizontalOffset
+
+    // Adjust for text alignment
+    if (style.textAlign === 'left') {
+      baseX = style.horizontalOffset + (canvas.width * 0.1)
+    } else if (style.textAlign === 'right') {
+      baseX = canvas.width - style.horizontalOffset - (canvas.width * 0.1)
+    }
+
+    // Measure all lines
+    const lineHeight = fontSize * style.lineHeight
+    const totalHeight = lines.length * lineHeight
+    const startY = baseY - (totalHeight / 2) + (lineHeight / 2)
+
+    // Draw background for all lines
+    if (style.backgroundColor && style.backgroundOpacity > 0 && lines.length > 0) {
+      const lineWidths = lines.map(line => ctx.measureText(line).width)
+      const maxWidth = Math.max(...lineWidths)
+      const bgX = baseX - (style.textAlign === 'center' ? maxWidth / 2 : style.textAlign === 'left' ? 0 : maxWidth)
+      const bgY = startY - (lineHeight / 2) - style.padding
+      const bgWidth = maxWidth + style.padding * 2
+      const bgHeight = totalHeight + style.padding * 2
+
       ctx.fillStyle = style.backgroundColor
       ctx.globalAlpha = style.backgroundOpacity
-      const bgX = x - textWidth / 2 - style.padding
-      const bgY = y - textHeight / 2 - style.padding
-      const bgWidth = textWidth + style.padding * 2
-      const bgHeight = textHeight + style.padding * 2
 
       ctx.beginPath()
       if (ctx.roundRect) {
         ctx.roundRect(bgX, bgY, bgWidth, bgHeight, style.borderRadius)
       } else {
-        // Fallback for browsers that don't support roundRect
         const r = style.borderRadius
         ctx.moveTo(bgX + r, bgY)
         ctx.lineTo(bgX + bgWidth - r, bgY)
@@ -269,20 +392,50 @@ export default function SubtitleEditor({
       ctx.fill()
     }
 
-    // Draw text outline
-    if (style.outlineWidth > 0) {
-      ctx.strokeStyle = style.outlineColor
-      ctx.lineWidth = style.outlineWidth
-      ctx.globalAlpha = 1
-      ctx.strokeText(text, x, y)
-    }
+    // Draw text lines
+    lines.forEach((line, index) => {
+      const y = startY + (index * lineHeight)
 
-    // Draw text
-    ctx.fillStyle = style.color
-    ctx.globalAlpha = 1
-    ctx.fillText(text, x, y)
+      // Draw text outline
+      if (style.outlineWidth > 0) {
+        ctx.strokeStyle = style.outlineColor
+        ctx.lineWidth = style.outlineWidth
+        ctx.globalAlpha = 1
+        ctx.strokeText(line, baseX, y)
+      }
+
+      // Draw text
+      ctx.fillStyle = style.color
+      ctx.globalAlpha = 1
+      ctx.fillText(line, baseX, y)
+    })
 
     ctx.restore()
+  }
+
+  const wrapText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number): string[] => {
+    const words = text.split(' ')
+    const lines: string[] = []
+    let currentLine = ''
+
+    for (const word of words) {
+      const testLine = currentLine ? `${currentLine} ${word}` : word
+      const metrics = ctx.measureText(testLine)
+      
+      if (metrics.width > maxWidth && currentLine) {
+        lines.push(currentLine)
+        currentLine = word
+        if (lines.length >= maxLines) break
+      } else {
+        currentLine = testLine
+      }
+    }
+    
+    if (currentLine && lines.length < maxLines) {
+      lines.push(currentLine)
+    }
+
+    return lines.length > 0 ? lines : [text]
   }
 
   const handlePlay = () => {
@@ -360,45 +513,104 @@ export default function SubtitleEditor({
       return
     }
 
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    
+    if (!video || !canvas || isAudio) {
+      toast.error('Video or canvas not available')
+      return
+    }
+
     try {
       setExporting(true)
-      toast.loading('Exporting video with subtitles... This may take a while.')
+      const exportToast = toast.loading('Exporting video with subtitles... This may take a while.')
 
-      // Use API endpoint for video export
-      const response = await fetch('/api/export-video', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          videoUrl,
-          subtitles: editingSubtitles,
-          style,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        if (data.comingSoon) {
-          toast.error('Video export is coming soon! Please use the download options for subtitle files in the meantime.', { duration: 5000 })
-        } else {
-          throw new Error(data.error || 'Export failed')
-        }
-        return
+      // Create a hidden canvas for composition
+      const exportCanvas = document.createElement('canvas')
+      exportCanvas.width = video.videoWidth || 1920
+      exportCanvas.height = video.videoHeight || 1080
+      const exportCtx = exportCanvas.getContext('2d')
+      if (!exportCtx) {
+        throw new Error('Could not get canvas context')
       }
 
-      const blob = await response.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `subtitle-video-${Date.now()}.mp4`
-      a.click()
-      URL.revokeObjectURL(url)
-      toast.success('Video exported successfully!')
+      // Create a video element for processing
+      const processingVideo = document.createElement('video')
+      processingVideo.src = videoUrl
+      processingVideo.crossOrigin = 'anonymous'
+      
+      await new Promise((resolve, reject) => {
+        processingVideo.onloadedmetadata = () => {
+          processingVideo.currentTime = 0
+          resolve(null)
+        }
+        processingVideo.onerror = reject
+      })
+
+      // Create MediaRecorder from canvas stream
+      const stream = exportCanvas.captureStream(30) // 30 FPS
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'video/webm;codecs=vp9',
+      })
+
+      const chunks: Blob[] = []
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data)
+      }
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/webm' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `subtitle-video-${Date.now()}.webm`
+        a.click()
+        URL.revokeObjectURL(url)
+        toast.success('Video exported successfully!', { id: exportToast })
+      }
+
+      mediaRecorder.start()
+
+      // Draw frames
+      const duration = video.duration
+      const fps = 30
+      const frameTime = 1 / fps
+      let currentTime = 0
+
+      const drawFrame = async () => {
+        if (currentTime >= duration) {
+          mediaRecorder.stop()
+          return
+        }
+
+        processingVideo.currentTime = currentTime
+        await new Promise((resolve) => {
+          processingVideo.onseeked = () => {
+            // Draw video frame
+            exportCtx.drawImage(processingVideo, 0, 0, exportCanvas.width, exportCanvas.height)
+            
+            // Draw subtitle
+            const activeSeg = editingSubtitles.find(
+              s => currentTime >= s.start && currentTime <= s.end
+            )
+            if (activeSeg) {
+              drawSubtitleOnCanvas(exportCtx, exportCanvas, activeSeg.text, style, currentTime - activeSeg.start)
+            }
+
+            currentTime += frameTime
+            resolve(null)
+          }
+        })
+
+        // Continue drawing
+        setTimeout(drawFrame, 0)
+      }
+
+      await drawFrame()
+
     } catch (error: any) {
       console.error('Export error:', error)
-      toast.error(error.message || 'Failed to export video. Please try again later.')
+      toast.error(error.message || 'Failed to export video. Client-side export may not be supported. Please try the download options for subtitle files.', { duration: 6000 })
     } finally {
       setExporting(false)
     }
@@ -516,36 +728,13 @@ export default function SubtitleEditor({
                 <canvas
                   ref={canvasRef}
                   className="absolute inset-0 pointer-events-none"
-                  style={{ width: '100%', height: '100%' }}
+                  style={{ 
+                    width: '100%', 
+                    height: '100%',
+                    objectFit: 'contain'
+                  }}
                 />
-                {/* Subtitle Overlay for Preview */}
-                {activeSegment !== null && editingSubtitles[activeSegment] && (
-                  <div
-                    ref={previewRef}
-                    className="absolute pointer-events-none z-10"
-                    style={{
-                      fontFamily: style.fontFamily,
-                      fontSize: `clamp(16px, ${style.fontSize * 0.8}px, 48px)`,
-                      fontWeight: style.fontWeight,
-                      color: style.color,
-                      textAlign: style.textAlign,
-                      left: style.position === 'center' ? '50%' : style.horizontalOffset !== 0 ? `${50 + style.horizontalOffset / 10}%` : '50%',
-                      top: style.position === 'top' ? `${style.verticalOffset * 0.8}px` : style.position === 'center' ? '50%' : 'auto',
-                      bottom: style.position === 'bottom' ? `${style.verticalOffset * 0.8}px` : 'auto',
-                      transform: style.position === 'center' ? 'translate(-50%, -50%)' : 'translateX(-50%)',
-                      backgroundColor: style.backgroundColor,
-                      opacity: style.backgroundOpacity,
-                      padding: `${style.padding * 0.8}px`,
-                      borderRadius: `${style.borderRadius * 0.8}px`,
-                      textShadow: `${style.outlineWidth}px ${style.outlineWidth}px 0 ${style.outlineColor}, -${style.outlineWidth}px -${style.outlineWidth}px 0 ${style.outlineColor}, ${style.outlineWidth}px -${style.outlineWidth}px 0 ${style.outlineColor}, -${style.outlineWidth}px ${style.outlineWidth}px 0 ${style.outlineColor}`,
-                      letterSpacing: `${style.letterSpacing}px`,
-                      lineHeight: style.lineHeight,
-                      maxWidth: '90%',
-                    }}
-                  >
-                    {editingSubtitles[activeSegment].text}
-                  </div>
-                )}
+                {/* Subtitle Overlay for Preview - Hidden as canvas handles rendering */}
               </>
             )}
           </div>
@@ -869,6 +1058,41 @@ function StylePanel({
           </div>
         </div>
 
+        {/* Display Mode */}
+        <div className="space-y-4 bg-white dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700">
+          <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">Display Mode</h4>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">How subtitles appear</label>
+              <select
+                value={style.displayMode}
+                onChange={(e) => setStyle({ ...style, displayMode: e.target.value as any })}
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 text-sm"
+              >
+                <option value="line-by-line">Line by Line</option>
+                <option value="multiple-lines">Multiple Lines (wrapped)</option>
+                <option value="word-by-word">Word by Word</option>
+                <option value="character-by-character">Character by Character</option>
+              </select>
+            </div>
+            {style.displayMode === 'multiple-lines' && (
+              <div>
+                <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">
+                  Max Lines: {style.maxLines}
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="5"
+                  value={style.maxLines}
+                  onChange={(e) => setStyle({ ...style, maxLines: parseInt(e.target.value) })}
+                  className="w-full"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Animation */}
         <div className="space-y-4 bg-white dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700">
           <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">Animation</h4>
@@ -1015,6 +1239,71 @@ function EditPanel({
   onSeek: (time: number) => void
   formatTime: (seconds: number) => string
 }) {
+  const handleAddSubtitle = (index: number) => {
+    const newSubtitles = [...subtitles]
+    const prevSub = index >= 0 ? subtitles[index] : null
+    const nextSub = index < subtitles.length - 1 ? subtitles[index + 1] : null
+    
+    let start = prevSub ? prevSub.end : (nextSub ? nextSub.start - 2 : currentTime)
+    let end = nextSub ? nextSub.start : (prevSub ? prevSub.end + 2 : currentTime + 2)
+    
+    // Ensure valid time range
+    if (start >= end) {
+      end = start + 2
+    }
+    
+    const newSub: Subtitle = {
+      id: Date.now(),
+      start,
+      end,
+      text: '',
+    }
+    
+    newSubtitles.splice(index + 1, 0, newSub)
+    setSubtitles(newSubtitles)
+  }
+
+  const handleRemoveSubtitle = (index: number) => {
+    if (subtitles.length <= 1) {
+      toast.error('Cannot remove the last subtitle')
+      return
+    }
+    const newSubtitles = subtitles.filter((_, i) => i !== index)
+    setSubtitles(newSubtitles)
+  }
+
+  const handleSplitSubtitle = (index: number) => {
+    const sub = subtitles[index]
+    const midpoint = (sub.start + sub.end) / 2
+    const lines = sub.text.split('\n')
+    
+    if (lines.length > 1) {
+      // Split by lines
+      const newSubtitles = [...subtitles]
+      newSubtitles[index] = { ...sub, text: lines[0], end: midpoint }
+      newSubtitles.splice(index + 1, 0, {
+        id: Date.now(),
+        start: midpoint,
+        end: sub.end,
+        text: lines.slice(1).join('\n'),
+      })
+      setSubtitles(newSubtitles)
+    } else {
+      // Split by midpoint time
+      const words = sub.text.split(' ')
+      const midWord = Math.ceil(words.length / 2)
+      const newSubtitles = [...subtitles]
+      newSubtitles[index] = { ...sub, text: words.slice(0, midWord).join(' '), end: midpoint }
+      newSubtitles.splice(index + 1, 0, {
+        id: Date.now(),
+        start: midpoint,
+        end: sub.end,
+        text: words.slice(midWord).join(' '),
+      })
+      setSubtitles(newSubtitles)
+    }
+  }
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
@@ -1026,37 +1315,88 @@ function EditPanel({
           const isActive = activeSegment === index
           const isCurrent = currentTime >= subtitle.start && currentTime <= subtitle.end
           return (
-            <div
-              key={index}
-              className={`p-3 rounded-lg border transition-all ${
-                isCurrent
-                  ? 'border-subit-500 bg-subit-50 dark:bg-subit-900/20 shadow-md'
-                  : isActive
-                  ? 'border-subit-300 dark:border-subit-500 bg-subit-50/50 dark:bg-subit-900/10'
-                  : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 hover:border-subit-300 dark:hover:border-subit-500'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-neutral-600 dark:text-neutral-400">
-                  {formatTime(subtitle.start)} → {formatTime(subtitle.end)}
-                </span>
-                <button
-                  onClick={() => onSeek(subtitle.start)}
-                  className="text-xs text-subit-600 hover:text-subit-700 font-medium"
-                >
-                  Jump
-                </button>
+            <div key={index} className="relative group">
+              {/* Add button above */}
+              {index === 0 && (
+                <div className="flex justify-center mb-1">
+                  <button
+                    onClick={() => handleAddSubtitle(-1)}
+                    className="p-1 rounded-full bg-neutral-200 dark:bg-neutral-700 hover:bg-subit-600 hover:text-white transition-colors opacity-0 group-hover:opacity-100"
+                    title="Add subtitle at beginning"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+              {index > 0 && (
+                <div className="flex justify-center mb-1">
+                  <button
+                    onClick={() => handleAddSubtitle(index - 1)}
+                    className="p-1 rounded-full bg-neutral-200 dark:bg-neutral-700 hover:bg-subit-600 hover:text-white transition-colors opacity-0 group-hover:opacity-100"
+                    title="Add subtitle above"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+
+              <div
+                className={`group p-3 rounded-lg border transition-all ${
+                  isCurrent
+                    ? 'border-subit-500 bg-subit-50 dark:bg-subit-900/20 shadow-md'
+                    : isActive
+                    ? 'border-subit-300 dark:border-subit-500 bg-subit-50/50 dark:bg-subit-900/10'
+                    : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 hover:border-subit-300 dark:hover:border-subit-500'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-neutral-600 dark:text-neutral-400">
+                    {formatTime(subtitle.start)} → {formatTime(subtitle.end)}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleSplitSubtitle(index)}
+                      className="text-xs text-neutral-500 hover:text-subit-600 transition-colors p-1"
+                      title="Split subtitle"
+                    >
+                      <Split className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={() => onSeek(subtitle.start)}
+                      className="text-xs text-subit-600 hover:text-subit-700 font-medium"
+                    >
+                      Jump
+                    </button>
+                  </div>
+                </div>
+                <textarea
+                  value={subtitle.text}
+                  onChange={(e) => {
+                    const updated = [...subtitles]
+                    updated[index].text = e.target.value
+                    setSubtitles(updated)
+                  }}
+                  className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 resize-none text-sm"
+                  rows={2}
+                />
+                <div className="flex items-center justify-between mt-2">
+                  <button
+                    onClick={() => handleRemoveSubtitle(index)}
+                    disabled={subtitles.length <= 1}
+                    className="p-1.5 rounded-full bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Remove subtitle"
+                  >
+                    <Minus className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={() => handleAddSubtitle(index)}
+                    className="p-1.5 rounded-full bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 text-green-600 dark:text-green-400 transition-colors"
+                    title="Add subtitle below"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </button>
+                </div>
               </div>
-              <textarea
-                value={subtitle.text}
-                onChange={(e) => {
-                  const updated = [...subtitles]
-                  updated[index].text = e.target.value
-                  setSubtitles(updated)
-                }}
-                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 resize-none text-sm"
-                rows={2}
-              />
             </div>
           )
         })}
