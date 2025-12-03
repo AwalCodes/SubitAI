@@ -28,6 +28,9 @@ import {
   Split
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { FFmpeg } from '@ffmpeg/ffmpeg'
+import { fetchFile, toBlobURL } from '@ffmpeg/util'
+import { generateSRT } from '@/lib/utils'
 
 export interface SubtitleStyle {
   fontFamily: string
@@ -538,51 +541,161 @@ export default function SubtitleEditor({
 
     try {
       setExporting(true)
-      const exportToast = toast.loading('Exporting video with subtitles as MP4... This may take a few minutes.')
+      const exportToast = toast.loading('Preparing FFmpeg for video export...', { duration: Infinity })
 
-      // Use server-side processing for fast, high-quality MP4 export
-      const formData = new FormData()
-      formData.append('videoUrl', videoUrl)
-      formData.append('subtitles', JSON.stringify(editingSubtitles))
-      formData.append('style', JSON.stringify(style))
-
-      const response = await fetch('/api/export-video', {
-        method: 'POST',
-        body: formData,
+      // Use FFmpeg.wasm for free, client-side MP4 export
+      const ffmpeg = new FFmpeg()
+      
+      // Report progress
+      ffmpeg.on('progress', ({ progress }) => {
+        const percent = Math.round(progress * 100)
+        toast.loading(`Exporting video... ${percent}%`, { id: exportToast, duration: Infinity })
       })
 
-      const data = await response.json()
+      // Load FFmpeg
+      toast.loading('Loading FFmpeg... This may take a moment.', { id: exportToast })
+      
+      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd'
+      await ffmpeg.load({
+        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+      })
 
-      if (!response.ok) {
-        if (data.comingSoon) {
-          // Fallback to client-side export if server-side not configured
-          toast.loading('Server-side export not configured. Using client-side export (slower)...', { id: exportToast })
-          await handleClientSideExport(exportToast)
-          return
+      toast.loading('Downloading video...', { id: exportToast })
+
+      // Fetch video file - detect format from URL
+      const videoData = await fetchFile(videoUrl)
+      
+      // Get file extension from URL - handle query strings
+      let ext = 'mp4' // default
+      try {
+        const url = new URL(videoUrl)
+        const pathMatch = url.pathname.match(/\.([a-z0-9]+)$/i)
+        if (pathMatch) {
+          ext = pathMatch[1].toLowerCase()
         }
-        throw new Error(data.error || 'Export failed')
+        // Common video formats
+        if (!['mp4', 'webm', 'mov', 'avi', 'mkv', 'flv', 'm4v'].includes(ext)) {
+          ext = 'mp4' // fallback
+        }
+      } catch (e) {
+        // If URL parsing fails, default to mp4
+        ext = 'mp4'
+      }
+      
+      const inputFileName = `input.${ext}`
+      await ffmpeg.writeFile(inputFileName, videoData)
+
+      toast.loading('Generating subtitle file...', { id: exportToast })
+
+      // Generate SRT file from subtitles (filter empty ones)
+      const validSubtitles = editingSubtitles.filter(s => s.text && s.text.trim())
+      if (validSubtitles.length === 0) {
+        throw new Error('No valid subtitles to export')
+      }
+      const srtContent = generateSRT(validSubtitles)
+      // Write SRT file - FFmpeg expects Uint8Array
+      await ffmpeg.writeFile('subtitles.srt', new TextEncoder().encode(srtContent))
+
+      toast.loading('Burning subtitles into video...', { id: exportToast })
+
+      // Build FFmpeg command with subtitle styling
+      const fontSize = style?.fontSize || 24
+      const fontFamily = style?.fontFamily || 'Arial'
+      const fontColor = style?.color || '#FFFFFF'
+      const outlineColor = style?.outlineColor || '#000000'
+      const outlineWidth = style?.outlineWidth || 2
+      const position = style?.position || 'bottom'
+      const verticalOffset = style?.verticalOffset || 80
+
+      // Convert hex colors to BGR format for FFmpeg
+      const hexToBGR = (hex: string): string => {
+        hex = hex.replace('#', '')
+        const r = parseInt(hex.substr(0, 2), 16)
+        const g = parseInt(hex.substr(2, 2), 16)
+        const b = parseInt(hex.substr(4, 2), 16)
+        return `${b.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${r.toString(16).padStart(2, '0')}`
       }
 
-      // Server-side export succeeded - download the file
-      if (data.videoUrl) {
-        const a = document.createElement('a')
-        a.href = data.videoUrl
-        a.download = `subtitle-video-${Date.now()}.mp4`
-        a.click()
-        toast.success('Video exported successfully as MP4!', { id: exportToast })
+      // Calculate subtitle position for FFmpeg
+      let yPos = ''
+      if (position === 'bottom') {
+        yPos = `y=h-th-${verticalOffset}`
+      } else if (position === 'top') {
+        yPos = `y=${verticalOffset}`
       } else {
-        throw new Error('No video URL returned from server')
+        yPos = 'y=(h-th)/2' // Center
       }
+
+      // Build FFmpeg subtitle filter with styling
+      // Escape font family name if it has spaces
+      const escapedFont = fontFamily.replace(/'/g, "\\'")
+      const styleStr = `FontName=${escapedFont},FontSize=${fontSize},PrimaryColour=&H${hexToBGR(fontColor)},OutlineColour=&H${hexToBGR(outlineColor)},Outline=${outlineWidth},Alignment=2,${yPos}`
+      
+      // FFmpeg subtitles filter
+      const subtitleFilter = `subtitles=subtitles.srt:force_style='${styleStr}'`
+
+      toast.loading('Encoding MP4... This may take a few minutes.', { id: exportToast })
+
+      // Execute FFmpeg command - handle different input formats
+      await ffmpeg.exec([
+        '-i', inputFileName,
+        '-vf', subtitleFilter,
+        '-c:v', 'libx264',
+        '-c:a', 'aac',
+        '-b:a', '192k',
+        '-preset', 'medium',
+        '-crf', '23',
+        '-movflags', '+faststart',
+        '-y', // Overwrite output file
+        'output.mp4'
+      ])
+
+      toast.loading('Finalizing video...', { id: exportToast })
+
+      // Read output file
+      const data = await ffmpeg.readFile('output.mp4')
+      
+      // Clean up
+      try {
+        await ffmpeg.deleteFile(inputFileName)
+        await ffmpeg.deleteFile('subtitles.srt')
+        await ffmpeg.deleteFile('output.mp4')
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+      ffmpeg.terminate()
+
+      // Convert to blob and download - handle Uint8Array properly
+      const blob = new Blob([data.buffer], { type: 'video/mp4' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `subtitle-video-${Date.now()}.mp4`
+      a.click()
+      URL.revokeObjectURL(url)
+      
+      toast.success('Video exported successfully as MP4!', { id: exportToast })
 
     } catch (error: any) {
       console.error('Export error:', error)
-      toast.error(error.message || 'Failed to export video. Please try again later.', { duration: 5000 })
+      const errorMsg = error.message || 'Failed to export video'
+      
+      if (errorMsg.includes('fetch')) {
+        toast.error('Failed to download video. Please check your internet connection and try again.', { duration: 6000 })
+      } else if (errorMsg.includes('CORS')) {
+        toast.error('CORS error: The video file cannot be accessed. Please ensure the video URL allows cross-origin access.', { duration: 6000 })
+      } else {
+        toast.error(`Export failed: ${errorMsg}`, { duration: 5000 })
+      }
     } finally {
       setExporting(false)
     }
   }
 
-  const handleClientSideExport = async (exportToast: string) => {
+  // OLD CLIENT-SIDE EXPORT REMOVED - Now using FFmpeg.wasm above
+  // Keeping this comment as marker - can delete the function below if needed
+  const _oldClientSideExport = async (exportToast: string) => {
     // Fallback: Original client-side export (slow, WebM only)
     const video = videoRef.current
     const canvas = canvasRef.current
