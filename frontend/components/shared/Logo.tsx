@@ -18,7 +18,7 @@ export default function Logo({
   textClassName,
 }: LogoProps) {
   const containerClass = cn('inline-flex items-center gap-3', className)
-  const imageClasses = cn('h-11 w-11 rounded-xl bg-subit-100 p-0.5', imageClassName)
+  const imageClasses = cn('h-11 w-11 rounded-xl bg-subit-100', imageClassName)
 
   const content = (
     <>
@@ -29,7 +29,7 @@ export default function Logo({
         height={44}
         priority
         className={imageClasses}
-        style={{ objectFit: 'contain' }}
+        style={{ objectFit: 'cover' }}
       />
       {withText && (
         <span className={cn('text-xl font-semibold tracking-tight text-neutral-900', textClassName)}>
