@@ -102,7 +102,7 @@ export default function RootLayout({
         <SoftwareApplicationSchema />
       </head>
       <body className={`font-sans h-full antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+        <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light">
           <Providers>
             {children}
             <CommandPalette />
@@ -137,7 +137,6 @@ export default function RootLayout({
     </html>
   )
 }
-
 
 
 
