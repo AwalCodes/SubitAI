@@ -1,3 +1,13 @@
+---
+title: Video Export Service
+emoji: 🎬
+colorFrom: blue
+colorTo: purple
+sdk: docker
+pinned: false
+app_port: 7860
+---
+
 # Free Video Export Service
 
 A free, self-hosted video export service using FFmpeg for burning subtitles into videos.

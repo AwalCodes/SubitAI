@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     const videoUrl = formData.get('videoUrl') as string
     const subtitles = JSON.parse(formData.get('subtitles') as string)
     const style = JSON.parse(formData.get('style') as string || '{}')
-    
+
     if (!videoUrl || !subtitles) {
       return NextResponse.json(
         { error: 'Missing required parameters' },
@@ -30,30 +30,46 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // For now, return instructions for server-side setup
-    // This endpoint should be implemented with:
-    // 1. Download video from videoUrl
-    // 2. Generate SRT file from subtitles
-    // 3. Use FFmpeg to burn subtitles and export as MP4
-    // 4. Return processed video
-    
-    // Option 1: Use external video processing service
-    // Example with Mux or Cloudflare Stream would go here
-    
-    // Option 2: Call separate FFmpeg backend service
-    // This would be a separate service running FFmpeg
-    
-    // For now, return error with setup instructions
-    return NextResponse.json({
-      error: 'Server-side video export not yet configured',
-      instructions: {
-        option1: 'Set up a separate backend service with FFmpeg',
-        option2: 'Integrate with Mux.com video API',
-        option3: 'Use Cloudflare Stream API',
-        option4: 'Use IMG.LY server-side video SDK'
-      },
-      comingSoon: true
-    }, { status: 501 })
+    // Forward to video export service
+    // In production this URL should be in environment variables
+    const EXPORT_SERVICE_URL = process.env.VIDEO_EXPORT_SERVICE_URL || 'https://samzeret78gmail-video-export-service.hf.space'
+
+    // Create new FormData for the backend service
+    const serviceFormData = new FormData()
+    serviceFormData.append('videoUrl', videoUrl)
+    serviceFormData.append('subtitles', JSON.stringify(subtitles))
+    serviceFormData.append('style', JSON.stringify(style))
+
+    console.log(`Forwarding export request to ${EXPORT_SERVICE_URL}/export`)
+
+    const response = await fetch(`${EXPORT_SERVICE_URL}/export`, {
+      method: 'POST',
+      body: serviceFormData,
+      // We don't set Content-Type header here because fetch with FormData sets it automatically with boundary
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      try {
+        const errorJson = JSON.parse(errorText)
+        throw new Error(errorJson.error || `Export service failed with status ${response.status}`)
+      } catch (e) {
+        throw new Error(`Export service failed: ${errorText}`)
+      }
+    }
+
+    // Stream the response back to client
+    const headers = new Headers(response.headers)
+
+    // Ensure we have correct headers for file download
+    if (!headers.has('Content-Disposition')) {
+      headers.set('Content-Disposition', 'attachment; filename="video.mp4"')
+    }
+
+    return new NextResponse(response.body, {
+      status: 200,
+      headers
+    })
 
   } catch (error: any) {
     console.error('Export video error:', error)

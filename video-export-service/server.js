@@ -14,7 +14,7 @@ app.use(cors())
 app.use(express.json({ limit: '50mb' }))
 
 // Configure multer for file uploads
-const upload = multer({ 
+const upload = multer({
   dest: 'temp/',
   limits: { fileSize: 500 * 1024 * 1024 } // 500MB limit
 })
@@ -28,11 +28,14 @@ app.get('/health', (req, res) => {
 app.post('/export', upload.single('video'), async (req, res) => {
   const tempDir = path.join(__dirname, 'temp')
   const outputDir = path.join(__dirname, 'output')
-  
+
   let inputVideoPath = null
   let srtFilePath = null
   let outputVideoPath = null
   const jobId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString()
+
+  // Track if we've sent the response already (error case)
+  let responseSent = false
 
   try {
     // Ensure directories exist
@@ -44,12 +47,14 @@ app.post('/export', upload.single('video'), async (req, res) => {
       // Try to download from URL
       const videoUrl = req.body.videoUrl
       if (!videoUrl) {
+        responseSent = true
         return res.status(400).json({ error: 'No video file or URL provided' })
       }
 
       // Download video from URL (Node.js 18+ has built-in fetch)
       const response = await fetch(videoUrl)
       if (!response.ok) {
+        responseSent = true
         return res.status(400).json({ error: 'Failed to download video from URL' })
       }
 
@@ -64,7 +69,10 @@ app.post('/export', upload.single('video'), async (req, res) => {
     // Get subtitles
     const subtitles = JSON.parse(req.body.subtitles || '[]')
     if (!subtitles || subtitles.length === 0) {
-      return res.status(400).json({ error: 'No subtitles provided' })
+      if (!responseSent) {
+        responseSent = true
+        return res.status(400).json({ error: 'No subtitles provided' })
+      }
     }
 
     // Generate SRT file
@@ -106,6 +114,9 @@ app.post('/export', upload.single('video'), async (req, res) => {
 
     // Build FFmpeg command
     return new Promise((resolve, reject) => {
+      res.setHeader('Content-Type', 'video/mp4')
+      res.setHeader('Content-Disposition', `attachment; filename="subtitle-video-${jobId}.mp4"`)
+
       const command = ffmpeg(inputVideoPath)
         .videoFilters(
           `subtitles=${srtFilePath}:force_style='FontName=${fontFamily},FontSize=${fontSize},PrimaryColour=&H${hexToBGR(fontColor)},OutlineColour=&H${hexToBGR(outlineColor)},Outline=${outlineWidth},Alignment=2,${yPosition}'`
@@ -115,12 +126,12 @@ app.post('/export', upload.single('video'), async (req, res) => {
         .audioBitrate('192k')
         .videoBitrate('5000k')
         .outputOptions([
-          '-preset medium',
-          '-crf 23',
+          '-preset ultrafast', // CHANGED: Significantly faster processing
+          '-crf 28',          // CHANGED: Slightly lower quality for speed (still good)
           '-movflags +faststart',
           '-pix_fmt yuv420p'
         ])
-        .output(outputVideoPath)
+        .output(outputVideoPath) // Write to disk first to ensure MOOV atom is correct for faststart, streaming pipe often has issues with MP4 metadata
         .on('start', (cmd) => {
           console.log('FFmpeg command:', cmd)
         })
@@ -129,17 +140,25 @@ app.post('/export', upload.single('video'), async (req, res) => {
         })
         .on('end', async () => {
           try {
-            // Read output file
-            const videoBuffer = await fs.readFile(outputVideoPath)
-            
-            // Clean up
-            await cleanup()
+            // Stream the file content to response
+            const { createReadStream } = require('fs')
+            const fileStream = createReadStream(outputVideoPath)
 
-            // Send video
-            res.setHeader('Content-Type', 'video/mp4')
-            res.setHeader('Content-Disposition', `attachment; filename="subtitle-video-${jobId}.mp4"`)
-            res.send(videoBuffer)
-            resolve()
+            fileStream.on('error', (err) => {
+              console.error('Stream error:', err)
+              if (!responseSent) {
+                // Try to end if possible, though headers likely sent
+                res.end()
+              }
+            })
+
+            fileStream.pipe(res)
+
+            fileStream.on('end', async () => {
+              await cleanup()
+              resolve()
+            })
+
           } catch (error) {
             reject(error)
           }
@@ -147,6 +166,12 @@ app.post('/export', upload.single('video'), async (req, res) => {
         .on('error', async (err) => {
           console.error('FFmpeg error:', err)
           await cleanup()
+          // If headers haven't been sent, valid JSON error. 
+          // Since we set headers early for streaming anticipation (or intended to), check writable.
+          if (!res.headersSent) {
+            res.status(500).json({ error: 'FFmpeg processing failed' })
+            responseSent = true
+          }
           reject(err)
         })
 
@@ -156,23 +181,17 @@ app.post('/export', upload.single('video'), async (req, res) => {
   } catch (error) {
     console.error('Export error:', error)
     await cleanup()
-    res.status(500).json({ error: error.message || 'Video export failed' })
+    if (!responseSent && !res.headersSent) {
+      res.status(500).json({ error: error.message || 'Video export failed' })
+    }
   }
 
   async function cleanup() {
     try {
-      if (inputVideoPath && await fs.access(inputVideoPath).then(() => true).catch(() => false)) {
-        await fs.unlink(inputVideoPath)
-      }
-      if (srtFilePath && await fs.access(srtFilePath).then(() => true).catch(() => false)) {
-        await fs.unlink(srtFilePath)
-      }
-      if (outputVideoPath && await fs.access(outputVideoPath).then(() => true).catch(() => false)) {
-        await fs.unlink(outputVideoPath)
-      }
-      if (req.file && req.file.path && await fs.access(req.file.path).then(() => true).catch(() => false)) {
-        await fs.unlink(req.file.path)
-      }
+      if (inputVideoPath) await fs.unlink(inputVideoPath).catch(() => { })
+      if (srtFilePath) await fs.unlink(srtFilePath).catch(() => { })
+      if (outputVideoPath) await fs.unlink(outputVideoPath).catch(() => { })
+      if (req.file && req.file.path) await fs.unlink(req.file.path).catch(() => { })
     } catch (error) {
       console.error('Cleanup error:', error)
     }
@@ -196,7 +215,7 @@ function formatTime(seconds) {
   const minutes = Math.floor((seconds % 3600) / 60)
   const secs = Math.floor(seconds % 60)
   const millisecs = Math.floor((seconds % 1) * 1000)
-  
+
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')},${millisecs.toString().padStart(3, '0')}`
 }
 

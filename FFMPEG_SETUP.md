@@ -1,63 +1,62 @@
-# FFmpeg Video Export - Complete Setup Guide
+# FFmpeg Video Export - Setup Guide
 
-## ✅ Current Implementation: FFmpeg.wasm (Browser-Based)
+This project uses a **dedicated microservice** for high-performance server-side FFmpeg video export.
 
-Your app now uses **FFmpeg.wasm** for FREE, client-side MP4 video export. This works immediately without any server setup!
+## Architecture
 
-### How It Works
+1. **Frontend**: Next.js App (`/frontend`)
+   - User clicks "Export"
+   - Browser calls `/api/export-video` (Next.js API Route)
+   - Next.js proxies the request to the Video Export Service
+2. **Backend**: Video Export Service (`/video-export-service`)
+   - Receives video + subtitles
+   - Uses FFmpeg (server-side) to burn subtitles fast
+   - Streams the MP4 back
 
-- Runs FFmpeg directly in the browser (no server needed)
-- Exports high-quality MP4 videos with burned-in subtitles
-- Free and works right now
-- Note: Can be slower for very long videos (10+ minutes)
+## 🚀 Deployment Instructions
 
----
+### 1. Deploy the Video Export Service (Backend)
+You need to deploy the `/video-export-service` folder as a standalone service.
 
-## 🚀 Optional: Fast Server-Side FFmpeg Service (FREE Deployment)
+**Option A: Railway (Recommended)**
+1. Connect your GitHub repo to Railway.
+2. Set the **Root Directory** to `/video-export-service`.
+3. Railway will detect `railway.json` and deploy it.
+4. Copy the assigned domain (e.g., `https://video-service-production.up.railway.app`).
 
-For faster processing of long videos, you can deploy a free backend service.
+**Option B: Render / Others**
+- Deploy as a **Web Service**.
+- **Root Directory**: `/video-export-service`
+- **Build Command**: `npm install`
+- **Start Command**: `npm start`
+- Ensure `ffmpeg` is installed (Render's native Node environment might need a Docker deploy or specific build setup). *Docker is provided in the folder for this reason.*
 
-### Quick Deploy on Railway (FREE tier)
-
-1. **Fork/Clone the video-export-service folder**
-2. **Go to [railway.app](https://railway.app)** → New Project → Deploy from GitHub
-3. **Select your repo** → Railway auto-detects and deploys
-4. **Get your service URL** (e.g., `https://your-service.railway.app`)
-5. **Add to frontend `.env.local`**:
-   ```env
-   NEXT_PUBLIC_VIDEO_EXPORT_SERVICE_URL=https://your-service.railway.app
+### 2. Configure the Frontend
+In your Next.js deployment (e.g., Vercel):
+1. Add an **Environment Variable**:
    ```
-6. **Done!** Frontend will automatically use the fast server-side export
+   VIDEO_EXPORT_SERVICE_URL=https://your-video-service-url.app
+   ```
+   *(Do NOT use the trailing slash /export, just the base URL)*
 
-### Alternative Free Hosting
+2. Redeploy the frontend.
 
-- **Render.com** - Free tier available
-- **Fly.io** - Free tier available  
-- **Vercel** - Can host the service (but FFmpeg needs special setup)
+## 🔧 Local Development
 
----
+1. **Start Backend**:
+   ```bash
+   cd video-export-service
+   npm install
+   npm start
+   ```
+   (Runs on http://localhost:3001)
 
-## 📝 Video Export Service Details
+2. **Start Frontend**:
+   ```bash
+   cd frontend
+   npm run dev
+   ```
+   (Runs on http://localhost:3000)
 
-Location: `/video-export-service/`
-
-**Features:**
-- Fast server-side FFmpeg processing
-- High-quality MP4 export
-- Subtitle styling support
-- Automatic cleanup
-- Error handling
-
-**Requirements:**
-- Node.js 18+
-- FFmpeg installed (auto-installed on Railway/Render)
-
----
-
-## 🔧 Current Status
-
-✅ **FFmpeg.wasm** - Working now in browser (free, slower for long videos)
-📦 **Backend Service** - Ready to deploy (faster, requires hosting)
-
-Both solutions export **high-quality MP4** with proper subtitle styling!
+The frontend is already configured to look for `http://localhost:3001` if the env var is missing.
 
