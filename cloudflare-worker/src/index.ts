@@ -7,13 +7,13 @@ import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { transcribeAudio } from './services/groq';
 import { validateAuth, getUser } from './services/auth';
-import { 
-  generateSRT, 
-  generateVTT, 
-  formatTimestamp 
+import {
+  generateSRT,
+  generateVTT,
+  formatTimestamp
 } from './utils/subtitles';
-import { 
-  validateFile, 
+import {
+  validateFile,
   extractAudioFromVideo,
 } from './utils/media';
 
@@ -138,7 +138,7 @@ async function getEffectiveSubscriptionTier(userId: string, env: Env): Promise<S
     });
 
     let userTier: SubscriptionTier | null = null;
-    
+
     if (userRes.ok) {
       try {
         const userRows = await userRes.json() as Array<{ subscription_tier: string }>;
@@ -318,14 +318,14 @@ function getCorsHeaders(env: Env, origin: string): Record<string, string> {
   const allowedOrigins = env.ALLOWED_ORIGINS
     ? env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
     : [];
-  
+
   const allowAll = allowedOrigins.length === 0;
   const isAllowedOrigin = allowAll || allowedOrigins.includes(origin);
-  
+
   if (!isAllowedOrigin && !allowAll) {
     return {};
   }
-  
+
   return {
     'Access-Control-Allow-Origin': allowAll ? '*' : origin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -339,11 +339,11 @@ function getCorsHeaders(env: Env, origin: string): Record<string, string> {
 app.options('*', (c) => {
   const origin = c.req.header('Origin') || '';
   const headers = getCorsHeaders(c.env, origin);
-  
+
   if (Object.keys(headers).length === 0) {
     return new Response('CORS not allowed', { status: 403 });
   }
-  
+
   return new Response(null, {
     status: 204,
     headers: headers,
@@ -357,10 +357,10 @@ app.use('*', logger());
 app.use('*', async (c, next) => {
   const origin = c.req.header('Origin') || '';
   const headers = getCorsHeaders(c.env, origin);
-  
+
   // Add CORS headers to response
   await next();
-  
+
   // Apply CORS headers after the response is generated
   Object.entries(headers).forEach(([key, value]) => {
     c.res.headers.set(key, value);
@@ -462,10 +462,13 @@ app.post('/transcribe', async (c) => {
     const languageEntry = formData.get('language');
     const formatEntry = formData.get('format');
     const projectIdEntry = formData.get('projectId');
+    const fileUrlEntry = formData.get('fileUrl');
 
-    const file = fileEntry && typeof fileEntry === 'object' && 'arrayBuffer' in (fileEntry as any)
+    // Check for direct file upload first
+    let file = fileEntry && typeof fileEntry === 'object' && 'arrayBuffer' in (fileEntry as any)
       ? (fileEntry as File)
       : null;
+
     const language = typeof languageEntry === 'string' && languageEntry
       ? languageEntry
       : 'en';
@@ -476,8 +479,27 @@ app.post('/transcribe', async (c) => {
       ? projectIdEntry
       : undefined;
 
+    // If no file upload, check for fileUrl
+    if (!file && typeof fileUrlEntry === 'string' && fileUrlEntry) {
+      console.log('Downloading file from URL:', fileUrlEntry);
+      try {
+        const downloadRes = await fetch(fileUrlEntry);
+        if (!downloadRes.ok) {
+          return c.json({ success: false, error: 'Failed to download file from URL' }, 400);
+        }
+
+        const blob = await downloadRes.blob();
+        // Create a File object from the blob (polyfill or compatible environment check might be needed, 
+        // but in Workers, File is available)
+        file = new File([blob], 'downloaded_file', { type: downloadRes.headers.get('content-type') || 'application/octet-stream' });
+      } catch (e) {
+        console.error('Download error:', e);
+        return c.json({ success: false, error: 'Failed to download file from URL' }, 400);
+      }
+    }
+
     if (!file) {
-      return c.json({ success: false, error: 'No file provided' }, 400);
+      return c.json({ success: false, error: 'No file or fileUrl provided' }, 400);
     }
 
     if (Number.isFinite(limits.videoSize) && file.size > limits.videoSize) {
@@ -495,9 +517,9 @@ app.post('/transcribe', async (c) => {
     // Validate file
     const validation = validateFile(file);
     if (!validation.valid) {
-      return c.json({ 
-        success: false, 
-        error: validation.error 
+      return c.json({
+        success: false,
+        error: validation.error
       }, 400);
     }
 
@@ -534,7 +556,7 @@ app.post('/transcribe', async (c) => {
     const uint8Array = new Uint8Array(fileBuffer);
 
     // Extract audio if video file
-    const audioData = file.type.startsWith('video/') 
+    const audioData = file.type.startsWith('video/')
       ? await extractAudioFromVideo(uint8Array)
       : uint8Array;
 
@@ -643,34 +665,34 @@ app.post('/transcribe/stream', async (c) => {
           : null;
 
         if (!file) {
-          await writer.write(encoder.encode(JSON.stringify({ 
-            error: 'No file provided' 
+          await writer.write(encoder.encode(JSON.stringify({
+            error: 'No file provided'
           })));
           await writer.close();
           return;
         }
 
         // Send progress updates
-        await writer.write(encoder.encode(JSON.stringify({ 
+        await writer.write(encoder.encode(JSON.stringify({
           status: 'processing',
           progress: 10,
           message: 'Uploading file...'
         }) + '\n'));
 
         const fileBuffer = await file.arrayBuffer();
-        
-        await writer.write(encoder.encode(JSON.stringify({ 
+
+        await writer.write(encoder.encode(JSON.stringify({
           status: 'processing',
           progress: 30,
           message: 'Extracting audio...'
         }) + '\n'));
 
         const uint8Array = new Uint8Array(fileBuffer);
-        const audioData = file.type.startsWith('video/') 
+        const audioData = file.type.startsWith('video/')
           ? await extractAudioFromVideo(uint8Array)
           : uint8Array;
 
-        await writer.write(encoder.encode(JSON.stringify({ 
+        await writer.write(encoder.encode(JSON.stringify({
           status: 'processing',
           progress: 50,
           message: 'Transcribing...'
@@ -681,14 +703,14 @@ app.post('/transcribe/stream', async (c) => {
           c.env.GROQ_API_KEY
         );
 
-        await writer.write(encoder.encode(JSON.stringify({ 
+        await writer.write(encoder.encode(JSON.stringify({
           status: 'processing',
           progress: 90,
           message: 'Generating formats...'
         }) + '\n'));
 
         // Send final result
-        await writer.write(encoder.encode(JSON.stringify({ 
+        await writer.write(encoder.encode(JSON.stringify({
           status: 'completed',
           progress: 100,
           data: {
@@ -702,9 +724,9 @@ app.post('/transcribe/stream', async (c) => {
         await writer.close();
 
       } catch (error: any) {
-        await writer.write(encoder.encode(JSON.stringify({ 
+        await writer.write(encoder.encode(JSON.stringify({
           status: 'error',
-          error: error.message 
+          error: error.message
         }) + '\n'));
         await writer.close();
       }

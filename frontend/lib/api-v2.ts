@@ -20,7 +20,8 @@ const supabase = getBrowserSupabaseClient();
 
 // Types
 interface TranscribeOptions {
-  file: File;
+  file?: File;
+  fileUrl?: string;
   language?: string;
   format?: string;
   onProgress?: (progress: number, message?: string) => void;
@@ -98,7 +99,7 @@ async function withRetry<T>(
       return await fn();
     } catch (error: any) {
       lastError = error;
-      
+
       // Don't retry on client errors (4xx)
       if (error.status && error.status >= 400 && error.status < 500) {
         throw error;
@@ -158,7 +159,11 @@ export async function fetchQuota(): Promise<QuotaInfo> {
  * Transcribe audio/video file
  */
 export async function transcribeFile(options: TranscribeOptions): Promise<TranscriptionResult> {
-  const { file, language = 'en', format = 'srt,vtt,json', onProgress, projectId } = options;
+  const { file, fileUrl, language = 'en', format = 'srt,vtt,json', onProgress, projectId } = options;
+
+  if (!file && !fileUrl) {
+    throw { error: 'No file or fileUrl provided', status: 400 } as APIError;
+  }
 
   const token = await getAuthToken();
   if (!token) {
@@ -167,7 +172,11 @@ export async function transcribeFile(options: TranscribeOptions): Promise<Transc
 
   return withRetry(async () => {
     const formData = new FormData();
-    formData.append('file', file);
+    if (file) {
+      formData.append('file', file);
+    } else if (fileUrl) {
+      formData.append('fileUrl', fileUrl);
+    }
     formData.append('language', language);
     formData.append('format', format);
     if (projectId) {
@@ -183,7 +192,8 @@ export async function transcribeFile(options: TranscribeOptions): Promise<Transc
         if (e.lengthComputable && onProgress) {
           // Upload to transcription service: 0-25% of total transcription
           const uploadProgress = Math.round((e.loaded / e.total) * 25);
-          onProgress(uploadProgress, `Uploading to transcription service... ${uploadProgress}%`);
+          // If sending URL, upload is tiny, so this might jump quickly. That's fine.
+          onProgress(uploadProgress, fileUrl ? 'Sending file URL...' : `Uploading to transcription service... ${uploadProgress}%`);
         }
       });
 
@@ -193,7 +203,7 @@ export async function transcribeFile(options: TranscribeOptions): Promise<Transc
           // Processing: 25-100% of total transcription
           // Map download progress to 25-100% range
           const downloadProgress = 25 + Math.round((e.loaded / e.total) * 75);
-          
+
           // Determine stage based on progress
           let message = '';
           if (downloadProgress < 40) {
@@ -205,7 +215,7 @@ export async function transcribeFile(options: TranscribeOptions): Promise<Transc
           } else {
             message = `Almost done... ${downloadProgress}%`;
           }
-          
+
           onProgress(downloadProgress, message);
         }
       });
@@ -218,48 +228,48 @@ export async function transcribeFile(options: TranscribeOptions): Promise<Transc
               onProgress?.(100, 'Complete');
               resolve(result);
             } else {
-              reject({ 
-                error: result.error || 'Transcription failed', 
+              reject({
+                error: result.error || 'Transcription failed',
                 status: xhr.status,
                 code: result.code,
                 details: result.details,
               });
             }
           } catch (e) {
-            reject({ 
-              error: 'Invalid response from server', 
-              status: xhr.status 
+            reject({
+              error: 'Invalid response from server',
+              status: xhr.status
             });
           }
         } else {
           try {
             const errorData = JSON.parse(xhr.responseText);
-            reject({ 
-              error: errorData.error || 'Request failed', 
+            reject({
+              error: errorData.error || 'Request failed',
               status: xhr.status,
               details: errorData.details,
               code: errorData.code,
             });
           } catch (e) {
-            reject({ 
-              error: `Request failed with status ${xhr.status}`, 
-              status: xhr.status 
+            reject({
+              error: `Request failed with status ${xhr.status}`,
+              status: xhr.status
             });
           }
         }
       });
 
       xhr.addEventListener('error', () => {
-        reject({ 
-          error: 'Network error occurred', 
-          status: 0 
+        reject({
+          error: 'Network error occurred',
+          status: 0
         });
       });
 
       xhr.addEventListener('timeout', () => {
-        reject({ 
-          error: 'Request timed out', 
-          status: 0 
+        reject({
+          error: 'Request timed out',
+          status: 0
         });
       });
 

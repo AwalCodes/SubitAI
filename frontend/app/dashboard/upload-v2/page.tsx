@@ -13,9 +13,9 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useDropzone } from 'react-dropzone'
-import { 
-  Upload, Video, X, CheckCircle, AlertCircle, 
-  Cloud, Loader, PlayCircle, FileAudio, RefreshCw 
+import {
+  Upload, Video, X, CheckCircle, AlertCircle,
+  Cloud, Loader, PlayCircle, FileAudio, RefreshCw
 } from 'lucide-react'
 import { transcribeFile } from '@/lib/api-v2'
 import { useUser } from '@/lib/providers'
@@ -26,12 +26,12 @@ import { getSubscriptionLimits } from '@/lib/utils'
 import { fetchQuota } from '@/lib/api-v2'
 
 // State machine states
-type UploadState = 
-  | 'idle' 
-  | 'file_selected' 
-  | 'uploading_video' 
-  | 'transcribing' 
-  | 'success' 
+type UploadState =
+  | 'idle'
+  | 'file_selected'
+  | 'uploading_video'
+  | 'transcribing'
+  | 'success'
   | 'error';
 
 // Reuse the shared browser Supabase client so we share auth/session state
@@ -40,7 +40,7 @@ const supabase = getBrowserSupabaseClient()
 export default function UploadPageV2() {
   const { user, loading, subscription } = useUser()
   const router = useRouter()
-  
+
   useEffect(() => {
     if (!loading && !user) {
       router.push('/auth/login')
@@ -111,7 +111,7 @@ export default function UploadPageV2() {
       try {
         const duration = await getVideoDuration(selectedFile)
         const { videoLength } = getSubscriptionLimits(planTier)
-        
+
         if (Number.isFinite(videoLength) && duration > videoLength) {
           const maxMinutes = Math.floor(videoLength / 60)
           const actualMinutes = Math.floor(duration / 60)
@@ -166,7 +166,7 @@ export default function UploadPageV2() {
     try {
       setProgressMessage('Checking quota...')
       const quota = await fetchQuota()
-      
+
       // Check if user has enough energy
       if (!quota.unlimited && quota.remaining !== null && quota.remaining <= 0) {
         const message = 'You have used all your subtitle energy for today. Please upgrade your plan or try again tomorrow.'
@@ -174,7 +174,7 @@ export default function UploadPageV2() {
         toast.error(message)
         return
       }
-      
+
       // Estimate energy cost (typically 10 energy per transcription)
       const estimatedCost = 10
       if (!quota.unlimited && quota.remaining !== null && quota.remaining < estimatedCost) {
@@ -251,7 +251,7 @@ export default function UploadPageV2() {
       // Upload video to storage
       setProgressMessage('Uploading file to storage...')
       setUploadProgress(2) // Start at 2% to show immediate feedback
-      
+
       const fileExt = file.name.split('.').pop()
       const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
       const filePath = `${user?.id}/${fileName}`
@@ -281,7 +281,7 @@ export default function UploadPageV2() {
       clearInterval(progressInterval)
 
       if (uploadError) throw uploadError
-      
+
       setUploadProgress(15) // Upload complete
       setProgressMessage('File uploaded successfully')
 
@@ -309,7 +309,9 @@ export default function UploadPageV2() {
       setUploadProgress(15) // Start transcription at 15%
 
       const result = await transcribeFile({
-        file,
+        // Pass file URL (from Supabase) instead of re-uploading file.
+        // This makes "uploading to transcription service" instant.
+        fileUrl: signedUrlData.signedUrl,
         language: 'auto',
         format: 'srt,vtt,json',
         projectId: newProjectId,
@@ -325,9 +327,9 @@ export default function UploadPageV2() {
             const remainingProgress = ((progress - 80) / 20) * 18
             mappedProgress = 80 + Math.round(remainingProgress)
           }
-          
+
           setUploadProgress(mappedProgress)
-          
+
           // Update message with better process names
           if (message) {
             if (message.includes('Uploading')) {
@@ -356,7 +358,7 @@ export default function UploadPageV2() {
       // Save subtitles to database
       setUploadProgress(98)
       setProgressMessage('Saving subtitles to database...')
-      
+
       const { error: subtitleError } = await supabase
         .from('subtitles')
         .insert({
@@ -379,7 +381,7 @@ export default function UploadPageV2() {
       // Update project status
       setUploadProgress(99)
       setProgressMessage('Finalizing project...')
-      
+
       const { error: updateError } = await supabase
         .from('projects')
         .update({
@@ -396,9 +398,9 @@ export default function UploadPageV2() {
       setState('success')
       setUploadProgress(100)
       setProgressMessage('Complete! Subtitles generated successfully.')
-      
+
       toast.success('Subtitles generated successfully!')
-      
+
       // Navigate to project page after short delay
       setTimeout(() => {
         router.push(`/dashboard/projects/${newProjectId}`)
@@ -421,7 +423,7 @@ export default function UploadPageV2() {
         setError(message)
         toast.error(message)
       }
-      
+
       // Mark project as failed if it was created
       const idToFail = createdProjectId || projectId
       if (idToFail) {
@@ -497,16 +499,15 @@ export default function UploadPageV2() {
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="max-w-4xl mx-auto">
-          
+
           {/* Upload/Process Area */}
           {state === 'idle' && (
             <div
               {...getRootProps()}
-              className={`border-2 border-dashed rounded-2xl p-8 sm:p-12 md:p-16 text-center cursor-pointer transition-all duration-300 ${
-                isDragActive
+              className={`border-2 border-dashed rounded-2xl p-8 sm:p-12 md:p-16 text-center cursor-pointer transition-all duration-300 ${isDragActive
                   ? 'border-violet-500 bg-violet-500/10 scale-[1.02]'
                   : 'border-slate-700 hover:border-violet-500/50 bg-slate-900/50 hover:bg-slate-800/50'
-              }`}
+                }`}
             >
               <input {...getInputProps()} />
               <div className="relative inline-block mb-4 sm:mb-6">
@@ -532,7 +533,7 @@ export default function UploadPageV2() {
           {/* File Selected */}
           {(state === 'file_selected' || isProcessing || state === 'success' || state === 'error') && file && (
             <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800 p-6 sm:p-8 space-y-6">
-              
+
               {/* File Info */}
               <div className="flex items-start justify-between p-4 sm:p-5 bg-slate-800/50 rounded-xl border border-slate-700">
                 <div className="flex items-start gap-4 flex-1 min-w-0">
