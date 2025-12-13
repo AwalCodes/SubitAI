@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { 
-  Type, 
-  Palette, 
-  Film, 
-  Download, 
-  Play, 
-  Pause, 
+import {
+  Type,
+  Palette,
+  Film,
+  Download,
+  Play,
+  Pause,
   Save,
   Sparkles,
   AlignCenter,
@@ -288,12 +288,12 @@ export default function SubtitleEditor({
   // REAL-TIME: Trigger immediate re-render when subtitles or style change
   useEffect(() => {
     if (!videoRef.current || isAudio) return
-    
+
     // Force immediate render on any subtitle/style change
     const timeoutId = setTimeout(() => {
       renderSubtitles()
     }, 0)
-    
+
     return () => clearTimeout(timeoutId)
   }, [editingSubtitles, style, renderSubtitles, isAudio])
 
@@ -343,7 +343,7 @@ export default function SubtitleEditor({
       const chars = text.split('')
       const duration = 0.5 // Animation duration in seconds
       const progress = Math.min(elapsed / duration, 1)
-      
+
       if (style.displayMode === 'word-by-word') {
         const wordCount = Math.ceil(words.length * progress)
         displayText = words.slice(0, wordCount).join(' ')
@@ -354,7 +354,7 @@ export default function SubtitleEditor({
     }
 
     // Split text into lines if needed
-    const lines = style.displayMode === 'multiple-lines' 
+    const lines = style.displayMode === 'multiple-lines'
       ? wrapText(ctx, displayText, canvas.width * 0.8, style.maxLines)
       : [displayText]
 
@@ -442,7 +442,7 @@ export default function SubtitleEditor({
     for (const word of words) {
       const testLine = currentLine ? `${currentLine} ${word}` : word
       const metrics = ctx.measureText(testLine)
-      
+
       if (metrics.width > maxWidth && currentLine) {
         lines.push(currentLine)
         currentLine = word
@@ -451,7 +451,7 @@ export default function SubtitleEditor({
         currentLine = testLine
       }
     }
-    
+
     if (currentLine && lines.length < maxLines) {
       lines.push(currentLine)
     }
@@ -541,156 +541,55 @@ export default function SubtitleEditor({
 
     try {
       setExporting(true)
-      const exportToast = toast.loading('Preparing FFmpeg for video export...', { duration: Infinity })
+      const exportToast = toast.loading('Preparing video export...', { duration: Infinity })
 
-      // Use FFmpeg.wasm for free, client-side MP4 export
-      const ffmpeg = new FFmpeg()
-      
-      // Report progress
-      ffmpeg.on('progress', ({ progress }) => {
-        const percent = Math.round(progress * 100)
-        toast.loading(`Exporting video... ${percent}%`, { id: exportToast, duration: Infinity })
-      })
+      toast.loading('Sending to export server...', { id: exportToast })
 
-      // Load FFmpeg
-      toast.loading('Loading FFmpeg... This may take a moment.', { id: exportToast })
-      
-      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd'
-      await ffmpeg.load({
-        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-      })
+      // Prepare request data
+      const formData = new FormData()
+      formData.append('videoUrl', videoUrl)
 
-      toast.loading('Downloading video...', { id: exportToast })
-
-      // Fetch video file - detect format from URL
-      const videoData = await fetchFile(videoUrl)
-      
-      // Get file extension from URL - handle query strings
-      let ext = 'mp4' // default
-      try {
-        const url = new URL(videoUrl)
-        const pathMatch = url.pathname.match(/\.([a-z0-9]+)$/i)
-        if (pathMatch) {
-          ext = pathMatch[1].toLowerCase()
-        }
-        // Common video formats
-        if (!['mp4', 'webm', 'mov', 'avi', 'mkv', 'flv', 'm4v'].includes(ext)) {
-          ext = 'mp4' // fallback
-        }
-      } catch (e) {
-        // If URL parsing fails, default to mp4
-        ext = 'mp4'
-      }
-      
-      const inputFileName = `input.${ext}`
-      await ffmpeg.writeFile(inputFileName, videoData)
-
-      toast.loading('Generating subtitle file...', { id: exportToast })
-
-      // Generate SRT file from subtitles (filter empty ones)
+      // Filter empty subtitles
       const validSubtitles = editingSubtitles.filter(s => s.text && s.text.trim())
       if (validSubtitles.length === 0) {
         throw new Error('No valid subtitles to export')
       }
-      const srtContent = generateSRT(validSubtitles)
-      // Write SRT file - FFmpeg expects Uint8Array
-      await ffmpeg.writeFile('subtitles.srt', new TextEncoder().encode(srtContent))
+      formData.append('subtitles', JSON.stringify(validSubtitles))
 
-      toast.loading('Burning subtitles into video...', { id: exportToast })
+      // Pass style
+      formData.append('style', JSON.stringify(style))
 
-      // Build FFmpeg command with subtitle styling
-      const fontSize = style?.fontSize || 24
-      const fontFamily = style?.fontFamily || 'Arial'
-      const fontColor = style?.color || '#FFFFFF'
-      const outlineColor = style?.outlineColor || '#000000'
-      const outlineWidth = style?.outlineWidth || 2
-      const position = style?.position || 'bottom'
-      const verticalOffset = style?.verticalOffset || 80
+      // Call our backend API which proxies to the Hugging Face service
+      const response = await fetch('/api/export-video', {
+        method: 'POST',
+        body: formData,
+      })
 
-      // Convert hex colors to BGR format for FFmpeg
-      const hexToBGR = (hex: string): string => {
-        hex = hex.replace('#', '')
-        const r = parseInt(hex.substr(0, 2), 16)
-        const g = parseInt(hex.substr(2, 2), 16)
-        const b = parseInt(hex.substr(4, 2), 16)
-        return `${b.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${r.toString(16).padStart(2, '0')}`
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `Export failed with status: ${response.status}`)
       }
 
-      // Calculate subtitle position for FFmpeg
-      let yPos = ''
-      if (position === 'bottom') {
-        yPos = `y=h-th-${verticalOffset}`
-      } else if (position === 'top') {
-        yPos = `y=${verticalOffset}`
-      } else {
-        yPos = 'y=(h-th)/2' // Center
-      }
+      toast.loading('Downloading processed video...', { id: exportToast })
 
-      // Build FFmpeg subtitle filter with styling
-      // Escape font family name if it has spaces
-      const escapedFont = fontFamily.replace(/'/g, "\\'")
-      const styleStr = `FontName=${escapedFont},FontSize=${fontSize},PrimaryColour=&H${hexToBGR(fontColor)},OutlineColour=&H${hexToBGR(outlineColor)},Outline=${outlineWidth},Alignment=2,${yPos}`
-      
-      // FFmpeg subtitles filter
-      const subtitleFilter = `subtitles=subtitles.srt:force_style='${styleStr}'`
-
-      toast.loading('Encoding MP4... This may take a few minutes.', { id: exportToast })
-
-      // Execute FFmpeg command - handle different input formats
-      await ffmpeg.exec([
-        '-i', inputFileName,
-        '-vf', subtitleFilter,
-        '-c:v', 'libx264',
-        '-c:a', 'aac',
-        '-b:a', '192k',
-        '-preset', 'medium',
-        '-crf', '23',
-        '-movflags', '+faststart',
-        '-y', // Overwrite output file
-        'output.mp4'
-      ])
-
-      toast.loading('Finalizing video...', { id: exportToast })
-
-      // Read output file
-      const data = await ffmpeg.readFile('output.mp4')
-      
-      // Clean up
-      try {
-        await ffmpeg.deleteFile(inputFileName)
-        await ffmpeg.deleteFile('subtitles.srt')
-        await ffmpeg.deleteFile('output.mp4')
-      } catch (e) {
-        // Ignore cleanup errors
-      }
-      ffmpeg.terminate()
-
-      // Convert to blob and download - handle FileData type properly
-      // FFmpeg readFile returns Uint8Array for binary files
-      // Create a new Uint8Array to ensure compatibility
-      const uint8Array = data instanceof Uint8Array ? data : new TextEncoder().encode(String(data))
-      const blob = new Blob([uint8Array.buffer.slice(uint8Array.byteOffset, uint8Array.byteOffset + uint8Array.byteLength) as ArrayBuffer], { type: 'video/mp4' })
+      // Get the blob from response
+      const blob = await response.blob()
       const url = URL.createObjectURL(blob)
+
+      // Trigger download
       const a = document.createElement('a')
       a.href = url
       a.download = `subtitle-video-${Date.now()}.mp4`
+      document.body.appendChild(a)
       a.click()
+      document.body.removeChild(a)
       URL.revokeObjectURL(url)
-      
+
       toast.success('Video exported successfully as MP4!', { id: exportToast })
 
     } catch (error: any) {
       console.error('Export error:', error)
-      const errorMsg = error.message || 'Failed to export video'
-      
-      if (errorMsg.includes('fetch')) {
-        toast.error('Failed to download video. Please check your internet connection and try again.', { duration: 6000 })
-      } else if (errorMsg.includes('CORS')) {
-        toast.error('CORS error: The video file cannot be accessed. Please ensure the video URL allows cross-origin access.', { duration: 6000 })
-      } else {
-        toast.error(`Export failed: ${errorMsg}`, { duration: 5000 })
-      }
+      toast.error(error.message || 'Failed to export video')
     } finally {
       setExporting(false)
     }
@@ -702,7 +601,7 @@ export default function SubtitleEditor({
     // Fallback: Original client-side export (slow, WebM only)
     const video = videoRef.current
     const canvas = canvasRef.current
-    
+
     if (!video || !canvas || isAudio) {
       throw new Error('Video or canvas not available for client-side export')
     }
@@ -713,7 +612,7 @@ export default function SubtitleEditor({
       const exportCanvas = document.createElement('canvas')
       exportCanvas.width = video.videoWidth || 1920
       exportCanvas.height = video.videoHeight || 1080
-      const exportCtx = exportCanvas.getContext('2d', { 
+      const exportCtx = exportCanvas.getContext('2d', {
         alpha: false, // No transparency for better performance
         desynchronized: true, // Better performance
         willReadFrequently: false
@@ -721,7 +620,7 @@ export default function SubtitleEditor({
       if (!exportCtx) {
         throw new Error('Could not get canvas context')
       }
-      
+
       // Enable high-quality rendering
       exportCtx.imageSmoothingEnabled = true
       exportCtx.imageSmoothingQuality = 'high'
@@ -732,7 +631,7 @@ export default function SubtitleEditor({
       processingVideo.crossOrigin = 'anonymous'
       processingVideo.preload = 'auto'
       processingVideo.muted = true // Required for autoplay
-      
+
       await new Promise<void>((resolve, reject) => {
         const timeout = setTimeout(() => {
           reject(new Error('Video loading timeout'))
@@ -748,11 +647,11 @@ export default function SubtitleEditor({
           console.error('Video load error:', e)
           reject(new Error('Failed to load video for export. CORS may be blocking.'))
         }
-        
+
         // Force load
         processingVideo.load()
       })
-      
+
       // Wait for video to be ready
       await new Promise<void>((resolve) => {
         if (processingVideo.readyState >= 2) {
@@ -771,7 +670,7 @@ export default function SubtitleEditor({
           'video/webm',
           'video/mp4', // Rarely supported
         ]
-        
+
         for (const type of types) {
           if (MediaRecorder.isTypeSupported(type)) {
             return type
@@ -782,27 +681,27 @@ export default function SubtitleEditor({
 
       const mimeType = getSupportedMimeType()
       const isMP4 = mimeType.includes('mp4')
-      
+
       // Note: Browser MediaRecorder API typically only supports WebM format
       // For true MP4 export, server-side processing with FFmpeg would be needed
       if (isMP4) {
         console.warn('MP4 export is rare in browsers - may fallback to WebM')
       }
-      
+
       // Create MediaRecorder from canvas stream with maximum quality
       // Use 30 FPS for smoother, more reliable export
       const stream = exportCanvas.captureStream(30)
-      
+
       // Calculate bitrate based on resolution for optimal quality
       const pixels = exportCanvas.width * exportCanvas.height
       // Higher bitrate for better quality: 8-12 Mbps range
       const bitrate = Math.max(8000000, Math.min(12000000, pixels * 3))
-      
+
       const options: MediaRecorderOptions = {
         mimeType,
         videoBitsPerSecond: bitrate,
       }
-      
+
       const mediaRecorder = new MediaRecorder(stream, options)
 
       const chunks: Blob[] = []
@@ -813,24 +712,24 @@ export default function SubtitleEditor({
       mediaRecorder.onstop = async () => {
         const fileExtension = isMP4 ? 'mp4' : 'webm'
         const blob = new Blob(chunks, { type: mimeType })
-        
+
         // For WebM files, we can attempt server-side conversion to MP4
         // For now, export as high-quality WebM
         if (!isMP4) {
           // Check if server-side MP4 conversion is available
           try {
             toast.loading('Converting to MP4 format...', { id: exportToast })
-            
+
             const formData = new FormData()
             formData.append('video', blob, 'video.webm')
             formData.append('subtitles', JSON.stringify(editingSubtitles))
             formData.append('style', JSON.stringify(style))
-            
+
             const response = await fetch('/api/convert-to-mp4', {
               method: 'POST',
               body: formData,
             })
-            
+
             if (response.ok) {
               const mp4Blob = await response.blob()
               const url = URL.createObjectURL(mp4Blob)
@@ -846,7 +745,7 @@ export default function SubtitleEditor({
             console.log('MP4 conversion not available, using WebM export')
           }
         }
-        
+
         // Fallback to direct download (WebM or MP4 if supported)
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
@@ -854,7 +753,7 @@ export default function SubtitleEditor({
         a.download = `subtitle-video-${Date.now()}.${fileExtension}`
         a.click()
         URL.revokeObjectURL(url)
-        
+
         if (!isMP4) {
           toast.success(
             `Video exported as high-quality WebM! Note: Browsers only support WebM format. You can convert to MP4 using online tools or VLC player.`,
@@ -895,7 +794,7 @@ export default function SubtitleEditor({
               exportCtx.imageSmoothingEnabled = true
               exportCtx.imageSmoothingQuality = 'high'
               exportCtx.drawImage(processingVideo, 0, 0, exportCanvas.width, exportCanvas.height)
-              
+
               // Draw subtitle
               const activeSeg = editingSubtitles.find(
                 s => currentTime >= s.start && currentTime <= s.end
@@ -907,12 +806,12 @@ export default function SubtitleEditor({
               processingVideo.removeEventListener('seeked', seekHandler)
               currentTime += frameTime
               frameCount++
-              
+
               // Update progress every 10 frames
               if (frameCount % 10 === 0) {
                 updateProgress()
               }
-              
+
               // Use requestAnimationFrame for smoother, non-blocking frame processing
               requestAnimationFrame(() => {
                 drawFrame().then(resolve).catch(resolve)
@@ -935,7 +834,7 @@ export default function SubtitleEditor({
     } catch (error: any) {
       console.error('Export error:', error)
       const errorMsg = error.message || 'Failed to export video'
-      
+
       if (errorMsg.includes('CORS') || errorMsg.includes('cross-origin')) {
         toast.error('Video export failed due to CORS restrictions. The video file needs to allow cross-origin access. For now, please use the subtitle download options (SRT/VTT).', { duration: 8000 })
       } else {
@@ -977,11 +876,10 @@ export default function SubtitleEditor({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setActivePanel('style')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activePanel === 'style'
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activePanel === 'style'
                     ? 'bg-subit-600 text-white'
                     : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-2">
                   <Palette className="w-4 h-4" />
@@ -990,11 +888,10 @@ export default function SubtitleEditor({
               </button>
               <button
                 onClick={() => setActivePanel('edit')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activePanel === 'edit'
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activePanel === 'edit'
                     ? 'bg-subit-600 text-white'
                     : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-2">
                   <Type className="w-4 h-4" />
@@ -1026,9 +923,9 @@ export default function SubtitleEditor({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
         {/* Video Preview - Left Side (2/3 width) */}
         <div className="lg:col-span-2 space-y-4">
-          <div 
-            className="bg-black rounded-lg overflow-hidden shadow-2xl relative" 
-            style={{ 
+          <div
+            className="bg-black rounded-lg overflow-hidden shadow-2xl relative"
+            style={{
               aspectRatio: videoAspectRatio ? `${videoAspectRatio}` : '16/9',
               maxHeight: '80vh'
             }}
@@ -1068,8 +965,8 @@ export default function SubtitleEditor({
                 <canvas
                   ref={canvasRef}
                   className="absolute inset-0 pointer-events-none"
-                  style={{ 
-                    width: '100%', 
+                  style={{
+                    width: '100%',
                     height: '100%',
                     objectFit: 'contain'
                   }}
@@ -1153,11 +1050,10 @@ export default function SubtitleEditor({
               <button
                 onClick={handleExportVideo}
                 disabled={exporting || !isPro}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
-                  isPro
+                className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${isPro
                     ? 'bg-green-600 text-white hover:bg-green-700'
                     : 'bg-neutral-700 text-neutral-400 cursor-not-allowed'
-                }`}
+                  }`}
               >
                 <Download className="w-4 h-4" />
                 <span>{exporting ? 'Exporting...' : 'Export Video'}</span>
@@ -1334,11 +1230,10 @@ function StylePanel({
                       }
                       setStyle({ ...style, position: pos.value as any })
                     }}
-                    className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                      style.position === pos.value
+                    className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${style.position === pos.value
                         ? 'bg-subit-600 text-white'
                         : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600'
-                    } ${pos.premium && !isPremium ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      } ${pos.premium && !isPremium ? 'opacity-50 cursor-not-allowed' : ''}`}
                     disabled={pos.premium && !isPremium}
                   >
                     {pos.premium && !isPremium && <Lock className="w-3 h-3 inline mr-1" />}
@@ -1365,31 +1260,28 @@ function StylePanel({
               <div className="flex gap-2">
                 <button
                   onClick={() => setStyle({ ...style, textAlign: 'left' })}
-                  className={`flex-1 px-3 py-2 rounded-lg border transition-colors ${
-                    style.textAlign === 'left'
+                  className={`flex-1 px-3 py-2 rounded-lg border transition-colors ${style.textAlign === 'left'
                       ? 'bg-subit-600 text-white border-subit-600'
                       : 'bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100'
-                  }`}
+                    }`}
                 >
                   <AlignLeft className="w-4 h-4 mx-auto" />
                 </button>
                 <button
                   onClick={() => setStyle({ ...style, textAlign: 'center' })}
-                  className={`flex-1 px-3 py-2 rounded-lg border transition-colors ${
-                    style.textAlign === 'center'
+                  className={`flex-1 px-3 py-2 rounded-lg border transition-colors ${style.textAlign === 'center'
                       ? 'bg-subit-600 text-white border-subit-600'
                       : 'bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100'
-                  }`}
+                    }`}
                 >
                   <AlignCenter className="w-4 h-4 mx-auto" />
                 </button>
                 <button
                   onClick={() => setStyle({ ...style, textAlign: 'right' })}
-                  className={`flex-1 px-3 py-2 rounded-lg border transition-colors ${
-                    style.textAlign === 'right'
+                  className={`flex-1 px-3 py-2 rounded-lg border transition-colors ${style.textAlign === 'right'
                       ? 'bg-subit-600 text-white border-subit-600'
                       : 'bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100'
-                  }`}
+                    }`}
                 >
                   <AlignRight className="w-4 h-4 mx-auto" />
                 </button>
@@ -1468,7 +1360,7 @@ function StylePanel({
           >
             {showAdvanced ? 'Hide' : 'Show'} Advanced Settings
           </button>
-          
+
           {showAdvanced && (
             <div className="mt-4 space-y-4 bg-white dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700">
               <div>
@@ -1583,22 +1475,22 @@ function EditPanel({
     const newSubtitles = [...subtitles]
     const prevSub = index >= 0 ? subtitles[index] : null
     const nextSub = index < subtitles.length - 1 ? subtitles[index + 1] : null
-    
+
     let start = prevSub ? prevSub.end : (nextSub ? nextSub.start - 2 : currentTime)
     let end = nextSub ? nextSub.start : (prevSub ? prevSub.end + 2 : currentTime + 2)
-    
+
     // Ensure valid time range
     if (start >= end) {
       end = start + 2
     }
-    
+
     const newSub: Subtitle = {
       id: Date.now(),
       start,
       end,
       text: '',
     }
-    
+
     newSubtitles.splice(index + 1, 0, newSub)
     setSubtitles(newSubtitles)
   }
@@ -1616,7 +1508,7 @@ function EditPanel({
     const sub = subtitles[index]
     const midpoint = (sub.start + sub.end) / 2
     const lines = sub.text.split('\n')
-    
+
     if (lines.length > 1) {
       // Split by lines
       const newSubtitles = [...subtitles]
@@ -1681,13 +1573,12 @@ function EditPanel({
               )}
 
               <div
-                className={`group p-3 rounded-lg border transition-all ${
-                  isCurrent
+                className={`group p-3 rounded-lg border transition-all ${isCurrent
                     ? 'border-subit-500 bg-subit-50 dark:bg-subit-900/20 shadow-md'
                     : isActive
-                    ? 'border-subit-300 dark:border-subit-500 bg-subit-50/50 dark:bg-subit-900/10'
-                    : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 hover:border-subit-300 dark:hover:border-subit-500'
-                }`}
+                      ? 'border-subit-300 dark:border-subit-500 bg-subit-50/50 dark:bg-subit-900/10'
+                      : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 hover:border-subit-300 dark:hover:border-subit-500'
+                  }`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-neutral-600 dark:text-neutral-400">
@@ -1709,16 +1600,16 @@ function EditPanel({
                     </button>
                   </div>
                 </div>
-              <textarea
-                value={subtitle.text}
-                onChange={(e) => {
-                  const updated = [...subtitles]
-                  updated[index].text = e.target.value
-                  setSubtitles(updated)
-                }}
-                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 resize-none text-sm"
-                rows={2}
-              />
+                <textarea
+                  value={subtitle.text}
+                  onChange={(e) => {
+                    const updated = [...subtitles]
+                    updated[index].text = e.target.value
+                    setSubtitles(updated)
+                  }}
+                  className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 resize-none text-sm"
+                  rows={2}
+                />
                 <div className="flex items-center justify-between mt-2">
                   <button
                     onClick={() => handleRemoveSubtitle(index)}
