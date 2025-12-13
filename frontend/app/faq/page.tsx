@@ -49,15 +49,15 @@ export default function FAQPage() {
   const faqSchemaData = faqs.map(f => ({ question: f.q, answer: f.a }))
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-white">
       <FAQSchema faqs={faqSchemaData} />
       <Header />
       <main className="pt-20">
         {/* Hero Section */}
         <section className="py-20 relative overflow-hidden">
           <div className="absolute inset-0">
-            <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-600/20 rounded-full blur-3xl" />
-            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-600/20 rounded-full blur-3xl" />
+            <div className="absolute top-0 left-1/4 w-96 h-96 bg-subit-200/40 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-subit-200/40 rounded-full blur-3xl" />
           </div>
 
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -67,13 +67,13 @@ export default function FAQPage() {
               transition={{ duration: 0.6 }}
               className="text-center mb-16"
             >
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-2xl mb-6 shadow-lg shadow-violet-500/30">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-subit-600 rounded-2xl mb-6 shadow-glow">
                 <HelpCircle className="w-8 h-8 text-white" />
               </div>
-              <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4">
+              <h1 className="text-4xl sm:text-5xl font-bold text-neutral-900 mb-4">
                 Frequently Asked Questions
               </h1>
-              <p className="text-xl text-slate-400 max-w-2xl mx-auto">
+              <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
                 Everything you need to know about SUBITAI
               </p>
             </motion.div>
@@ -90,21 +90,21 @@ export default function FAQPage() {
                 >
                   <button
                     onClick={() => setOpenIndex(openIndex === i ? null : i)}
-                    className="w-full flex items-center justify-between p-5 bg-slate-800/50 backdrop-blur-sm border border-slate-700 hover:border-slate-600 rounded-xl transition-all text-left group"
+                    className="w-full flex items-center justify-between p-5 bg-white border border-neutral-200 hover:shadow-card rounded-xl transition-all text-left group"
                   >
-                    <h3 className="text-base font-semibold text-white pr-8">
+                    <h3 className="text-base font-semibold text-neutral-900 pr-8">
                       {faq.q}
                     </h3>
                     <ChevronDown 
-                      className={`w-5 h-5 text-slate-500 flex-shrink-0 transition-transform duration-300 ${
-                        openIndex === i ? 'rotate-180 text-violet-400' : 'group-hover:text-violet-400'
+                      className={`w-5 h-5 text-neutral-500 flex-shrink-0 transition-transform duration-300 ${
+                        openIndex === i ? 'rotate-180 text-subit-600' : 'group-hover:text-subit-600'
                       }`}
                     />
                   </button>
                   
                   {openIndex === i && (
-                    <div className="px-5 pb-5 pt-3 bg-slate-800/30 border border-t-0 border-slate-700 rounded-b-xl -mt-2">
-                      <p className="text-slate-400 leading-relaxed text-sm">
+                    <div className="px-5 pb-5 pt-3 bg-neutral-50 border border-t-0 border-neutral-200 rounded-b-xl -mt-2">
+                      <p className="text-neutral-600 leading-relaxed text-sm">
                         {faq.a}
                       </p>
                     </div>
@@ -120,25 +120,25 @@ export default function FAQPage() {
               transition={{ duration: 0.6, delay: 0.5 }}
               className="mt-16 max-w-2xl mx-auto"
             >
-              <div className="bg-gradient-to-r from-violet-600/20 via-fuchsia-600/20 to-violet-600/20 rounded-2xl p-8 border border-violet-500/20 text-center">
-                <MessageSquare className="w-10 h-10 text-violet-400 mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-white mb-3">
+              <div className="bg-subit-50 rounded-2xl p-8 border border-subit-200 text-center">
+                <MessageSquare className="w-10 h-10 text-subit-600 mx-auto mb-4" />
+                <h2 className="text-2xl font-bold text-neutral-900 mb-3">
                   Still have questions?
                 </h2>
-                <p className="text-slate-400 mb-6 max-w-md mx-auto">
+                <p className="text-neutral-600 mb-6 max-w-md mx-auto">
                   Can&apos;t find the answer you&apos;re looking for? Our support team is here to help.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Link 
                     href="/contact" 
-                    className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-xl font-semibold hover:from-violet-500 hover:to-fuchsia-500 transition-all shadow-lg shadow-violet-500/25"
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-subit-600 hover:bg-subit-700 text-white rounded-xl font-semibold transition-all shadow-glow"
                   >
                     Contact Support
                     <ArrowRight className="w-4 h-4" />
                   </Link>
                   <Link 
                     href="/features" 
-                    className="inline-flex items-center justify-center px-6 py-3 bg-slate-800 text-white rounded-xl font-semibold border border-slate-700 hover:bg-slate-700 transition-colors"
+                    className="inline-flex items-center justify-center px-6 py-3 bg-white text-subit-700 rounded-xl font-semibold border border-neutral-200 hover:shadow-card transition-all"
                   >
                     View Features
                   </Link>

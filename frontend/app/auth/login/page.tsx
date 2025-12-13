@@ -68,32 +68,32 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex">
+    <div className="min-h-screen bg-white flex">
       {/* Left side - Branding */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-violet-600/20 via-slate-950 to-fuchsia-600/20" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:4rem_4rem]" />
-        <div className="absolute -top-40 -left-40 w-80 h-80 bg-violet-600/30 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-fuchsia-600/30 rounded-full blur-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-br from-subit-200/40 via-white to-subit-200/40" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f172a0a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a0a_1px,transparent_1px)] bg-[size:4rem_4rem]" />
+        <div className="absolute -top-40 -left-40 w-80 h-80 bg-subit-200/40 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-subit-200/40 rounded-full blur-3xl" />
         
         <div className="relative z-10 flex flex-col justify-center px-12 lg:px-16">
           <Link href="/" className="flex items-center gap-3 mb-12">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
+            <div className="w-12 h-12 rounded-xl bg-subit-600 flex items-center justify-center shadow-glow">
               <Zap className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl font-bold text-white">
+            <span className="text-2xl font-bold text-neutral-900">
               SUBITAI
             </span>
           </Link>
           
-          <h1 className="text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">
+          <h1 className="text-4xl lg:text-5xl font-bold text-neutral-900 mb-6 leading-tight">
             Generate subtitles<br />
-            <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-subit-500 to-subit-700 bg-clip-text text-transparent">
               10x faster
             </span>
           </h1>
           
-          <p className="text-slate-400 text-lg mb-8 max-w-md">
+          <p className="text-neutral-600 text-lg mb-8 max-w-md">
             AI-powered subtitle generation with 95%+ accuracy. Perfect for content creators worldwide.
           </p>
 
@@ -104,8 +104,8 @@ export default function LoginPage() {
               { value: '50+', label: 'Languages' },
             ].map((stat) => (
               <div key={stat.label}>
-                <p className="text-2xl font-bold text-white">{stat.value}</p>
-                <p className="text-slate-500 text-sm">{stat.label}</p>
+                <p className="text-2xl font-bold text-neutral-900">{stat.value}</p>
+                <p className="text-neutral-500 text-sm">{stat.label}</p>
               </div>
             ))}
           </div>
@@ -117,34 +117,34 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center justify-center gap-2 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-subit-600 flex items-center justify-center shadow-glow">
               <Zap className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-white">
+            <span className="text-xl font-bold text-neutral-900">
               SUBITAI
             </span>
           </div>
 
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-white mb-2">Welcome back</h2>
-            <p className="text-slate-400">
+            <h2 className="text-3xl font-bold text-neutral-900 mb-2">Welcome back</h2>
+            <p className="text-neutral-600">
               Don&apos;t have an account?{' '}
-              <Link href="/auth/signup" className="text-violet-400 hover:text-violet-300 font-medium transition-colors">
+              <Link href="/auth/signup" className="text-subit-600 hover:text-subit-700 font-medium transition-colors">
                 Sign up free
               </Link>
             </p>
           </div>
 
-          <div className="bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-slate-800 p-8">
+          <div className="bg-white rounded-2xl border border-neutral-200 p-8">
             <form className="space-y-5" onSubmit={handleLogin}>
               {/* Email */}
               <div className="space-y-2">
-                <label htmlFor="email" className="block text-sm font-medium text-slate-300">
+                <label htmlFor="email" className="block text-sm font-medium text-neutral-700">
                   Email address
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-slate-500" />
+                    <Mail className="h-5 w-5 text-subit-600" />
                   </div>
                   <input
                     id="email"
@@ -154,7 +154,7 @@ export default function LoginPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all text-white placeholder-slate-500"
+                    className="w-full pl-12 pr-4 py-3 bg-white border border-neutral-300 rounded-xl focus:ring-2 focus:ring-subit-500 focus:border-subit-500 transition-all text-neutral-900 placeholder-neutral-400"
                     placeholder="you@example.com"
                   />
                 </div>
@@ -163,16 +163,16 @@ export default function LoginPage() {
               {/* Password */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="password" className="block text-sm font-medium text-slate-300">
+                  <label htmlFor="password" className="block text-sm font-medium text-neutral-700">
                     Password
                   </label>
-                  <Link href="/auth/forgot-password" className="text-sm text-violet-400 hover:text-violet-300 transition-colors">
+                  <Link href="/auth/forgot-password" className="text-sm text-subit-600 hover:text-subit-700 transition-colors">
                     Forgot?
                   </Link>
                 </div>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-slate-500" />
+                    <Lock className="h-5 w-5 text-subit-600" />
                   </div>
                   <input
                     id="password"
@@ -182,13 +182,13 @@ export default function LoginPage() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-12 pr-12 py-3 bg-slate-800/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all text-white placeholder-slate-500"
+                    className="w-full pl-12 pr-12 py-3 bg-white border border-neutral-300 rounded-xl focus:ring-2 focus:ring-subit-500 focus:border-subit-500 transition-all text-neutral-900 placeholder-neutral-400"
                     placeholder="••••••••"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-neutral-500 hover:text-neutral-700 transition-colors"
                   >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
@@ -199,7 +199,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="group w-full py-3.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40"
+                className="group w-full py-3.5 bg-subit-600 hover:bg-subit-700 text-white rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-glow"
               >
                 {loading ? (
                   <>
@@ -217,10 +217,10 @@ export default function LoginPage() {
               {/* Divider */}
               <div className="relative py-2">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-700" />
+                  <div className="w-full border-t border-neutral-200" />
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="px-4 bg-slate-900/50 text-slate-500 text-sm">or</span>
+                  <span className="px-4 bg-white text-neutral-500 text-sm">or</span>
                 </div>
               </div>
 
@@ -228,7 +228,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={handleGoogleLogin}
-                className="w-full py-3.5 bg-white hover:bg-slate-100 text-slate-900 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-3"
+                className="w-full py-3.5 bg-white hover:shadow-card text-subit-700 border border-neutral-200 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-3"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -241,11 +241,11 @@ export default function LoginPage() {
             </form>
           </div>
 
-          <p className="text-center text-slate-500 text-sm mt-6">
+          <p className="text-center text-neutral-500 text-sm mt-6">
             By signing in, you agree to our{' '}
-            <Link href="/terms" className="text-slate-400 hover:text-white transition-colors">Terms</Link>
+            <Link href="/terms" className="text-neutral-600 hover:text-neutral-900 transition-colors">Terms</Link>
             {' '}and{' '}
-            <Link href="/privacy" className="text-slate-400 hover:text-white transition-colors">Privacy Policy</Link>
+            <Link href="/privacy" className="text-neutral-600 hover:text-neutral-900 transition-colors">Privacy Policy</Link>
           </p>
         </div>
       </div>

@@ -748,33 +748,33 @@ export default function ProjectDetailPage() {
                           className="fixed inset-0 z-10" 
                           onClick={() => setShowExportMenu(false)}
                         />
-                        <div className="absolute right-0 top-full mt-2 w-56 bg-slate-800 rounded-xl border border-slate-700 shadow-xl z-20 py-2">
+                        <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl border border-subit-200 shadow-xl z-20 py-2">
                           <button
                             onClick={handleDownloadSRT}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-700 transition-colors text-white"
+                            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-subit-50 transition-colors text-gray-900"
                           >
-                            <FileText className="w-4 h-4 text-blue-400" />
+                            <FileText className="w-4 h-4 text-subit-500" />
                             <span className="text-sm font-medium">Download SRT</span>
                           </button>
                           <button
                             onClick={handleDownloadVTT}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-700 transition-colors text-white"
+                            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-subit-50 transition-colors text-gray-900"
                           >
-                            <FileText className="w-4 h-4 text-violet-400" />
+                            <FileText className="w-4 h-4 text-subit-500" />
                             <span className="text-sm font-medium">Download VTT</span>
                           </button>
                           <button
                             onClick={handleDownloadTXT}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-700 transition-colors text-white"
+                            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-subit-50 transition-colors text-gray-900"
                           >
-                            <FileText className="w-4 h-4 text-emerald-400" />
+                            <FileText className="w-4 h-4 text-subit-500" />
                             <span className="text-sm font-medium">Download TXT</span>
                           </button>
                           <button
                             onClick={handleDownloadJSON}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-700 transition-colors text-white"
+                            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-subit-50 transition-colors text-gray-900"
                           >
-                            <FileJson className="w-4 h-4 text-amber-400" />
+                            <FileJson className="w-4 h-4 text-subit-500" />
                             <span className="text-sm font-medium">Download JSON</span>
                           </button>
                         </div>
@@ -836,9 +836,9 @@ export default function ProjectDetailPage() {
                   {isAudio ? 'Audio Preview' : 'Video Preview'}
                 </h2>
                 {isAudio ? (
-                  <div className="bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 rounded-lg p-8 sm:p-12">
+                  <div className="bg-gradient-to-br from-subit-500/20 to-subit-600/20 rounded-lg p-8 sm:p-12">
                     <div className="flex flex-col items-center justify-center space-y-6">
-                      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg">
+                      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-subit-500 to-subit-600 flex items-center justify-center shadow-lg">
                         <FileAudio className="w-12 h-12 text-white" />
                       </div>
                       {project.video_url ? (
@@ -864,13 +864,13 @@ export default function ProjectDetailPage() {
                           Your browser does not support the audio tag.
                         </audio>
                       ) : (
-                        <div className="text-center text-slate-400">
+                        <div className="text-center text-subit-600">
                           <p>Audio file not available</p>
                         </div>
                       )}
                       {project.title && (
                         <div className="text-center">
-                          <p className="text-sm text-slate-400">Now Playing</p>
+                          <p className="text-sm text-subit-600">Now Playing</p>
                           <p className="text-lg font-semibold text-white mt-1">{project.title}</p>
                         </div>
                       )}
@@ -1010,19 +1010,19 @@ export default function ProjectDetailPage() {
         {/* Next Steps - Export section removed since it's in header */}
         {project.status === 'completed' && subtitles.length > 0 && (
           <div className="grid md:grid-cols-2 gap-6 mt-8">
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700 p-6">
-              <h3 className="font-semibold text-white mb-3">Next Steps</h3>
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-subit-200 p-6 shadow-sm">
+              <h3 className="font-semibold text-gray-900 mb-3">Next Steps</h3>
               <div className="space-y-2">
                 <button 
                   onClick={() => router.push('/dashboard/upload-v2')} 
-                  className="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                  className="w-full py-2.5 bg-subit-600 hover:bg-subit-700 text-white rounded-lg transition-colors"
                 >
                   Process Another {isAudio ? 'Audio' : 'Video'}
                 </button>
               </div>
             </div>
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700 p-6">
-              <h3 className="font-semibold text-white mb-3">Share Project</h3>
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-subit-200 p-6 shadow-sm">
+              <h3 className="font-semibold text-gray-900 mb-3">Share Project</h3>
               <div className="space-y-2">
                 <button 
                   onClick={async () => {
@@ -1051,7 +1051,7 @@ export default function ProjectDetailPage() {
                       document.body.removeChild(textArea)
                     }
                   }} 
-                  className="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-2.5 bg-subit-600 hover:bg-subit-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   <Share2 className="w-4 h-4" />
                   Share

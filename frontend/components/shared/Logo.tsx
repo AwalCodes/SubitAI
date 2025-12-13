@@ -18,17 +18,18 @@ export default function Logo({
   textClassName,
 }: LogoProps) {
   const containerClass = cn('inline-flex items-center gap-3', className)
-  const imageClasses = cn('h-10 w-10', imageClassName)
+  const imageClasses = cn('h-11 w-11 rounded-xl bg-subit-100 p-0.5', imageClassName)
 
   const content = (
     <>
       <Image
         src="/FreeSample-Vectorizer-io-WhatsApp%20Image%202025-10-15%20at%2016.36.25.svg"
         alt="SUBIT AI logo"
-        width={40}
-        height={40}
+        width={44}
+        height={44}
         priority
         className={imageClasses}
+        style={{ objectFit: 'contain' }}
       />
       {withText && (
         <span className={cn('text-xl font-semibold tracking-tight text-neutral-900', textClassName)}>

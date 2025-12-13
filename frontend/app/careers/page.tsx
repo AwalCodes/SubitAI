@@ -11,7 +11,7 @@ export default function CareersPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-white">
       <Header />
       <main className="pt-20">
         <section className="py-16">
@@ -19,11 +19,11 @@ export default function CareersPage() {
             <div className="max-w-3xl mx-auto">
               {/* Header */}
               <div className="text-center mb-12">
-                <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-2xl mb-4 shadow-lg shadow-violet-500/30">
+                <div className="inline-flex items-center justify-center w-14 h-14 bg-subit-600 rounded-2xl mb-4 shadow-glow">
                   <Briefcase className="w-7 h-7 text-white" />
                 </div>
-                <h1 className="text-4xl font-bold text-white mb-2">Careers</h1>
-                <p className="text-slate-400 max-w-lg mx-auto">
+                <h1 className="text-4xl font-bold text-neutral-900 mb-2">Careers</h1>
+                <p className="text-neutral-600 max-w-lg mx-auto">
                   Join us in building the best subtitle generator for video creators worldwide.
                 </p>
               </div>
@@ -33,14 +33,14 @@ export default function CareersPage() {
                 {roles.map((role, i) => (
                   <div 
                     key={i} 
-                    className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700 hover:border-slate-600 transition-all group"
+                    className="bg-white rounded-xl p-6 border border-neutral-200 hover:shadow-card transition-all group"
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="font-semibold text-white text-lg group-hover:text-violet-400 transition-colors">
+                        <h3 className="font-semibold text-neutral-900 text-lg group-hover:text-subit-700 transition-colors">
                           {role.title}
                         </h3>
-                        <div className="flex items-center gap-4 mt-2 text-sm text-slate-400">
+                        <div className="flex items-center gap-4 mt-2 text-sm text-neutral-600">
                           <span className="flex items-center gap-1">
                             <MapPin className="w-4 h-4" />
                             {role.location}
@@ -53,7 +53,7 @@ export default function CareersPage() {
                       </div>
                       <a 
                         href={`mailto:subit053@gmail.com?subject=Job Application - ${role.title}`}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white rounded-xl font-medium transition-all shadow-lg shadow-violet-500/25"
+                        className="flex items-center gap-2 px-5 py-2.5 bg-subit-600 hover:bg-subit-700 text-white rounded-xl font-medium transition-all shadow-glow"
                       >
                         Apply
                         <ArrowRight className="w-4 h-4" />
@@ -65,9 +65,9 @@ export default function CareersPage() {
 
               {/* No positions message */}
               <div className="mt-12 text-center">
-                <p className="text-slate-500">
+                <p className="text-neutral-500">
                   Don&apos;t see a position that fits?{' '}
-                  <a href="mailto:subit053@gmail.com" className="text-violet-400 hover:text-violet-300 transition-colors">
+                  <a href="mailto:subit053@gmail.com" className="text-subit-600 hover:text-subit-700 transition-colors">
                     Send us your resume
                   </a>
                 </p>

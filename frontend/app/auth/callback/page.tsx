@@ -87,20 +87,20 @@ function AuthCallbackContent() {
   }, [router])
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center relative overflow-hidden">
+    <div className="min-h-screen bg-white flex items-center justify-center relative overflow-hidden">
       {/* Animated background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-violet-600/20 via-slate-950 to-fuchsia-600/20" />
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:4rem_4rem]" />
-      <div className="absolute -top-40 -left-40 w-80 h-80 bg-violet-600/30 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-fuchsia-600/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+      <div className="absolute inset-0 bg-gradient-to-br from-subit-200/40 via-white to-subit-200/40" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f172a0a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a0a_1px,transparent_1px)] bg-[size:4rem_4rem]" />
+      <div className="absolute -top-40 -left-40 w-80 h-80 bg-subit-200/40 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-subit-200/40 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
       
       <div className="relative z-10 text-center max-w-md mx-auto px-6">
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
+          <div className="w-14 h-14 rounded-xl bg-subit-600 flex items-center justify-center shadow-glow">
             <Zap className="w-7 h-7 text-white" />
           </div>
-          <span className="text-2xl font-bold text-white">
+          <span className="text-2xl font-bold text-neutral-900">
             SUBITAI
           </span>
         </div>
@@ -109,9 +109,9 @@ function AuthCallbackContent() {
         <div className="mb-6">
           {status === 'loading' && (
             <div className="relative w-20 h-20 mx-auto mb-4">
-              <div className="absolute inset-0 border-4 border-violet-500/20 border-t-violet-500 rounded-full animate-spin" />
+              <div className="absolute inset-0 border-4 border-subit-500/20 border-t-subit-500 rounded-full animate-spin" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <Sparkles className="w-8 h-8 text-violet-400 animate-pulse" />
+                <Sparkles className="w-8 h-8 text-subit-600 animate-pulse" />
               </div>
             </div>
           )}
@@ -128,19 +128,19 @@ function AuthCallbackContent() {
         </div>
 
         {/* Message */}
-        <h2 className="text-2xl font-bold text-white mb-2">
+        <h2 className="text-2xl font-bold text-neutral-900 mb-2">
           {status === 'loading' && 'Completing Sign In'}
           {status === 'success' && 'Welcome Back!'}
           {status === 'error' && 'Authentication Failed'}
         </h2>
-        <p className="text-slate-400 text-lg">{message}</p>
+        <p className="text-neutral-600 text-lg">{message}</p>
 
         {/* Loading dots animation */}
         {status === 'loading' && (
           <div className="flex items-center justify-center gap-2 mt-6">
-            <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
-            <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-            <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+            <div className="w-2 h-2 bg-subit-600 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+            <div className="w-2 h-2 bg-subit-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+            <div className="w-2 h-2 bg-subit-600 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
           </div>
         )}
       </div>
@@ -159,4 +159,3 @@ export default function AuthCallback() {
     </Suspense>
   )
 }
-

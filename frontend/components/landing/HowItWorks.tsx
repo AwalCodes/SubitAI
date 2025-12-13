@@ -63,7 +63,7 @@ export default function HowItWorks() {
         {/* Steps */}
         <div className="relative max-w-5xl mx-auto">
           {/* Connection line for desktop */}
-          <div className="hidden lg:block absolute top-24 left-[15%] right-[15%] h-0.5 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-500 opacity-30" />
+          <div className="hidden lg:block absolute top-24 left-[15%] right-[15%] h-0.5 bg-gradient-to-r from-subit-400 via-subit-500 to-subit-600 opacity-30" />
           
           <div className="grid lg:grid-cols-3 gap-8 lg:gap-6">
             {steps.map((step, index) => (
@@ -131,7 +131,6 @@ export default function HowItWorks() {
     </section>
   )
 }
-
 
 
 

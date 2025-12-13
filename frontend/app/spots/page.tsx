@@ -26,7 +26,7 @@ export default function SpotsPromoPage() {
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="max-w-2xl w-full">
           {/* Promotional Banner */}
-          <div className="relative bg-gradient-to-b from-blue-400 to-blue-600 rounded-2xl p-12 mb-8 text-center">
+          <div className="relative bg-gradient-to-b from-subit-500 to-subit-600 rounded-2xl p-12 mb-8 text-center">
             {/* Decorative icons */}
             <div className="absolute top-6 left-6">
               <svg className="w-8 h-8 text-white opacity-75" fill="currentColor" viewBox="0 0 20 20">
@@ -62,7 +62,7 @@ export default function SpotsPromoPage() {
           {/* Brand */}
           <div className="flex items-center justify-center space-x-3 mb-4">
             <Logo withText={false} href={null} className="h-8" />
-            <span className="text-2xl font-bold text-blue-600">SUBITAI</span>
+            <span className="text-2xl font-bold text-subit-600">SUBITAI</span>
           </div>
           <p className="text-center text-gray-600 mb-6">
             Revolutionizing the future with artificial intelligence solutions
@@ -70,15 +70,15 @@ export default function SpotsPromoPage() {
 
           {/* Scarcity */}
           <div className="relative mb-8">
-            <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-20 border-t-2 border-gray-900"></div>
+            <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-20 border-t-2 border-subit-300"></div>
             <p className="text-center text-gray-900 font-medium">Only <span className="font-bold">6</span> spots left</p>
-            <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-20 border-t-2 border-gray-900"></div>
+            <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-20 border-t-2 border-subit-300"></div>
           </div>
 
           {/* CTA Button */}
           <div className="text-center">
             <Link href="/auth/signup">
-              <button className="px-12 py-4 bg-gradient-to-r from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white font-bold rounded-2xl shadow-xl transition-all transform hover:scale-105">
+              <button className="px-12 py-4 bg-gradient-to-r from-subit-500 to-subit-600 hover:from-subit-600 hover:to-subit-700 text-white font-bold rounded-2xl shadow-xl transition-all transform hover:scale-105">
                 Sign Up
               </button>
             </Link>

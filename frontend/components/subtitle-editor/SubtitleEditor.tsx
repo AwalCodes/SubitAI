@@ -912,9 +912,9 @@ export default function SubtitleEditor({
             }}
           >
             {isAudio ? (
-              <div className="flex items-center justify-center h-full bg-gradient-to-br from-violet-900 to-fuchsia-900">
+              <div className="flex items-center justify-center h-full bg-gradient-to-br from-subit-700 to-subit-900">
                 <div className="text-center">
-                  <div className="w-24 h-24 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-full flex items-center justify-center mb-4 mx-auto shadow-lg">
+                  <div className="w-24 h-24 bg-gradient-to-br from-subit-500 to-subit-600 rounded-full flex items-center justify-center mb-4 mx-auto shadow-lg">
                     <Film className="w-12 h-12 text-white" />
                   </div>
                   <p className="text-neutral-300 text-sm">Audio file - subtitles will appear in exported video</p>

@@ -11,13 +11,13 @@ const features = [
     icon: Upload,
     title: 'Drag & Drop Upload',
     description: 'Simply drag your video or audio file. We support MP4, MOV, AVI, MKV, MP3, WAV, and more.',
-    color: 'from-violet-500 to-violet-600'
+    color: 'from-subit-500 to-subit-600'
   },
   {
     icon: Sparkles,
     title: 'AI Transcription',
     description: 'Powered by Groq Whisper AI with 95%+ accuracy. 10x faster than manual transcription.',
-    color: 'from-fuchsia-500 to-fuchsia-600'
+    color: 'from-subit-500 to-subit-600'
   },
   {
     icon: Languages,

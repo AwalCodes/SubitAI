@@ -88,7 +88,7 @@ export default function Header() {
           {/* Desktop Auth */}
           <div className="hidden lg:flex items-center gap-3">
             {loading ? (
-              <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 animate-pulse" />
+              <div className="w-8 h-8 rounded-full bg-neutral-200 animate-pulse" />
             ) : user ? (
               <div className="relative">
                 <button

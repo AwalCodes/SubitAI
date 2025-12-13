@@ -49,28 +49,28 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <div className="bg-gradient-to-r from-violet-600/20 via-fuchsia-600/10 to-transparent border-b border-slate-800">
+      <div className="bg-subit-50 border-b border-neutral-200">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link 
                 href="/dashboard"
-                className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+                className="p-2 rounded-lg bg-white hover:bg-neutral-100 text-neutral-600 hover:text-subit-700 transition-colors border border-neutral-200"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Link>
               <div>
                 <h1 className="text-2xl font-bold text-white">Settings</h1>
-                <p className="text-slate-400 text-sm">Manage your account preferences</p>
+                <p className="text-neutral-600 text-sm">Manage your account preferences</p>
               </div>
             </div>
           </div>
@@ -80,37 +80,37 @@ export default function SettingsPage() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="max-w-2xl mx-auto space-y-6">
           {/* Profile Section */}
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-700 flex items-center gap-3">
-              <User className="w-5 h-5 text-violet-400" />
+          <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-neutral-200 flex items-center gap-3">
+              <User className="w-5 h-5 text-subit-600" />
               <h2 className="text-lg font-semibold text-white">Profile</h2>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Email</label>
-                <div className="flex items-center gap-3 px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl">
-                  <Mail className="w-5 h-5 text-slate-500" />
-                  <span className="text-slate-400">{user?.email || 'Not set'}</span>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">Email</label>
+                <div className="flex items-center gap-3 px-4 py-3 bg-white border border-neutral-200 rounded-xl">
+                  <Mail className="w-5 h-5 text-subit-600" />
+                  <span className="text-neutral-700">{user?.email || 'Not set'}</span>
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Name</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">Name</label>
                 <input 
                   type="text"
                   placeholder="Your name" 
                   defaultValue={user?.user_metadata?.name || user?.user_metadata?.full_name || ''} 
-                  className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all"
+                  className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl text-neutral-900 placeholder-neutral-400 focus:ring-2 focus:ring-subit-500 focus:border-subit-500 transition-all"
                 />
               </div>
-              <button className="px-5 py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white rounded-xl font-medium transition-all shadow-lg shadow-violet-500/25">
+              <button className="px-5 py-2.5 bg-subit-600 hover:bg-subit-700 text-white rounded-xl font-medium transition-all shadow-glow">
                 Update Profile
               </button>
             </div>
           </div>
 
           {/* Plan Section */}
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-700 flex items-center gap-3">
+          <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-neutral-200 flex items-center gap-3">
               <Zap className="w-5 h-5 text-amber-400" />
               <h2 className="text-lg font-semibold text-white">Current Plan</h2>
             </div>
@@ -118,12 +118,12 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-white font-semibold">{planName}</p>
-                  <p className="text-slate-400 text-sm">{planEnergy}</p>
+                  <p className="text-neutral-600 text-sm">{planEnergy}</p>
                 </div>
                 {(subscription?.plan === 'free' || !subscription) && (
                   <Link
                     href="/pricing"
-                    className="px-5 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-medium transition-colors"
+                    className="px-5 py-2.5 bg-white border border-neutral-200 hover:shadow-card text-subit-700 rounded-xl font-medium transition-all"
                   >
                     Upgrade
                   </Link>
@@ -133,35 +133,35 @@ export default function SettingsPage() {
           </div>
 
           {/* Preferences Section */}
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-700 flex items-center gap-3">
-              <Bell className="w-5 h-5 text-violet-400" />
+          <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-neutral-200 flex items-center gap-3">
+              <Bell className="w-5 h-5 text-subit-600" />
               <h2 className="text-lg font-semibold text-white">Preferences</h2>
             </div>
             <div className="p-6 space-y-4">
               <label className="flex items-center justify-between cursor-pointer">
-                <span className="text-slate-300">Email Notifications</span>
+                <span className="text-neutral-700">Email Notifications</span>
                 <div className="relative">
                   <input type="checkbox" className="sr-only peer" defaultChecked />
-                  <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
+                  <div className="w-11 h-6 bg-neutral-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-subit-600"></div>
                 </div>
               </label>
               <label className="flex items-center justify-between cursor-pointer">
-                <span className="text-slate-300">Marketing emails</span>
+                <span className="text-neutral-700">Marketing emails</span>
                 <div className="relative">
                   <input type="checkbox" className="sr-only peer" />
-                  <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
+                  <div className="w-11 h-6 bg-neutral-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-subit-600"></div>
                 </div>
               </label>
             </div>
           </div>
 
           {/* Sign Out */}
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700 overflow-hidden">
+          <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
             <div className="p-6">
               <button
                 onClick={handleSignOut}
-                className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-medium transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-white text-subit-700 border border-neutral-200 hover:shadow-card rounded-xl font-medium transition-all"
               >
                 <LogOut className="w-5 h-5" />
                 Sign Out

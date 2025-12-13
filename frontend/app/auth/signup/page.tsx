@@ -103,42 +103,42 @@ export default function SignupPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-slate-950 flex">
+    <div className="min-h-screen bg-white flex">
       {/* Left side - Branding */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-violet-600/20 via-slate-950 to-fuchsia-600/20" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:4rem_4rem]" />
-        <div className="absolute -top-40 -left-40 w-80 h-80 bg-violet-600/30 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-fuchsia-600/30 rounded-full blur-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-br from-subit-200/40 via-white to-subit-200/40" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f172a0a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a0a_1px,transparent_1px)] bg-[size:4rem_4rem]" />
+        <div className="absolute -top-40 -left-40 w-80 h-80 bg-subit-200/40 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-subit-200/40 rounded-full blur-3xl" />
         
         <div className="relative z-10 flex flex-col justify-center px-12 lg:px-16">
           <Link href="/" className="flex items-center gap-3 mb-12">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
+            <div className="w-12 h-12 rounded-xl bg-subit-600 flex items-center justify-center shadow-glow">
               <Zap className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl font-bold text-white">
+            <span className="text-2xl font-bold text-neutral-900">
               SUBITAI
             </span>
           </Link>
           
-          <h1 className="text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">
+          <h1 className="text-4xl lg:text-5xl font-bold text-neutral-900 mb-6 leading-tight">
             Start creating<br />
-            <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-subit-500 to-subit-700 bg-clip-text text-transparent">
               subtitles today
             </span>
           </h1>
           
-          <p className="text-slate-400 text-lg mb-8 max-w-md">
+          <p className="text-neutral-600 text-lg mb-8 max-w-md">
             Join 10,000+ content creators using SUBITAI to generate professional subtitles.
           </p>
 
           <div className="space-y-4">
             {benefits.map((benefit) => (
               <div key={benefit} className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 flex items-center justify-center">
+                <div className="w-6 h-6 rounded-full bg-subit-600 flex items-center justify-center">
                   <Check className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-slate-300">{benefit}</span>
+                <span className="text-neutral-600">{benefit}</span>
               </div>
             ))}
           </div>
@@ -150,30 +150,30 @@ export default function SignupPage() {
         <div className="w-full max-w-md py-8">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center justify-center gap-2 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-subit-600 flex items-center justify-center shadow-glow">
               <Zap className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-white">
+            <span className="text-xl font-bold text-neutral-900">
               SUBITAI
             </span>
           </div>
 
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-white mb-2">Create your account</h2>
-            <p className="text-slate-400">
+            <h2 className="text-3xl font-bold text-neutral-900 mb-2">Create your account</h2>
+            <p className="text-neutral-600">
               Already have an account?{' '}
-              <Link href="/auth/login" className="text-violet-400 hover:text-violet-300 font-medium transition-colors">
+              <Link href="/auth/login" className="text-subit-600 hover:text-subit-700 font-medium transition-colors">
                 Sign in
               </Link>
             </p>
           </div>
 
-          <div className="bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-slate-800 p-8">
+          <div className="bg-white rounded-2xl border border-neutral-200 p-8">
             {/* Google Signup */}
             <button
               type="button"
               onClick={handleGoogleSignup}
-              className="w-full py-3.5 bg-white hover:bg-slate-100 text-slate-900 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-3 mb-6"
+              className="w-full py-3.5 bg-white hover:shadow-card text-subit-700 border border-neutral-200 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-3 mb-6"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -187,22 +187,22 @@ export default function SignupPage() {
             {/* Divider */}
             <div className="relative py-2 mb-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-700" />
+                <div className="w-full border-t border-neutral-200" />
               </div>
               <div className="relative flex justify-center">
-                <span className="px-4 bg-slate-900/50 text-slate-500 text-sm">or with email</span>
+                <span className="px-4 bg-white text-neutral-500 text-sm">or with email</span>
               </div>
             </div>
 
             <form className="space-y-4" onSubmit={handleSignup}>
               {/* Full Name */}
               <div className="space-y-2">
-                <label htmlFor="fullName" className="block text-sm font-medium text-slate-300">
+                <label htmlFor="fullName" className="block text-sm font-medium text-neutral-700">
                   Full name
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-slate-500" />
+                    <User className="h-5 w-5 text-subit-600" />
                   </div>
                   <input
                     id="fullName"
@@ -212,7 +212,7 @@ export default function SignupPage() {
                     required
                     value={formData.fullName}
                     onChange={handleChange}
-                    className="w-full pl-12 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all text-white placeholder-slate-500"
+                    className="w-full pl-12 pr-4 py-3 bg-white border border-neutral-300 rounded-xl focus:ring-2 focus:ring-subit-500 focus:border-subit-500 transition-all text-neutral-900 placeholder-neutral-400"
                     placeholder="John Doe"
                   />
                 </div>
@@ -220,12 +220,12 @@ export default function SignupPage() {
 
               {/* Email */}
               <div className="space-y-2">
-                <label htmlFor="email" className="block text-sm font-medium text-slate-300">
+                <label htmlFor="email" className="block text-sm font-medium text-neutral-700">
                   Email address
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-slate-500" />
+                    <Mail className="h-5 w-5 text-subit-600" />
                   </div>
                   <input
                     id="email"
@@ -235,7 +235,7 @@ export default function SignupPage() {
                     required
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full pl-12 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all text-white placeholder-slate-500"
+                    className="w-full pl-12 pr-4 py-3 bg-white border border-neutral-300 rounded-xl focus:ring-2 focus:ring-subit-500 focus:border-subit-500 transition-all text-neutral-900 placeholder-neutral-400"
                     placeholder="you@example.com"
                   />
                 </div>
@@ -243,12 +243,12 @@ export default function SignupPage() {
 
               {/* Password */}
               <div className="space-y-2">
-                <label htmlFor="password" className="block text-sm font-medium text-slate-300">
+                <label htmlFor="password" className="block text-sm font-medium text-neutral-700">
                   Password
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-slate-500" />
+                    <Lock className="h-5 w-5 text-subit-600" />
                   </div>
                   <input
                     id="password"
@@ -258,13 +258,13 @@ export default function SignupPage() {
                     required
                     value={formData.password}
                     onChange={handleChange}
-                    className="w-full pl-12 pr-12 py-3 bg-slate-800/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all text-white placeholder-slate-500"
+                    className="w-full pl-12 pr-12 py-3 bg-white border border-neutral-300 rounded-xl focus:ring-2 focus:ring-subit-500 focus:border-subit-500 transition-all text-neutral-900 placeholder-neutral-400"
                     placeholder="Min. 6 characters"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-neutral-500 hover:text-neutral-700 transition-colors"
                   >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
@@ -273,12 +273,12 @@ export default function SignupPage() {
 
               {/* Confirm Password */}
               <div className="space-y-2">
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-300">
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-neutral-700">
                   Confirm password
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-slate-500" />
+                    <Lock className="h-5 w-5 text-subit-600" />
                   </div>
                   <input
                     id="confirmPassword"
@@ -288,7 +288,7 @@ export default function SignupPage() {
                     required
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    className="w-full pl-12 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all text-white placeholder-slate-500"
+                    className="w-full pl-12 pr-4 py-3 bg-white border border-neutral-300 rounded-xl focus:ring-2 focus:ring-subit-500 focus:border-subit-500 transition-all text-neutral-900 placeholder-neutral-400"
                     placeholder="••••••••"
                   />
                 </div>
@@ -303,15 +303,15 @@ export default function SignupPage() {
                   required
                   checked={formData.agreeToTerms}
                   onChange={handleChange}
-                  className="h-4 w-4 mt-1 text-violet-600 bg-slate-800 border-slate-600 rounded focus:ring-violet-500 focus:ring-offset-slate-900"
+                  className="h-4 w-4 mt-1 text-subit-600 bg-white border-neutral-300 rounded focus:ring-subit-500"
                 />
-                <label htmlFor="agreeToTerms" className="ml-3 text-sm text-slate-400">
+                <label htmlFor="agreeToTerms" className="ml-3 text-sm text-neutral-600">
                   I agree to the{' '}
-                  <Link href="/terms" className="text-violet-400 hover:text-violet-300">
+                  <Link href="/terms" className="text-subit-600 hover:text-subit-700">
                     Terms of Service
                   </Link>{' '}
                   and{' '}
-                  <Link href="/privacy" className="text-violet-400 hover:text-violet-300">
+                  <Link href="/privacy" className="text-subit-600 hover:text-subit-700">
                     Privacy Policy
                   </Link>
                 </label>
@@ -321,7 +321,7 @@ export default function SignupPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="group w-full py-3.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 mt-6"
+                className="group w-full py-3.5 bg-subit-600 hover:bg-subit-700 text-white rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-glow mt-6"
               >
                 {loading ? (
                   <>

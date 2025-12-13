@@ -24,7 +24,7 @@ const featureHighlights = [
     icon: Languages,
     title: 'Automatic language detection',
     description: 'Detect 50+ languages instantly and auto-select matching subtitle templates.',
-    gradient: 'from-violet-500 to-violet-600'
+    gradient: 'from-subit-500 to-subit-600'
   },
   {
     icon: Zap,
@@ -36,7 +36,7 @@ const featureHighlights = [
     icon: Palette,
     title: 'Brand-safe templates',
     description: 'Save presets for fonts, colors, shadows, and export them directly into Adobe Premiere or CapCut.',
-    gradient: 'from-fuchsia-500 to-fuchsia-600'
+    gradient: 'from-subit-500 to-subit-600'
   },
 ]
 
