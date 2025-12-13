@@ -75,42 +75,13 @@ app.post('/export', upload.single('video'), async (req, res) => {
       }
     }
 
-    // Generate SRT file
-    const srtContent = generateSRT(subtitles)
-    srtFilePath = path.join(tempDir, `subtitles_${jobId}.srt`)
-    await fs.writeFile(srtFilePath, srtContent, 'utf8')
-
-    // Get style options
-    const style = JSON.parse(req.body.style || '{}')
-    const fontSize = style?.fontSize || 24
-    const fontFamily = style?.fontFamily || 'Arial'
-    const fontColor = style?.color || '#FFFFFF'
-    const outlineColor = style?.outlineColor || '#000000'
-    const outlineWidth = style?.outlineWidth || 2
-    const position = style?.position || 'bottom'
-    const verticalOffset = style?.verticalOffset || 80
+    // Generate ASS file instead of SRT
+    const assContent = generateASS(subtitles, style)
+    const assFilePath = path.join(tempDir, `subtitles_${jobId}.ass`)
+    await fs.writeFile(assFilePath, assContent, 'utf8')
 
     // Output path
     outputVideoPath = path.join(outputDir, `output_${jobId}.mp4`)
-
-    // Convert hex color to BGR for FFmpeg
-    const hexToBGR = (hex) => {
-      hex = hex.replace('#', '')
-      const r = parseInt(hex.substr(0, 2), 16)
-      const g = parseInt(hex.substr(2, 2), 16)
-      const b = parseInt(hex.substr(4, 2), 16)
-      return `${b.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${r.toString(16).padStart(2, '0')}`
-    }
-
-    // Calculate subtitle position
-    let yPosition = ''
-    if (position === 'bottom') {
-      yPosition = `y=h-th-${verticalOffset}`
-    } else if (position === 'top') {
-      yPosition = `y=${verticalOffset}`
-    } else {
-      yPosition = 'y=(h-th)/2' // Center
-    }
 
     // Build FFmpeg command
     return new Promise((resolve, reject) => {
@@ -119,19 +90,19 @@ app.post('/export', upload.single('video'), async (req, res) => {
 
       const command = ffmpeg(inputVideoPath)
         .videoFilters(
-          `subtitles=${srtFilePath}:force_style='FontName=${fontFamily},FontSize=${fontSize},PrimaryColour=&H${hexToBGR(fontColor)},OutlineColour=&H${hexToBGR(outlineColor)},Outline=${outlineWidth},Alignment=2,${yPosition}'`
+          `subtitles=${assFilePath}`
         )
         .videoCodec('libx264')
         .audioCodec('aac')
         .audioBitrate('192k')
         .videoBitrate('5000k')
         .outputOptions([
-          '-preset ultrafast', // CHANGED: Significantly faster processing
-          '-crf 28',          // CHANGED: Slightly lower quality for speed (still good)
+          '-preset ultrafast',
+          '-crf 28',
           '-movflags +faststart',
           '-pix_fmt yuv420p'
         ])
-        .output(outputVideoPath) // Write to disk first to ensure MOOV atom is correct for faststart, streaming pipe often has issues with MP4 metadata
+        .output(outputVideoPath)
         .on('start', (cmd) => {
           console.log('FFmpeg command:', cmd)
         })
@@ -189,7 +160,9 @@ app.post('/export', upload.single('video'), async (req, res) => {
   async function cleanup() {
     try {
       if (inputVideoPath) await fs.unlink(inputVideoPath).catch(() => { })
-      if (srtFilePath) await fs.unlink(srtFilePath).catch(() => { })
+      // Cleanup ass file instead of srt
+      if (assFilePath) await fs.unlink(assFilePath).catch(() => { })
+
       if (outputVideoPath) await fs.unlink(outputVideoPath).catch(() => { })
       if (req.file && req.file.path) await fs.unlink(req.file.path).catch(() => { })
     } catch (error) {
@@ -203,14 +176,14 @@ function generateSRT(segments) {
   return segments
     .filter((seg) => seg.text && seg.text.trim())
     .map((seg, index) => {
-      const start = formatTime(seg.start)
-      const end = formatTime(seg.end)
+      const start = formatSRTTime(seg.start)
+      const end = formatSRTTime(seg.end)
       return `${index + 1}\n${start} --> ${end}\n${seg.text.trim()}\n`
     })
     .join('\n')
 }
 
-function formatTime(seconds) {
+function formatSRTTime(seconds) {
   const hours = Math.floor(seconds / 3600)
   const minutes = Math.floor((seconds % 3600) / 60)
   const secs = Math.floor(seconds % 60)
@@ -218,6 +191,112 @@ function formatTime(seconds) {
 
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')},${millisecs.toString().padStart(3, '0')}`
 }
+
+// Helper: Convert hex color to ASS format &HBBGGRR
+function toASSColor(hex) {
+  if (!hex) return '&HFFFFFF'
+  hex = hex.replace('#', '')
+  if (hex.length === 3) {
+    hex = hex.split('').map(c => c + c).join('')
+  }
+  const r = hex.substr(0, 2)
+  const g = hex.substr(2, 2)
+  const b = hex.substr(4, 2)
+  // ASS uses BGR order
+  return `&H${b}${g}${r}`
+}
+
+function formatASSTime(seconds) {
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = Math.floor(seconds % 60)
+  const centisecs = Math.floor((seconds % 1) * 100) // ASS uses centiseconds
+
+  return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${centisecs.toString().padStart(2, '0')}`
+}
+
+function generateASS(segments, style) {
+  const fontSize = style?.fontSize || 24
+  const fontFamily = style?.fontFamily || 'Arial'
+  const fontColor = toASSColor(style?.color || '#FFFFFF')
+  const outlineColor = toASSColor(style?.outlineColor || '#000000')
+  const outlineWidth = style?.outlineWidth || 2
+  const verticalOffset = style?.verticalOffset || 20
+
+  // Alignment: 2=Bottom Center, 5=Top Center, 10=Center (approximated for ASS basic alignments)
+  // ASS Alignments: 1=Left-Bot, 2=Center-Bot, 3=Right-Bot, 5=Top-Left, 6=Top-Center, ...
+  let alignment = 2 // Bottom Center default
+  let marginV = verticalOffset
+
+  if (style?.position === 'top') {
+    alignment = 8 // Top Center
+  } else if (style?.position === 'center') {
+    alignment = 5 // Middle Center
+  }
+
+  const animation = style?.animation || 'none'
+  const animDuration = (style?.animationDuration || 0.3) * 1000
+
+  // Header
+  let content = `[Script Info]
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+WrapStyle: 1
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,${fontFamily},${fontSize},${fontColor},&H000000FF,${outlineColor},&H00000000,-1,0,0,0,100,100,0,0,1,${outlineWidth},0,${alignment},10,10,${marginV},1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+`
+
+  segments.forEach(seg => {
+    if (!seg.text || !seg.text.trim()) return
+
+    const start = formatASSTime(seg.start)
+    const end = formatASSTime(seg.end)
+    let text = seg.text.trim()
+    let tags = ''
+
+    // Apply Animations via ASS Tags
+    if (animation === 'fade') {
+      // \fad(fadeIn, fadeOut) in ms
+      tags += `\\fad(${animDuration},${animDuration})`
+    } else if (animation === 'slide') {
+      // Slide up effect using \move
+      // We assume sliding from slightly lower Y to target Y
+      // This requires knowing precise coordinates, which is tricky in generic ASS without resolution info.
+      // Fallback to simple fade for stability if strict slide is hard, or use generic move.
+      // Approximating slide up from Bottom+50 to Bottom
+      // \move(x1,y1,x2,y2)
+      // Standard move is hard to calculate without exact screen pos. 
+      // Let's use \fad as fallback or \t based transforms?
+      // Actually, \move is coordinate based.
+      // A safer bet for "slide" without coords is just \fad for now or strict move if assumed 1080p.
+      // Let's implement fade for slide for robustness unless we mandate 1080p.
+      tags += `\\fad(${animDuration},${animDuration})`
+    } else if (animation === 'typewriter') {
+      // Simple typewriter simulated by standard display (no specific tag unless doing karaoke per char)
+      // Leaving plain (pop-in) or adding a transform
+    } else if (animation === 'bounce') {
+      // \t for scaling?
+      // \t(start, end, \fscx120\fscy120) -> bounce effect
+      tags += `{\\t(0,200,\\fscx110\\fscy110)\\t(200,400,\\fscx100\\fscy100)}`
+    } else if (animation === 'glow') {
+      // Outline blur?
+      tags += `{\\bord${outlineWidth + 2}\\blur5}`
+    }
+
+    content += `Dialogue: 0,${start},${end},Default,,0,0,0,,{${tags}}${text}\n`
+  })
+
+  return content
+}
+
+
+
 
 app.listen(PORT, () => {
   console.log(`Video export service running on port ${PORT}`)
