@@ -2,8 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import Logo from '@/components/shared/Logo'
-import { Plus, LayoutDashboard, Settings, Home, ChevronLeft } from 'lucide-react'
+import { ChevronLeft } from 'lucide-react'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -23,7 +22,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <ChevronLeft className="w-4 h-4" />
                 <span className="hidden sm:inline">Back</span>
               </Link>
-              <Logo withText href="/" />
             </div>
             <div className="flex items-center gap-2" />
           </div>
