@@ -43,7 +43,7 @@ export default function SubscribePlanPage() {
   const plan = useMemo(() => PLAN_DETAILS[planKey] || PLAN_DETAILS['pro'], [planKey])
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-white">
       <Header />
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <motion.div
@@ -52,10 +52,10 @@ export default function SubscribePlanPage() {
           animate="visible"
           className="text-center mb-10"
         >
-          <motion.h1 variants={staggerItem} className="text-3xl sm:text-4xl font-bold text-white">
+          <motion.h1 variants={staggerItem} className="text-3xl sm:text-4xl font-bold text-neutral-900">
             Subscribe to {planKey === 'premium' ? 'Premium' : 'Pro'} Plan
           </motion.h1>
-          <motion.p variants={staggerItem} className="text-slate-400 mt-3 text-lg">
+          <motion.p variants={staggerItem} className="text-neutral-600 mt-3 text-lg">
             Get {planKey === 'premium' ? 'unlimited' : '300'} energy and unlock advanced features
           </motion.p>
         </motion.div>
@@ -67,20 +67,20 @@ export default function SubscribePlanPage() {
           className="max-w-3xl mx-auto space-y-6"
         >
           {/* Plan card */}
-          <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800 shadow-lg overflow-hidden">
-            <div className="bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-semibold px-6 py-4 flex items-center justify-between">
+          <div className="bg-white rounded-2xl border border-neutral-200 shadow-lg overflow-hidden">
+            <div className="bg-gradient-to-r from-subit-500 to-subit-600 text-white font-semibold px-6 py-4 flex items-center justify-between">
               <span>{plan.title}</span>
               <span className="text-2xl">{plan.price}</span>
             </div>
             <div className="p-6">
-              <h3 className="font-semibold text-white mb-4 text-lg">What&apos;s included:</h3>
+              <h3 className="font-semibold text-neutral-900 mb-4 text-lg">What&apos;s included:</h3>
               <ul className="space-y-3">
                 {plan.features.map((f, i) => (
                   <li key={i} className="flex items-start space-x-3">
                     <div className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
                       <Check className="w-3 h-3 text-emerald-400" />
                     </div>
-                    <span className="text-slate-300">{f}</span>
+                    <span className="text-neutral-600">{f}</span>
                   </li>
                 ))}
               </ul>
@@ -88,30 +88,30 @@ export default function SubscribePlanPage() {
           </div>
 
           {/* Payment method */}
-          <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800 shadow-lg">
-            <div className="p-6 border-b border-slate-800">
-              <h3 className="font-semibold text-white text-lg">Choose Payment Method</h3>
+          <div className="bg-white rounded-2xl border border-neutral-200 shadow-lg">
+            <div className="p-6 border-b border-neutral-200">
+              <h3 className="font-semibold text-neutral-900 text-lg">Choose Payment Method</h3>
             </div>
             <div className="p-6 space-y-4">
               <button
                 onClick={() => setMethod('card')}
                 className={`w-full flex items-center px-5 py-4 rounded-xl border-2 transition-all duration-200 ${
                   method === 'card'
-                    ? 'border-violet-500 bg-violet-500/10 shadow-md'
-                    : 'border-slate-700 hover:border-slate-600 hover:bg-slate-800/50'
+                    ? 'border-subit-500 bg-subit-500/10 shadow-md'
+                    : 'border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50'
                 }`}
               >
                 <div className={`w-12 h-12 rounded-lg flex items-center justify-center mr-4 ${
-                  method === 'card' ? 'bg-violet-500' : 'bg-slate-800'
+                  method === 'card' ? 'bg-subit-600' : 'bg-neutral-100'
                 }`}>
-                  <CreditCard className={`w-6 h-6 ${method === 'card' ? 'text-white' : 'text-slate-400'}`} />
+                  <CreditCard className={`w-6 h-6 ${method === 'card' ? 'text-white' : 'text-neutral-500'}`} />
                 </div>
                 <div className="text-left flex-1">
-                  <div className="font-semibold text-white">Pay with Card</div>
-                  <div className="text-sm text-slate-400">Credit/Debit Card, Apple Pay, Google Pay</div>
+                  <div className="font-semibold text-neutral-900">Pay with Card</div>
+                  <div className="text-sm text-neutral-600">Credit/Debit Card, Apple Pay, Google Pay</div>
                 </div>
                 {method === 'card' && (
-                  <div className="w-5 h-5 rounded-full bg-violet-500 flex items-center justify-center">
+                  <div className="w-5 h-5 rounded-full bg-subit-600 flex items-center justify-center">
                     <Check className="w-3 h-3 text-white" />
                   </div>
                 )}
@@ -121,21 +121,21 @@ export default function SubscribePlanPage() {
                 onClick={() => setMethod('crypto')}
                 className={`w-full flex items-center px-5 py-4 rounded-xl border-2 transition-all duration-200 ${
                   method === 'crypto'
-                    ? 'border-violet-500 bg-violet-500/10 shadow-md'
-                    : 'border-slate-700 hover:border-slate-600 hover:bg-slate-800/50'
+                    ? 'border-subit-500 bg-subit-500/10 shadow-md'
+                    : 'border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50'
                 }`}
               >
                 <div className={`w-12 h-12 rounded-lg flex items-center justify-center mr-4 ${
-                  method === 'crypto' ? 'bg-violet-500' : 'bg-slate-800'
+                  method === 'crypto' ? 'bg-subit-600' : 'bg-neutral-100'
                 }`}>
-                  <Bitcoin className={`w-6 h-6 ${method === 'crypto' ? 'text-white' : 'text-slate-400'}`} />
+                  <Bitcoin className={`w-6 h-6 ${method === 'crypto' ? 'text-white' : 'text-neutral-500'}`} />
                 </div>
                 <div className="text-left flex-1">
-                  <div className="font-semibold text-white">Pay with Crypto</div>
-                  <div className="text-sm text-slate-400">BTC, ETH, USDT, and more</div>
+                  <div className="font-semibold text-neutral-900">Pay with Crypto</div>
+                  <div className="text-sm text-neutral-600">BTC, ETH, USDT, and more</div>
                 </div>
                 {method === 'crypto' && (
-                  <div className="w-5 h-5 rounded-full bg-violet-500 flex items-center justify-center">
+                  <div className="w-5 h-5 rounded-full bg-subit-600 flex items-center justify-center">
                     <Check className="w-3 h-3 text-white" />
                   </div>
                 )}
@@ -150,15 +150,15 @@ export default function SubscribePlanPage() {
                 Continue to Payment
               </Button>
 
-              <p className="text-xs text-slate-500 text-center pt-2">
+              <p className="text-xs text-neutral-500 text-center pt-2">
                 By proceeding, you agree to our{' '}
-                <Link href="/terms" className="text-violet-400 hover:text-violet-300 underline">Terms of Service</Link>
+                <Link href="/terms" className="text-subit-600 hover:text-subit-700 underline">Terms of Service</Link>
                 {' '}and{' '}
-                <Link href="/privacy" className="text-violet-400 hover:text-violet-300 underline">Privacy Policy</Link>
+                <Link href="/privacy" className="text-subit-600 hover:text-subit-700 underline">Privacy Policy</Link>
               </p>
 
               <div className="text-center pt-4">
-                <Link href="/pricing" className="text-violet-400 hover:text-violet-300 font-medium">
+                <Link href="/pricing" className="text-subit-600 hover:text-subit-700 font-medium">
                   ← Back to Pricing
                 </Link>
               </div>

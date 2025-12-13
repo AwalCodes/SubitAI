@@ -50,7 +50,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-subit-500 border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -69,7 +69,7 @@ export default function SettingsPage() {
                 <ArrowLeft className="w-5 h-5" />
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-white">Settings</h1>
+                <h1 className="text-2xl font-bold text-neutral-900">Settings</h1>
                 <p className="text-neutral-600 text-sm">Manage your account preferences</p>
               </div>
             </div>
@@ -83,7 +83,7 @@ export default function SettingsPage() {
           <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-neutral-200 flex items-center gap-3">
               <User className="w-5 h-5 text-subit-600" />
-              <h2 className="text-lg font-semibold text-white">Profile</h2>
+              <h2 className="text-lg font-semibold text-neutral-900">Profile</h2>
             </div>
             <div className="p-6 space-y-4">
               <div>
@@ -112,12 +112,12 @@ export default function SettingsPage() {
           <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-neutral-200 flex items-center gap-3">
               <Zap className="w-5 h-5 text-amber-400" />
-              <h2 className="text-lg font-semibold text-white">Current Plan</h2>
+              <h2 className="text-lg font-semibold text-neutral-900">Current Plan</h2>
             </div>
             <div className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-white font-semibold">{planName}</p>
+                  <p className="text-neutral-900 font-semibold">{planName}</p>
                   <p className="text-neutral-600 text-sm">{planEnergy}</p>
                 </div>
                 {(subscription?.plan === 'free' || !subscription) && (
@@ -136,7 +136,7 @@ export default function SettingsPage() {
           <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-neutral-200 flex items-center gap-3">
               <Bell className="w-5 h-5 text-subit-600" />
-              <h2 className="text-lg font-semibold text-white">Preferences</h2>
+              <h2 className="text-lg font-semibold text-neutral-900">Preferences</h2>
             </div>
             <div className="p-6 space-y-4">
               <label className="flex items-center justify-between cursor-pointer">
@@ -176,7 +176,7 @@ export default function SettingsPage() {
               <h2 className="text-lg font-semibold text-red-400">Danger Zone</h2>
             </div>
             <div className="p-6">
-              <p className="text-slate-400 text-sm mb-4">
+              <p className="text-neutral-600 text-sm mb-4">
                 Permanently delete your account and all data. This action cannot be undone.
               </p>
               <button

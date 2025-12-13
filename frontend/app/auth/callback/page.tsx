@@ -151,8 +151,8 @@ function AuthCallbackContent() {
 export default function AuthCallback() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="w-16 h-16 border-4 border-violet-500/20 border-t-violet-500 rounded-full animate-spin" />
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-subit-500/20 border-t-subit-500 rounded-full animate-spin" />
       </div>
     }>
       <AuthCallbackContent />
