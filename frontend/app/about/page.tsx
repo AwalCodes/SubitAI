@@ -12,7 +12,7 @@ export default function AboutPage() {
       icon: Target,
       title: 'Mission-Driven',
       description: 'Making video content accessible to everyone through AI-powered tools.',
-      gradient: 'from-violet-500 to-violet-600'
+      gradient: 'from-subit-500 to-subit-600'
     },
     {
       icon: Zap,
@@ -30,7 +30,7 @@ export default function AboutPage() {
       icon: Heart,
       title: 'Creator Focused',
       description: 'Built for content creators who need professional results fast.',
-      gradient: 'from-rose-500 to-rose-600'
+      gradient: 'from-subit-500 to-subit-600'
     },
   ]
 
@@ -41,14 +41,14 @@ export default function AboutPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-white">
       <Header />
       <main className="pt-20">
         {/* Hero Section */}
         <section className="relative py-20 overflow-hidden">
           <div className="absolute inset-0">
-            <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-600/20 rounded-full blur-3xl" />
-            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-fuchsia-600/20 rounded-full blur-3xl" />
+            <div className="absolute top-0 left-1/4 w-96 h-96 bg-subit-200/40 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-subit-200/40 rounded-full blur-3xl" />
           </div>
           
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -58,13 +58,13 @@ export default function AboutPage() {
               transition={{ duration: 0.6 }}
               className="text-center max-w-3xl mx-auto"
             >
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-2xl mb-6 shadow-lg shadow-violet-500/30">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-subit-600 rounded-2xl mb-6 shadow-glow">
                 <Sparkles className="w-8 h-8 text-white" />
               </div>
-              <h1 className="text-4xl sm:text-5xl font-bold text-white mb-6">
-                About <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">SUBITAI</span>
+              <h1 className="text-4xl sm:text-5xl font-bold text-neutral-900 mb-6">
+                About <span className="bg-gradient-to-r from-subit-500 to-subit-700 bg-clip-text text-transparent">SUBITAI</span>
               </h1>
-              <p className="text-xl text-slate-400 leading-relaxed">
+              <p className="text-xl text-neutral-600 leading-relaxed">
                 Building the future of video accessibility with AI-powered subtitle technology
               </p>
             </motion.div>
@@ -78,8 +78,8 @@ export default function AboutPage() {
             >
               {stats.map((stat) => (
                 <div key={stat.label} className="text-center">
-                  <p className="text-3xl font-bold text-white">{stat.value}</p>
-                  <p className="text-slate-500 text-sm">{stat.label}</p>
+                  <p className="text-3xl font-bold text-neutral-900">{stat.value}</p>
+                  <p className="text-neutral-500 text-sm">{stat.label}</p>
                 </div>
               ))}
             </motion.div>
@@ -87,7 +87,7 @@ export default function AboutPage() {
         </section>
 
         {/* Mission Section */}
-        <section className="py-20 bg-slate-900/50">
+        <section className="py-20 bg-neutral-50">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -96,16 +96,16 @@ export default function AboutPage() {
               viewport={{ once: true }}
               className="max-w-4xl mx-auto"
             >
-              <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 md:p-12 border border-slate-700">
+              <div className="bg-white rounded-2xl p-8 md:p-12 border border-neutral-200">
                 <div className="flex items-start gap-4 mb-6">
-                  <div className="p-3 bg-violet-500/10 border border-violet-500/20 rounded-xl">
-                    <Target className="w-8 h-8 text-violet-400" />
+                  <div className="p-3 bg-subit-50 border border-subit-200 rounded-xl">
+                    <Target className="w-8 h-8 text-subit-600" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-white mb-3">
+                    <h2 className="text-2xl font-bold text-neutral-900 mb-3">
                       Our Mission
                     </h2>
-                    <p className="text-slate-400 leading-relaxed text-lg">
+                    <p className="text-neutral-600 leading-relaxed text-lg">
                       SUBITAI builds AI-powered tools that make video subtitles fast, accurate, and customizable 
                       for creators and teams worldwide. We believe that great content should be accessible to 
                       everyone, regardless of language or hearing ability.
@@ -127,10 +127,10 @@ export default function AboutPage() {
               viewport={{ once: true }}
               className="text-center mb-12"
             >
-              <h2 className="text-3xl font-bold text-white mb-4">
+              <h2 className="text-3xl font-bold text-neutral-900 mb-4">
                 What We Stand For
               </h2>
-              <p className="text-slate-400 max-w-2xl mx-auto">
+              <p className="text-neutral-600 max-w-2xl mx-auto">
                 Our core values guide everything we do
               </p>
             </motion.div>
@@ -145,16 +145,16 @@ export default function AboutPage() {
                   viewport={{ once: true }}
                   className="group"
                 >
-                  <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700 hover:border-slate-600 transition-all duration-300 h-full">
+                  <div className="bg-white rounded-xl p-6 border border-neutral-200 hover:shadow-card transition-all duration-300 h-full">
                     <div className="flex items-start gap-4">
                       <div className={`p-3 bg-gradient-to-br ${value.gradient} rounded-xl group-hover:scale-110 transition-transform shadow-lg`}>
                         <value.icon className="w-6 h-6 text-white" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-white mb-2">
+                        <h3 className="text-lg font-semibold text-neutral-900 mb-2">
                           {value.title}
                         </h3>
-                        <p className="text-slate-400 text-sm leading-relaxed">
+                        <p className="text-neutral-600 text-sm leading-relaxed">
                           {value.description}
                         </p>
                       </div>
@@ -167,7 +167,7 @@ export default function AboutPage() {
         </section>
 
         {/* Team Section */}
-        <section className="py-20 bg-slate-900/50">
+        <section className="py-20 bg-neutral-50">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -176,20 +176,20 @@ export default function AboutPage() {
               viewport={{ once: true }}
               className="max-w-2xl mx-auto text-center"
             >
-              <h2 className="text-3xl font-bold text-white mb-4">
+              <h2 className="text-3xl font-bold text-neutral-900 mb-4">
                 Meet the Team
               </h2>
-              <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700 mt-8">
-                <div className="w-24 h-24 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg shadow-violet-500/30">
+              <div className="bg-white rounded-2xl p-8 border border-neutral-200 mt-8">
+                <div className="w-24 h-24 bg-subit-600 rounded-full mx-auto mb-4 flex items-center justify-center shadow-glow">
                   <Sparkles className="w-12 h-12 text-white" />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-1">
+                <h3 className="text-xl font-semibold text-neutral-900 mb-1">
                   The SUBITAI Team
                 </h3>
-                <p className="text-violet-400 font-medium mb-3">
+                <p className="text-subit-600 font-medium mb-3">
                   AI & Product Engineering
                 </p>
-                <p className="text-slate-400 text-sm">
+                <p className="text-neutral-600 text-sm">
                   Passionate about making video accessible with cutting-edge AI
                 </p>
               </div>
@@ -207,23 +207,23 @@ export default function AboutPage() {
               viewport={{ once: true }}
               className="max-w-3xl mx-auto"
             >
-              <div className="bg-gradient-to-r from-violet-600/20 via-fuchsia-600/20 to-violet-600/20 rounded-2xl p-8 md:p-12 border border-violet-500/20 text-center">
-                <h2 className="text-2xl font-bold text-white mb-3">
+              <div className="bg-subit-50 rounded-2xl p-8 md:p-12 border border-subit-200 text-center">
+                <h2 className="text-2xl font-bold text-neutral-900 mb-3">
                   Join Thousands of Creators
                 </h2>
-                <p className="text-slate-400 mb-6 max-w-md mx-auto">
+                <p className="text-neutral-600 mb-6 max-w-md mx-auto">
                   Start creating professional subtitles in minutes
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Link 
                     href="/auth/signup" 
-                    className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-xl font-semibold hover:from-violet-500 hover:to-fuchsia-500 transition-all shadow-lg shadow-violet-500/25"
+                    className="inline-flex items-center justify-center px-6 py-3 bg-subit-600 hover:bg-subit-700 text-white rounded-xl font-semibold transition-all shadow-glow"
                   >
                     Get Started Free
                   </Link>
                   <Link 
                     href="/features" 
-                    className="inline-flex items-center justify-center px-6 py-3 bg-slate-800 text-white rounded-xl font-semibold border border-slate-700 hover:bg-slate-700 transition-colors"
+                    className="inline-flex items-center justify-center px-6 py-3 bg-white text-subit-700 rounded-xl font-semibold border border-neutral-200 hover:shadow-card transition-all"
                   >
                     Learn More
                   </Link>

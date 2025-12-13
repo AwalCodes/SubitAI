@@ -30,14 +30,14 @@ export default function ContactPage() {
   ]
   
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-white">
       <Header />
       <main className="pt-20">
         {/* Hero Section */}
         <section className="py-20 relative overflow-hidden">
           <div className="absolute inset-0">
-            <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-600/20 rounded-full blur-3xl" />
-            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-600/20 rounded-full blur-3xl" />
+            <div className="absolute top-0 left-1/4 w-96 h-96 bg-subit-200/40 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-subit-200/40 rounded-full blur-3xl" />
           </div>
 
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -47,13 +47,13 @@ export default function ContactPage() {
               transition={{ duration: 0.6 }}
               className="text-center mb-12"
             >
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-2xl mb-6 shadow-lg shadow-violet-500/30">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-subit-600 rounded-2xl mb-6 shadow-glow">
                 <MessageSquare className="w-8 h-8 text-white" />
               </div>
-              <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4">
+              <h1 className="text-4xl sm:text-5xl font-bold text-neutral-900 mb-4">
                 Get in Touch
               </h1>
-              <p className="text-xl text-slate-400 max-w-2xl mx-auto">
+              <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
                 Have questions? Send us a message and we&apos;ll get back to you promptly.
               </p>
             </motion.div>
@@ -65,34 +65,34 @@ export default function ContactPage() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="max-w-2xl mx-auto"
             >
-              <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700">
+              <div className="bg-white rounded-2xl p-8 border border-neutral-200">
                 <form onSubmit={submit} className="space-y-5">
                   <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-2">
+                    <label htmlFor="name" className="block text-sm font-medium text-neutral-700 mb-2">
                       Full Name
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <User className="h-5 w-5 text-slate-500" />
+                        <User className="h-5 w-5 text-subit-600" />
                       </div>
                       <input
                         id="name"
                         value={form.name}
                         onChange={e => setForm({ ...form, name: e.target.value })}
                         placeholder="John Doe"
-                        className="w-full pl-12 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 text-white placeholder-slate-500 transition-all"
+                        className="w-full pl-12 pr-4 py-3 bg-white border border-neutral-300 rounded-xl focus:ring-2 focus:ring-subit-500 focus:border-subit-500 text-neutral-900 placeholder-neutral-400 transition-all"
                         required
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
+                    <label htmlFor="email" className="block text-sm font-medium text-neutral-700 mb-2">
                       Email Address
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <Mail className="h-5 w-5 text-slate-500" />
+                        <Mail className="h-5 w-5 text-subit-600" />
                       </div>
                       <input
                         id="email"
@@ -100,14 +100,14 @@ export default function ContactPage() {
                         value={form.email}
                         onChange={e => setForm({ ...form, email: e.target.value })}
                         placeholder="you@example.com"
-                        className="w-full pl-12 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 text-white placeholder-slate-500 transition-all"
+                        className="w-full pl-12 pr-4 py-3 bg-white border border-neutral-300 rounded-xl focus:ring-2 focus:ring-subit-500 focus:border-subit-500 text-neutral-900 placeholder-neutral-400 transition-all"
                         required
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label htmlFor="message" className="block text-sm font-medium text-slate-300 mb-2">
+                    <label htmlFor="message" className="block text-sm font-medium text-neutral-700 mb-2">
                       Your Message
                     </label>
                     <textarea
@@ -116,7 +116,7 @@ export default function ContactPage() {
                       onChange={e => setForm({ ...form, message: e.target.value })}
                       placeholder="Tell us how we can help..."
                       rows={5}
-                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 text-white placeholder-slate-500 resize-none transition-all"
+                      className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl focus:ring-2 focus:ring-subit-500 focus:border-subit-500 text-neutral-900 placeholder-neutral-400 resize-none transition-all"
                       required
                     />
                   </div>
@@ -124,7 +124,7 @@ export default function ContactPage() {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg shadow-violet-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full flex items-center justify-center gap-2 py-3.5 bg-subit-600 hover:bg-subit-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-glow disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {submitting ? (
                       <>
@@ -140,13 +140,13 @@ export default function ContactPage() {
                   </button>
                 </form>
 
-                <div className="mt-6 pt-6 border-t border-slate-700">
-                  <div className="flex items-center justify-center gap-3 text-slate-400">
-                    <Mail className="w-5 h-5 text-violet-400" />
+                <div className="mt-6 pt-6 border-t border-neutral-200">
+                  <div className="flex items-center justify-center gap-3 text-neutral-600">
+                    <Mail className="w-5 h-5 text-subit-600" />
                     <span>Or email us directly at</span>
                     <a 
                       href="mailto:subit053@gmail.com" 
-                      className="font-semibold text-violet-400 hover:text-violet-300 transition-colors"
+                      className="font-semibold text-subit-600 hover:text-subit-700 transition-colors"
                     >
                       subit053@gmail.com
                     </a>
@@ -162,15 +162,15 @@ export default function ContactPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.3 + i * 0.1 }}
-                    className="text-center p-5 bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700"
+                    className="text-center p-5 bg-white rounded-xl border border-neutral-200"
                   >
-                    <div className="inline-flex items-center justify-center w-10 h-10 bg-violet-500/10 border border-violet-500/20 rounded-xl mb-3">
-                      <feature.icon className="w-5 h-5 text-violet-400" />
+                    <div className="inline-flex items-center justify-center w-10 h-10 bg-subit-50 border border-subit-200 rounded-xl mb-3">
+                      <feature.icon className="w-5 h-5 text-subit-600" />
                     </div>
-                    <h3 className="font-semibold text-white mb-1 text-sm">
+                    <h3 className="font-semibold text-neutral-900 mb-1 text-sm">
                       {feature.title}
                     </h3>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-neutral-500">
                       {feature.desc}
                     </p>
                   </motion.div>
