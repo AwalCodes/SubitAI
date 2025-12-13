@@ -6,7 +6,7 @@ export function OrganizationSchema() {
     '@type': 'Organization',
     name: 'SUBITAI',
     url: 'https://subitai.com',
-    logo: 'https://subitai.com/logo.png',
+    logo: 'https://subitai.com/favicon.svg?v=2',
     description: 'AI-Powered Subtitle Generator - Generate professional subtitles for your videos using advanced AI technology.',
     sameAs: [
       'https://twitter.com/subitai',
@@ -154,4 +154,3 @@ export function PricingSchema() {
     />
   )
 }
-
