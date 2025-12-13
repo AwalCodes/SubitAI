@@ -560,9 +560,15 @@ export default function SubtitleEditor({
       formData.append('style', JSON.stringify(style))
 
       // Call our backend API which proxies to the Hugging Face service
+      // Get auth token from localStorage
+      const token = typeof window !== 'undefined' ? window.localStorage.getItem('access_token') : null
+
       const response = await fetch('/api/export-video', {
         method: 'POST',
         body: formData,
+        headers: token ? {
+          'Authorization': `Bearer ${token}`
+        } : undefined,
       })
 
       if (!response.ok) {
@@ -877,8 +883,8 @@ export default function SubtitleEditor({
               <button
                 onClick={() => setActivePanel('style')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activePanel === 'style'
-                    ? 'bg-subit-600 text-white'
-                    : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                  ? 'bg-subit-600 text-white'
+                  : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                   }`}
               >
                 <div className="flex items-center gap-2">
@@ -889,8 +895,8 @@ export default function SubtitleEditor({
               <button
                 onClick={() => setActivePanel('edit')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activePanel === 'edit'
-                    ? 'bg-subit-600 text-white'
-                    : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                  ? 'bg-subit-600 text-white'
+                  : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                   }`}
               >
                 <div className="flex items-center gap-2">
@@ -1051,8 +1057,8 @@ export default function SubtitleEditor({
                 onClick={handleExportVideo}
                 disabled={exporting || !isPro}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${isPro
-                    ? 'bg-green-600 text-white hover:bg-green-700'
-                    : 'bg-neutral-700 text-neutral-400 cursor-not-allowed'
+                  ? 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-neutral-700 text-neutral-400 cursor-not-allowed'
                   }`}
               >
                 <Download className="w-4 h-4" />
@@ -1231,8 +1237,8 @@ function StylePanel({
                       setStyle({ ...style, position: pos.value as any })
                     }}
                     className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${style.position === pos.value
-                        ? 'bg-subit-600 text-white'
-                        : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600'
+                      ? 'bg-subit-600 text-white'
+                      : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600'
                       } ${pos.premium && !isPremium ? 'opacity-50 cursor-not-allowed' : ''}`}
                     disabled={pos.premium && !isPremium}
                   >
@@ -1261,8 +1267,8 @@ function StylePanel({
                 <button
                   onClick={() => setStyle({ ...style, textAlign: 'left' })}
                   className={`flex-1 px-3 py-2 rounded-lg border transition-colors ${style.textAlign === 'left'
-                      ? 'bg-subit-600 text-white border-subit-600'
-                      : 'bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100'
+                    ? 'bg-subit-600 text-white border-subit-600'
+                    : 'bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100'
                     }`}
                 >
                   <AlignLeft className="w-4 h-4 mx-auto" />
@@ -1270,8 +1276,8 @@ function StylePanel({
                 <button
                   onClick={() => setStyle({ ...style, textAlign: 'center' })}
                   className={`flex-1 px-3 py-2 rounded-lg border transition-colors ${style.textAlign === 'center'
-                      ? 'bg-subit-600 text-white border-subit-600'
-                      : 'bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100'
+                    ? 'bg-subit-600 text-white border-subit-600'
+                    : 'bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100'
                     }`}
                 >
                   <AlignCenter className="w-4 h-4 mx-auto" />
@@ -1279,8 +1285,8 @@ function StylePanel({
                 <button
                   onClick={() => setStyle({ ...style, textAlign: 'right' })}
                   className={`flex-1 px-3 py-2 rounded-lg border transition-colors ${style.textAlign === 'right'
-                      ? 'bg-subit-600 text-white border-subit-600'
-                      : 'bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100'
+                    ? 'bg-subit-600 text-white border-subit-600'
+                    : 'bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100'
                     }`}
                 >
                   <AlignRight className="w-4 h-4 mx-auto" />
@@ -1574,10 +1580,10 @@ function EditPanel({
 
               <div
                 className={`group p-3 rounded-lg border transition-all ${isCurrent
-                    ? 'border-subit-500 bg-subit-50 dark:bg-subit-900/20 shadow-md'
-                    : isActive
-                      ? 'border-subit-300 dark:border-subit-500 bg-subit-50/50 dark:bg-subit-900/10'
-                      : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 hover:border-subit-300 dark:hover:border-subit-500'
+                  ? 'border-subit-500 bg-subit-50 dark:bg-subit-900/20 shadow-md'
+                  : isActive
+                    ? 'border-subit-300 dark:border-subit-500 bg-subit-50/50 dark:bg-subit-900/10'
+                    : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 hover:border-subit-300 dark:hover:border-subit-500'
                   }`}
               >
                 <div className="flex items-center justify-between mb-2">

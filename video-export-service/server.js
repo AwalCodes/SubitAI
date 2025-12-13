@@ -75,6 +75,9 @@ app.post('/export', upload.single('video'), async (req, res) => {
       }
     }
 
+    // Get style options
+    const style = JSON.parse(req.body.style || '{}')
+
     // Generate ASS file instead of SRT
     const assContent = generateASS(subtitles, style)
     const assFilePath = path.join(tempDir, `subtitles_${jobId}.ass`)
