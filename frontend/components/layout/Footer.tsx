@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { Zap, Twitter, Github, Linkedin } from 'lucide-react'
+import { Twitter, Github, Linkedin } from 'lucide-react'
+import Logo from '@/components/shared/Logo'
 
 const footerLinks = {
   product: [
@@ -20,30 +21,23 @@ const footerLinks = {
 
 export default function Footer() {
   return (
-    <footer className="bg-slate-950 border-t border-slate-800">
+    <footer className="bg-neutral-50 border-t border-neutral-200">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12">
           {/* Brand Section */}
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-lg font-bold text-white">
-                SUBITAI
-              </span>
-            </Link>
-            <p className="text-slate-400 text-sm mb-4 max-w-xs">
+            <Logo withText href="/" className="mb-4" />
+            <p className="text-neutral-600 text-sm mb-4 max-w-xs">
               AI-powered subtitle generation. Transform your videos with professional subtitles in seconds.
             </p>
             <div className="flex gap-3">
-              <a href="#" className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+              <a href="#" className="w-9 h-9 rounded-lg bg-white border border-neutral-200 hover:bg-neutral-100 flex items-center justify-center text-neutral-500 hover:text-subit-600 transition-colors">
                 <Twitter className="w-4 h-4" />
               </a>
-              <a href="#" className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+              <a href="#" className="w-9 h-9 rounded-lg bg-white border border-neutral-200 hover:bg-neutral-100 flex items-center justify-center text-neutral-500 hover:text-subit-600 transition-colors">
                 <Github className="w-4 h-4" />
               </a>
-              <a href="#" className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+              <a href="#" className="w-9 h-9 rounded-lg bg-white border border-neutral-200 hover:bg-neutral-100 flex items-center justify-center text-neutral-500 hover:text-subit-600 transition-colors">
                 <Linkedin className="w-4 h-4" />
               </a>
             </div>
@@ -51,11 +45,11 @@ export default function Footer() {
 
           {/* Product Links */}
           <div>
-            <h3 className="text-sm font-semibold text-white mb-4">Product</h3>
+            <h3 className="text-sm font-semibold text-neutral-900 mb-4">Product</h3>
             <ul className="space-y-3">
               {footerLinks.product.map((link) => (
                 <li key={link.name}>
-                  <Link href={link.href} className="text-slate-400 hover:text-violet-400 text-sm transition-colors">
+                  <Link href={link.href} className="text-neutral-600 hover:text-subit-600 text-sm transition-colors">
                     {link.name}
                   </Link>
                 </li>
@@ -65,11 +59,11 @@ export default function Footer() {
 
           {/* Company Links */}
           <div>
-            <h3 className="text-sm font-semibold text-white mb-4">Company</h3>
+            <h3 className="text-sm font-semibold text-neutral-900 mb-4">Company</h3>
             <ul className="space-y-3">
               {footerLinks.company.map((link) => (
                 <li key={link.name}>
-                  <Link href={link.href} className="text-slate-400 hover:text-violet-400 text-sm transition-colors">
+                  <Link href={link.href} className="text-neutral-600 hover:text-subit-600 text-sm transition-colors">
                     {link.name}
                   </Link>
                 </li>
@@ -79,11 +73,11 @@ export default function Footer() {
 
           {/* Legal Links */}
           <div>
-            <h3 className="text-sm font-semibold text-white mb-4">Legal</h3>
+            <h3 className="text-sm font-semibold text-neutral-900 mb-4">Legal</h3>
             <ul className="space-y-3">
               {footerLinks.legal.map((link) => (
                 <li key={link.name}>
-                  <Link href={link.href} className="text-slate-400 hover:text-violet-400 text-sm transition-colors">
+                  <Link href={link.href} className="text-neutral-600 hover:text-subit-600 text-sm transition-colors">
                     {link.name}
                   </Link>
                 </li>
@@ -93,11 +87,11 @@ export default function Footer() {
         </div>
 
         {/* Bottom */}
-        <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-slate-500 text-sm">
+        <div className="mt-12 pt-8 border-t border-neutral-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <p className="text-neutral-500 text-sm">
             © {new Date().getFullYear()} SUBITAI. All rights reserved.
           </p>
-          <p className="text-slate-500 text-sm">
+          <p className="text-neutral-500 text-sm">
             Made with ❤️ for content creators
           </p>
         </div>

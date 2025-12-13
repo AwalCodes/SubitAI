@@ -171,44 +171,7 @@ export default function SubtitleEditor({
     setEditingSubtitles(subtitles)
   }, [subtitles])
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      // Prevent shortcuts when typing in inputs
-      if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') {
-        return
-      }
-
-      // Spacebar to play/pause
-      if (e.code === 'Space') {
-        e.preventDefault()
-        if (isPlaying) {
-          handlePause()
-        } else {
-          handlePlay()
-        }
-      }
-
-      // Arrow keys for seeking
-      if (e.code === 'ArrowLeft') {
-        e.preventDefault()
-        handleSkip(-5)
-      }
-      if (e.code === 'ArrowRight') {
-        e.preventDefault()
-        handleSkip(5)
-      }
-
-      // Ctrl/Cmd + S to save
-      if ((e.ctrlKey || e.metaKey) && e.code === 'KeyS') {
-        e.preventDefault()
-        handleSave()
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyPress)
-    return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [isPlaying, currentTime])
+  
 
   useEffect(() => {
     const mediaElement = videoRef.current
@@ -256,6 +219,101 @@ export default function SubtitleEditor({
     }
   }, [videoUrl, isAudio])
 
+  const drawSubtitleOnCanvas = useCallback((
+    ctx: CanvasRenderingContext2D,
+    canvas: HTMLCanvasElement,
+    text: string,
+    style: SubtitleStyle,
+    elapsed: number = 0
+  ) => {
+    ctx.save()
+
+    const fontSize = style.fontSize
+    ctx.font = `${style.fontWeight} ${fontSize}px ${style.fontFamily}, sans-serif`
+    ctx.textAlign = style.textAlign === 'center' ? 'center' : style.textAlign === 'left' ? 'left' : 'right'
+    ctx.textBaseline = 'middle'
+    ctx.letterSpacing = `${style.letterSpacing}px`
+
+    let displayText = text
+    if (style.displayMode === 'word-by-word' || style.displayMode === 'character-by-character') {
+      const words = text.split(' ')
+      const chars = text.split('')
+      const duration = 0.5
+      const progress = Math.min(elapsed / duration, 1)
+      if (style.displayMode === 'word-by-word') {
+        const wordCount = Math.ceil(words.length * progress)
+        displayText = words.slice(0, wordCount).join(' ')
+      } else {
+        const charCount = Math.ceil(chars.length * progress)
+        displayText = chars.slice(0, charCount).join('')
+      }
+    }
+
+    const lines = style.displayMode === 'multiple-lines'
+      ? wrapText(ctx, displayText, canvas.width * 0.8, style.maxLines)
+      : [displayText]
+
+    let baseX = canvas.width / 2
+    let baseY = canvas.height - style.verticalOffset
+    if (style.position === 'center') {
+      baseY = canvas.height / 2
+    } else if (style.position === 'top') {
+      baseY = style.verticalOffset
+    }
+    baseX += style.horizontalOffset
+    if (style.textAlign === 'left') {
+      baseX = style.horizontalOffset + (canvas.width * 0.1)
+    } else if (style.textAlign === 'right') {
+      baseX = canvas.width - style.horizontalOffset - (canvas.width * 0.1)
+    }
+
+    const lineHeight = fontSize * style.lineHeight
+    const totalHeight = lines.length * lineHeight
+    const startY = baseY - (totalHeight / 2) + (lineHeight / 2)
+
+    if (style.backgroundColor && style.backgroundOpacity > 0 && lines.length > 0) {
+      const lineWidths = lines.map(line => ctx.measureText(line).width)
+      const maxWidth = Math.max(...lineWidths)
+      const bgX = baseX - (style.textAlign === 'center' ? maxWidth / 2 : style.textAlign === 'left' ? 0 : maxWidth)
+      const bgY = startY - (lineHeight / 2) - style.padding
+      const bgWidth = maxWidth + style.padding * 2
+      const bgHeight = totalHeight + style.padding * 2
+      ctx.fillStyle = style.backgroundColor
+      ctx.globalAlpha = style.backgroundOpacity
+      ctx.beginPath()
+      if (ctx.roundRect) {
+        ctx.roundRect(bgX, bgY, bgWidth, bgHeight, style.borderRadius)
+      } else {
+        const r = style.borderRadius
+        ctx.moveTo(bgX + r, bgY)
+        ctx.lineTo(bgX + bgWidth - r, bgY)
+        ctx.quadraticCurveTo(bgX + bgWidth, bgY, bgX + bgWidth, bgY + r)
+        ctx.lineTo(bgX + bgWidth, bgY + bgHeight - r)
+        ctx.quadraticCurveTo(bgX + bgWidth, bgY + bgHeight, bgX + bgWidth - r, bgY + bgHeight)
+        ctx.lineTo(bgX + r, bgY + bgHeight)
+        ctx.quadraticCurveTo(bgX, bgY + bgHeight, bgX, bgY + bgHeight - r)
+        ctx.lineTo(bgX, bgY + r)
+        ctx.quadraticCurveTo(bgX, bgY, bgX + r, bgY)
+        ctx.closePath()
+      }
+      ctx.fill()
+    }
+
+    lines.forEach((line, index) => {
+      const y = startY + (index * lineHeight)
+      if (style.outlineWidth > 0) {
+        ctx.strokeStyle = style.outlineColor
+        ctx.lineWidth = style.outlineWidth
+        ctx.globalAlpha = 1
+        ctx.strokeText(line, baseX, y)
+      }
+      ctx.fillStyle = style.color
+      ctx.globalAlpha = 1
+      ctx.fillText(line, baseX, y)
+    })
+    ctx.restore()
+  }, [])
+
   // Real-time subtitle rendering function - always reads current time directly
   const renderSubtitles = useCallback(() => {
     const canvas = canvasRef.current
@@ -265,7 +323,6 @@ export default function SubtitleEditor({
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Ensure canvas matches video dimensions
     if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
       canvas.width = video.videoWidth || 1920
       canvas.height = video.videoHeight || 1080
@@ -273,7 +330,6 @@ export default function SubtitleEditor({
 
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    // Find active subtitle segment - always use video.currentTime directly for real-time updates
     const currentVideoTime = video.currentTime
     const activeSeg = editingSubtitles.find(
       s => currentVideoTime >= s.start && currentVideoTime <= s.end
@@ -283,7 +339,7 @@ export default function SubtitleEditor({
       const elapsed = isPlaying ? currentVideoTime - activeSeg.start : 0
       drawSubtitleOnCanvas(ctx, canvas, activeSeg.text, style, elapsed)
     }
-  }, [editingSubtitles, style, isAudio, isPlaying])
+  }, [editingSubtitles, style, isAudio, isPlaying, drawSubtitleOnCanvas])
 
   // REAL-TIME: Trigger immediate re-render when subtitles or style change
   useEffect(() => {
@@ -320,119 +376,7 @@ export default function SubtitleEditor({
     }
   }, [isPlaying, renderSubtitles, isAudio])
 
-  const drawSubtitleOnCanvas = (
-    ctx: CanvasRenderingContext2D,
-    canvas: HTMLCanvasElement,
-    text: string,
-    style: SubtitleStyle,
-    elapsed: number = 0
-  ) => {
-    ctx.save()
-
-    // Set font - use actual pixel size, not scaled
-    const fontSize = style.fontSize
-    ctx.font = `${style.fontWeight} ${fontSize}px ${style.fontFamily}, sans-serif`
-    ctx.textAlign = style.textAlign === 'center' ? 'center' : style.textAlign === 'left' ? 'left' : 'right'
-    ctx.textBaseline = 'middle'
-    ctx.letterSpacing = `${style.letterSpacing}px`
-
-    // Process text based on display mode
-    let displayText = text
-    if (style.displayMode === 'word-by-word' || style.displayMode === 'character-by-character') {
-      const words = text.split(' ')
-      const chars = text.split('')
-      const duration = 0.5 // Animation duration in seconds
-      const progress = Math.min(elapsed / duration, 1)
-
-      if (style.displayMode === 'word-by-word') {
-        const wordCount = Math.ceil(words.length * progress)
-        displayText = words.slice(0, wordCount).join(' ')
-      } else {
-        const charCount = Math.ceil(chars.length * progress)
-        displayText = chars.slice(0, charCount).join('')
-      }
-    }
-
-    // Split text into lines if needed
-    const lines = style.displayMode === 'multiple-lines'
-      ? wrapText(ctx, displayText, canvas.width * 0.8, style.maxLines)
-      : [displayText]
-
-    // Calculate position
-    let baseX = canvas.width / 2
-    let baseY = canvas.height - style.verticalOffset
-
-    if (style.position === 'center') {
-      baseY = canvas.height / 2
-    } else if (style.position === 'top') {
-      baseY = style.verticalOffset
-    }
-
-    baseX += style.horizontalOffset
-
-    // Adjust for text alignment
-    if (style.textAlign === 'left') {
-      baseX = style.horizontalOffset + (canvas.width * 0.1)
-    } else if (style.textAlign === 'right') {
-      baseX = canvas.width - style.horizontalOffset - (canvas.width * 0.1)
-    }
-
-    // Measure all lines
-    const lineHeight = fontSize * style.lineHeight
-    const totalHeight = lines.length * lineHeight
-    const startY = baseY - (totalHeight / 2) + (lineHeight / 2)
-
-    // Draw background for all lines
-    if (style.backgroundColor && style.backgroundOpacity > 0 && lines.length > 0) {
-      const lineWidths = lines.map(line => ctx.measureText(line).width)
-      const maxWidth = Math.max(...lineWidths)
-      const bgX = baseX - (style.textAlign === 'center' ? maxWidth / 2 : style.textAlign === 'left' ? 0 : maxWidth)
-      const bgY = startY - (lineHeight / 2) - style.padding
-      const bgWidth = maxWidth + style.padding * 2
-      const bgHeight = totalHeight + style.padding * 2
-
-      ctx.fillStyle = style.backgroundColor
-      ctx.globalAlpha = style.backgroundOpacity
-
-      ctx.beginPath()
-      if (ctx.roundRect) {
-        ctx.roundRect(bgX, bgY, bgWidth, bgHeight, style.borderRadius)
-      } else {
-        const r = style.borderRadius
-        ctx.moveTo(bgX + r, bgY)
-        ctx.lineTo(bgX + bgWidth - r, bgY)
-        ctx.quadraticCurveTo(bgX + bgWidth, bgY, bgX + bgWidth, bgY + r)
-        ctx.lineTo(bgX + bgWidth, bgY + bgHeight - r)
-        ctx.quadraticCurveTo(bgX + bgWidth, bgY + bgHeight, bgX + bgWidth - r, bgY + bgHeight)
-        ctx.lineTo(bgX + r, bgY + bgHeight)
-        ctx.quadraticCurveTo(bgX, bgY + bgHeight, bgX, bgY + bgHeight - r)
-        ctx.lineTo(bgX, bgY + r)
-        ctx.quadraticCurveTo(bgX, bgY, bgX + r, bgY)
-        ctx.closePath()
-      }
-      ctx.fill()
-    }
-
-    // Draw text lines
-    lines.forEach((line, index) => {
-      const y = startY + (index * lineHeight)
-
-      // Draw text outline
-      if (style.outlineWidth > 0) {
-        ctx.strokeStyle = style.outlineColor
-        ctx.lineWidth = style.outlineWidth
-        ctx.globalAlpha = 1
-        ctx.strokeText(line, baseX, y)
-      }
-
-      // Draw text
-      ctx.fillStyle = style.color
-      ctx.globalAlpha = 1
-      ctx.fillText(line, baseX, y)
-    })
-
-    ctx.restore()
-  }
+  
 
   const wrapText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number): string[] => {
     const words = text.split(' ')
@@ -459,52 +403,52 @@ export default function SubtitleEditor({
     return lines.length > 0 ? lines : [text]
   }
 
-  const handlePlay = () => {
+  const handlePlay = useCallback(() => {
     if (videoRef.current) {
       videoRef.current.play()
       setIsPlaying(true)
     }
-  }
+  }, [])
 
-  const handlePause = () => {
+  const handlePause = useCallback(() => {
     if (videoRef.current) {
       videoRef.current.pause()
       setIsPlaying(false)
     }
-  }
+  }, [])
 
-  const handleSeek = (time: number) => {
+  const handleSeek = useCallback((time: number) => {
     if (videoRef.current) {
       videoRef.current.currentTime = Math.max(0, Math.min(time, videoDuration))
       setCurrentTime(videoRef.current.currentTime)
     }
-  }
+  }, [videoDuration])
 
-  const handleTimelineClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleTimelineClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!timelineRef.current) return
     const rect = timelineRef.current.getBoundingClientRect()
     const x = e.clientX - rect.left
     const percentage = x / rect.width
     const time = percentage * videoDuration
     handleSeek(time)
-  }
+  }, [videoDuration, handleSeek])
 
-  const handleSkip = (seconds: number) => {
+  const handleSkip = useCallback((seconds: number) => {
     if (videoRef.current) {
       handleSeek(videoRef.current.currentTime + seconds)
     }
-  }
+  }, [handleSeek])
 
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const vol = parseFloat(e.target.value)
     setVolume(vol)
     if (videoRef.current) {
       videoRef.current.volume = vol
       setIsMuted(vol === 0)
     }
-  }
+  }, [])
 
-  const handleMute = () => {
+  const handleMute = useCallback(() => {
     if (videoRef.current) {
       if (isMuted) {
         videoRef.current.volume = volume || 0.5
@@ -514,9 +458,9 @@ export default function SubtitleEditor({
         setIsMuted(true)
       }
     }
-  }
+  }, [isMuted, volume])
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     try {
       setSaving(true)
       await onSave(editingSubtitles, style)
@@ -526,7 +470,7 @@ export default function SubtitleEditor({
     } finally {
       setSaving(false)
     }
-  }
+  }, [onSave, editingSubtitles, style])
 
   const handleExportVideo = async () => {
     if (!isPro) {
@@ -850,6 +794,37 @@ export default function SubtitleEditor({
       setExporting(false)
     }
   }
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') {
+        return
+      }
+      if (e.code === 'Space') {
+        e.preventDefault()
+        if (isPlaying) {
+          handlePause()
+        } else {
+          handlePlay()
+        }
+      }
+      if (e.code === 'ArrowLeft') {
+        e.preventDefault()
+        handleSkip(-5)
+      }
+      if (e.code === 'ArrowRight') {
+        e.preventDefault()
+        handleSkip(5)
+      }
+      if ((e.ctrlKey || e.metaKey) && e.code === 'KeyS') {
+        e.preventDefault()
+        handleSave()
+      }
+    }
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [isPlaying, handlePause, handlePlay, handleSkip, handleSave])
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)

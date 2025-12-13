@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { OnboardingModal } from '@/components/onboarding-modal'
 import { fetchQuota, type QuotaInfo } from '@/lib/api-v2'
 import toast from 'react-hot-toast'
+import Logo from '@/components/shared/Logo'
 
 interface Project {
   id: string
@@ -129,7 +130,7 @@ export default function Dashboard() {
       label: 'Total Projects',
       value: projects.length,
       icon: Video,
-      gradient: 'from-blue-500 to-blue-600'
+      gradient: 'from-subit-500 to-subit-600'
     },
     {
       label: 'Completed',
@@ -147,7 +148,7 @@ export default function Dashboard() {
       label: 'Energy',
       value: remainingEnergy,
       icon: Zap,
-      gradient: 'from-violet-500 to-fuchsia-600'
+      gradient: 'from-subit-500 to-subit-600'
     }
   ], [projects, remainingEnergy])
 
@@ -218,13 +219,13 @@ export default function Dashboard() {
   // Show loading only if user auth is still loading, not if projects are loading
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="relative">
-            <div className="w-16 h-16 border-4 border-violet-500/20 border-t-violet-500 rounded-full animate-spin mx-auto mb-6" />
-            <Sparkles className="w-6 h-6 text-violet-400 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+            <div className="w-16 h-16 border-4 border-subit-500/20 border-t-subit-500 rounded-full animate-spin mx-auto mb-6" />
+            <Sparkles className="w-6 h-6 text-subit-600 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-pulse" />
           </div>
-          <p className="text-slate-400 text-lg font-medium">Loading your dashboard...</p>
+          <p className="text-neutral-600 text-lg font-medium">Loading your dashboard...</p>
         </div>
       </div>
     )
@@ -237,19 +238,12 @@ export default function Dashboard() {
   ]
 
   return (
-    <div className="min-h-screen bg-slate-950 flex">
+    <div className="min-h-screen bg-white flex">
       {/* Sidebar - Desktop */}
-      <aside className="hidden lg:flex lg:flex-col w-64 bg-slate-900/50 border-r border-slate-800">
+      <aside className="hidden lg:flex lg:flex-col w-64 bg-neutral-50 border-r border-neutral-200">
         {/* Logo */}
-        <div className="p-6 border-b border-slate-800">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
-              <Zap className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-white">
-              SUBITAI
-            </span>
-          </Link>
+        <div className="p-6 border-b border-neutral-200">
+          <Logo withText href="/" />
         </div>
 
         {/* Nav Links */}
@@ -260,8 +254,8 @@ export default function Dashboard() {
               href={link.href}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
                 link.active
-                  ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                  ? 'bg-subit-50 text-subit-700 border border-subit-200'
+                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
               }`}
             >
               <link.icon className="w-5 h-5" />
@@ -271,27 +265,27 @@ export default function Dashboard() {
         </nav>
 
         {/* User Section */}
-        <div className="p-4 border-t border-slate-800">
+        <div className="p-4 border-t border-neutral-200">
           <Link 
             href="/dashboard/settings"
-            className="flex items-center gap-3 px-3 py-2 mb-3 rounded-xl hover:bg-slate-800/50 transition-all duration-200 cursor-pointer group"
+            className="flex items-center gap-3 px-3 py-2 mb-3 rounded-xl hover:bg-neutral-100 transition-all duration-200 cursor-pointer group"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white font-bold group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-subit-600 flex items-center justify-center text-white font-bold group-hover:scale-105 transition-transform">
               {user?.email?.charAt(0).toUpperCase() || 'U'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate group-hover:text-violet-400 transition-colors">{user?.email}</p>
-              <p className="text-xs text-slate-500">
+              <p className="text-sm font-medium text-neutral-900 truncate group-hover:text-subit-700 transition-colors">{user?.email}</p>
+              <p className="text-xs text-neutral-500">
                 {subscription?.plan === 'premium' ? 'Premium Plan' : 
                  subscription?.plan === 'pro' ? 'Pro Plan' : 
                  'Free Plan'}
               </p>
             </div>
-            <Settings className="w-4 h-4 text-slate-500 group-hover:text-violet-400 transition-colors opacity-0 group-hover:opacity-100" />
+            <Settings className="w-4 h-4 text-neutral-500 group-hover:text-subit-700 transition-colors opacity-0 group-hover:opacity-100" />
           </Link>
           <button
             onClick={handleSignOut}
-            className="flex items-center gap-2 w-full px-4 py-2.5 rounded-xl text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
+            className="flex items-center gap-2 w-full px-4 py-2.5 rounded-xl text-neutral-600 hover:text-red-600 hover:bg-red-50 transition-all duration-200"
           >
             <LogOut className="w-4 h-4" />
             <span className="text-sm font-medium">Sign out</span>
@@ -300,33 +294,28 @@ export default function Dashboard() {
       </aside>
 
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-neutral-200">
         <div className="flex items-center justify-between px-4 py-3">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
-              <Zap className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-lg font-bold text-white">SUBITAI</span>
-          </Link>
+          <Logo withText href="/" />
           <div className="flex items-center gap-2">
             <Link 
               href="/pricing"
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-500/10 border border-violet-500/20 rounded-lg hover:bg-violet-500/20 transition-colors group"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-subit-50 border border-subit-200 rounded-lg hover:bg-subit-100 transition-colors group"
             >
-              <Zap className="w-4 h-4 text-amber-400" />
-              <span className="text-sm font-semibold text-white">{remainingEnergy}</span>
-              <Crown className="w-3.5 h-3.5 text-amber-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Zap className="w-4 h-4 text-subit-600" />
+              <span className="text-sm font-semibold text-neutral-900">{remainingEnergy}</span>
+              <Crown className="w-3.5 h-3.5 text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity" />
             </Link>
             <Link
               href="/dashboard/settings"
-              className="p-2 text-slate-400 hover:text-white transition-colors"
+              className="p-2 text-neutral-600 hover:text-neutral-900 transition-colors"
               title="Settings"
             >
               <User className="w-5 h-5" />
             </Link>
             <button
               onClick={handleSignOut}
-              className="p-2 text-slate-400 hover:text-white transition-colors"
+              className="p-2 text-neutral-600 hover:text-neutral-900 transition-colors"
             >
               <LogOut className="w-5 h-5" />
             </button>
@@ -337,17 +326,17 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="flex-1 overflow-auto pt-16 lg:pt-0">
         {/* Header */}
-        <div className="bg-gradient-to-r from-violet-600/20 via-fuchsia-600/10 to-transparent border-b border-slate-800">
+        <div className="bg-gradient-to-r from-subit-100 via-subit-50 to-transparent border-b border-neutral-200">
           <div className="px-6 lg:px-8 py-8">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1">
+                <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 mb-1">
                   Welcome back! 👋
                 </h1>
-                <p className="text-slate-400">Manage your video projects and subtitles</p>
+                <p className="text-neutral-600">Manage your video projects and subtitles</p>
               </div>
               <Link href="/dashboard/upload-v2">
-                <button className="group flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5">
+                <button className="group flex items-center gap-2 px-6 py-3 bg-subit-600 hover:bg-subit-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-glow hover:-translate-y-0.5">
                   <Plus className="w-5 h-5" />
                   <span>New Project</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -363,24 +352,24 @@ export default function Dashboard() {
             {stats.map((stat, index) => (
               <div
                 key={stat.label}
-                className="group bg-slate-900/50 backdrop-blur-sm rounded-2xl p-5 border border-slate-800 hover:border-slate-700 transition-all duration-300 relative"
+                className="group bg-white rounded-2xl p-5 border border-neutral-200 hover:shadow-card transition-all duration-300 relative"
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div className={`p-2.5 rounded-xl bg-gradient-to-br ${stat.gradient} group-hover:scale-110 transition-transform duration-300`}>
                     <stat.icon className="w-5 h-5 text-white" />
                   </div>
-                  <span className="text-sm font-medium text-slate-400">{stat.label}</span>
+                  <span className="text-sm font-medium text-neutral-600">{stat.label}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <p className="text-3xl font-bold text-white">{stat.value}</p>
+                  <p className="text-3xl font-bold text-neutral-900">{stat.value}</p>
                   {stat.label === 'Energy' && (
                     <Link 
                       href="/pricing"
                       onClick={(e) => e.stopPropagation()}
-                      className="ml-2 p-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 transition-colors group/upgrade"
+                      className="ml-2 p-1.5 rounded-lg bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors group/upgrade"
                       title="Upgrade plan"
                     >
-                      <Crown className="w-4 h-4 text-amber-400 group-hover/upgrade:scale-110 transition-transform" />
+                      <Crown className="w-4 h-4 text-amber-500 group-hover/upgrade:scale-110 transition-transform" />
                     </Link>
                   )}
                 </div>
@@ -389,29 +378,29 @@ export default function Dashboard() {
           </div>
 
           {/* Projects List */}
-          <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+          <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <FolderOpen className="w-5 h-5 text-violet-400" />
-                <h2 className="text-lg font-semibold text-white">Recent Projects</h2>
+                <FolderOpen className="w-5 h-5 text-subit-600" />
+                <h2 className="text-lg font-semibold text-neutral-900">Recent Projects</h2>
               </div>
-              <span className="text-sm text-slate-500">{projects.length} projects</span>
+              <span className="text-sm text-neutral-500">{projects.length} projects</span>
             </div>
 
             {projects.length === 0 ? (
               <div className="p-12 text-center">
                 <div className="relative w-20 h-20 mx-auto mb-6">
-                  <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-2xl rotate-6 opacity-20 blur-xl" />
-                  <div className="relative w-20 h-20 bg-slate-800 rounded-2xl flex items-center justify-center">
-                    <Video className="w-10 h-10 text-slate-600" />
+                  <div className="absolute inset-0 bg-subit-500 rounded-2xl rotate-6 opacity-10 blur-xl" />
+                  <div className="relative w-20 h-20 bg-neutral-100 rounded-2xl flex items-center justify-center">
+                    <Video className="w-10 h-10 text-neutral-500" />
                   </div>
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">No projects yet</h3>
-                <p className="text-slate-400 mb-6 max-w-sm mx-auto text-sm">
+                <h3 className="text-xl font-bold text-neutral-900 mb-2">No projects yet</h3>
+                <p className="text-neutral-600 mb-6 max-w-sm mx-auto text-sm">
                   Upload your first video and let AI generate professional subtitles automatically
                 </p>
                 <Link href="/dashboard/upload-v2">
-                  <button className="group inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-violet-500/25 transition-all duration-200">
+                  <button className="group inline-flex items-center gap-2 px-6 py-3 bg-subit-600 text-white rounded-xl font-semibold hover:shadow-glow transition-all duration-200">
                     <Plus className="w-5 h-5" />
                     <span>Create First Project</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -419,21 +408,21 @@ export default function Dashboard() {
                 </Link>
               </div>
             ) : (
-              <div className="divide-y divide-slate-800">
+              <div className="divide-y divide-neutral-200">
                 {projects.map((project) => (
                   <div key={project.id} className="group relative">
                     <Link href={`/dashboard/projects/${project.id}`}>
-                      <div className="p-5 hover:bg-slate-800/30 transition-all duration-200 cursor-pointer">
+                      <div className="p-5 hover:bg-neutral-50 transition-all duration-200 cursor-pointer">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
                             <div className="flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
                               {getStatusIcon(project.status)}
                             </div>
                             <div>
-                              <h3 className="text-base font-semibold text-white group-hover:text-violet-400 transition-colors">
+                              <h3 className="text-base font-semibold text-neutral-900 group-hover:text-subit-700 transition-colors">
                                 {project.title}
                               </h3>
-                              <div className="flex items-center gap-3 text-sm text-slate-500 mt-0.5">
+                              <div className="flex items-center gap-3 text-sm text-neutral-500 mt-0.5">
                                 <span>{formatDate(project.created_at)}</span>
                                 {project.video_duration && (
                                   <span className="flex items-center gap-1">
@@ -447,23 +436,23 @@ export default function Dashboard() {
                           <div className="flex items-center gap-3">
                             <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 ${
                               project.status === 'completed' 
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                                ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' 
                                 : project.status === 'processing' 
-                                ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' 
+                                ? 'bg-blue-50 text-blue-600 border border-blue-200' 
                                 : project.status === 'failed' 
-                                ? 'bg-red-500/10 text-red-400 border border-red-500/20'
-                                : 'bg-slate-800 text-slate-400'
+                                ? 'bg-red-50 text-red-600 border border-red-200'
+                                : 'bg-neutral-100 text-neutral-500'
                             }`}>
                               {getStatusText(project.status)}
                             </span>
                             <button
                               onClick={(e) => handleDeleteProject(e, project.id)}
-                              className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-all opacity-0 group-hover:opacity-100"
+                              className="p-2 rounded-lg bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 hover:text-red-700 transition-all opacity-0 group-hover:opacity-100"
                               title="Delete project"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
-                            <ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-violet-400 group-hover:translate-x-1 transition-all" />
+                            <ArrowRight className="w-4 h-4 text-neutral-500 group-hover:text-subit-700 group-hover:translate-x-1 transition-all" />
                           </div>
                         </div>
                       </div>

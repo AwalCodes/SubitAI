@@ -23,8 +23,8 @@ export default function Logo({
   const content = (
     <>
       <Image
-        src="/logo.svg"
-        alt="SubitAI logo"
+        src="/FreeSample-Vectorizer-io-WhatsApp%20Image%202025-10-15%20at%2016.36.25.svg"
+        alt="SUBIT AI logo"
         width={40}
         height={40}
         priority

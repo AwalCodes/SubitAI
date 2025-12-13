@@ -61,6 +61,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "baseline-browser-mapping": "^2.9.7",
     "eslint": "^8.56.0",
     "eslint-config-next": "14.0.4",
     "prettier": "^3.1.1",

@@ -72,27 +72,27 @@ const collaborationPoints = [
 
 export default function FeaturesPage() {
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-white">
       <Header />
       <main className="pt-20">
         {/* Hero Section */}
         <section className="py-20 relative overflow-hidden">
           <div className="absolute inset-0">
-            <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-600/20 rounded-full blur-3xl" />
-            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-fuchsia-600/20 rounded-full blur-3xl" />
+            <div className="absolute top-0 left-1/4 w-96 h-96 bg-subit-200/40 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-subit-200/40 rounded-full blur-3xl" />
           </div>
           
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-            <span className="inline-flex items-center rounded-full bg-violet-500/10 border border-violet-500/20 px-4 py-1.5 text-sm font-medium text-violet-400">
+            <span className="inline-flex items-center rounded-full bg-subit-50 border border-subit-200 px-4 py-1.5 text-sm font-medium text-subit-700">
               Built for creators
             </span>
-            <h1 className="mt-6 text-4xl sm:text-5xl font-bold text-white">
+            <h1 className="mt-6 text-4xl sm:text-5xl font-bold text-neutral-900">
               Powerful AI workflows for{' '}
-              <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-subit-500 to-subit-700 bg-clip-text text-transparent">
                 every video team
               </span>
             </h1>
-            <p className="mt-4 max-w-2xl mx-auto text-lg text-slate-400">
+            <p className="mt-4 max-w-2xl mx-auto text-lg text-neutral-600">
               Automate subtitles, collaborate with your team, and publish faster with an experience that feels crafted for professionals.
             </p>
           </div>
@@ -102,23 +102,23 @@ export default function FeaturesPage() {
         <Features />
 
         {/* Feature Highlights */}
-        <section className="py-20 bg-slate-900/50">
+        <section className="py-20 bg-neutral-50">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid lg:grid-cols-3 gap-6">
               {featureHighlights.map((feature) => (
                 <div 
                   key={feature.title} 
-                  className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700 hover:border-slate-600 transition-all duration-300 group"
+                  className="bg-white rounded-2xl p-6 border border-neutral-200 hover:shadow-card transition-all duration-300 group"
                 >
                   <div className="flex items-center gap-3 mb-4">
                     <div className={`p-3 rounded-xl bg-gradient-to-br ${feature.gradient} group-hover:scale-110 transition-transform shadow-lg`}>
                       <feature.icon className="w-6 h-6 text-white" />
                     </div>
-                    <h3 className="text-lg font-semibold text-white">
+                    <h3 className="text-lg font-semibold text-neutral-900">
                       {feature.title}
                     </h3>
                   </div>
-                  <p className="text-slate-400 leading-relaxed text-sm">
+                  <p className="text-neutral-600 leading-relaxed text-sm">
                     {feature.description}
                   </p>
                 </div>
@@ -132,34 +132,34 @@ export default function FeaturesPage() {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid lg:grid-cols-2 gap-12 items-start">
               <div>
-                <h2 className="text-3xl font-bold text-white mb-4">
+                <h2 className="text-3xl font-bold text-neutral-900 mb-4">
                   Workflows that match your production speed
                 </h2>
-                <p className="text-slate-400 text-lg leading-relaxed mb-8">
+                <p className="text-neutral-600 text-lg leading-relaxed mb-8">
                   Upload in bulk, track progress with smart status indicators, and export captions ready for YouTube, TikTok or any editing suite.
                 </p>
                 <div className="grid gap-4 sm:grid-cols-2">
                   {workflowPerks.map((perk) => (
-                    <div key={perk.title} className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+                    <div key={perk.title} className="bg-white rounded-xl p-4 border border-neutral-200">
                       <div className="flex items-center gap-2 mb-2">
-                        <perk.icon className="w-5 h-5 text-violet-400" />
-                        <p className="font-semibold text-white">{perk.title}</p>
+                        <perk.icon className="w-5 h-5 text-subit-600" />
+                        <p className="font-semibold text-neutral-900">{perk.title}</p>
                       </div>
-                      <p className="text-sm text-slate-400">{perk.description}</p>
+                      <p className="text-sm text-neutral-600">{perk.description}</p>
                     </div>
                   ))}
                 </div>
               </div>
               
-              <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700">
-                <h3 className="text-2xl font-semibold text-white mb-6">Collaboration-ready</h3>
+              <div className="bg-white rounded-2xl p-8 border border-neutral-200">
+                <h3 className="text-2xl font-semibold text-neutral-900 mb-6">Collaboration-ready</h3>
                 <ul className="space-y-4">
                   {collaborationPoints.map((point) => (
                     <li key={point} className="flex items-start gap-3">
-                      <span className="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 font-semibold flex-shrink-0 text-sm">
+                      <span className="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-subit-50 border border-subit-200 text-subit-700 font-semibold flex-shrink-0 text-sm">
                         •
                       </span>
-                      <p className="text-slate-400">{point}</p>
+                      <p className="text-neutral-600">{point}</p>
                     </li>
                   ))}
                 </ul>

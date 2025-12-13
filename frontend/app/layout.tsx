@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import { Providers } from '@/lib/providers'
@@ -15,7 +14,6 @@ const FloatingHelp = dynamic(() => import('@/components/floating-help').then(mod
   ssr: false,
 })
 
-const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'SUBITAI - AI-Powered Subtitle Generator',
@@ -102,7 +100,7 @@ export default function RootLayout({
         <WebsiteSchema />
         <SoftwareApplicationSchema />
       </head>
-      <body className={`${inter.className} h-full antialiased`}>
+      <body className={`font-sans h-full antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <Providers>
             {children}
@@ -138,7 +136,6 @@ export default function RootLayout({
     </html>
   )
 }
-
 
 
 
