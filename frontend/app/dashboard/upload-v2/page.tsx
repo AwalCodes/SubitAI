@@ -309,9 +309,7 @@ export default function UploadPageV2() {
       setUploadProgress(15) // Start transcription at 15%
 
       const result = await transcribeFile({
-        // Pass file URL (from Supabase) instead of re-uploading file.
-        // This makes "uploading to transcription service" instant.
-        fileUrl: signedUrlData.signedUrl,
+        file,
         language: 'auto',
         format: 'srt,vtt,json',
         projectId: newProjectId,
@@ -505,8 +503,8 @@ export default function UploadPageV2() {
             <div
               {...getRootProps()}
               className={`border-2 border-dashed rounded-2xl p-8 sm:p-12 md:p-16 text-center cursor-pointer transition-all duration-300 ${isDragActive
-                  ? 'border-violet-500 bg-violet-500/10 scale-[1.02]'
-                  : 'border-slate-700 hover:border-violet-500/50 bg-slate-900/50 hover:bg-slate-800/50'
+                ? 'border-violet-500 bg-violet-500/10 scale-[1.02]'
+                : 'border-slate-700 hover:border-violet-500/50 bg-slate-900/50 hover:bg-slate-800/50'
                 }`}
             >
               <input {...getInputProps()} />
