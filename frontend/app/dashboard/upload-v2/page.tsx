@@ -486,6 +486,11 @@ export default function UploadPageV2() {
                 Upload your video and get AI-powered subtitles instantly
               </p>
             </div>
+            <Link href="/dashboard">
+              <button className="px-5 py-2.5 bg-white hover:shadow-card border border-neutral-200 rounded-xl text-subit-700 transition-all duration-200 text-sm font-medium">
+                ← Back to Dashboard
+              </button>
+            </Link>
           </div>
         </div>
       </div>
