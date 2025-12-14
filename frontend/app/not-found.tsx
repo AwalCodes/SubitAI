@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { Home, LayoutDashboard, Zap } from 'lucide-react'
+import { Home, LayoutDashboard } from 'lucide-react'
+import Logo from '@/components/shared/Logo'
 
 export default function NotFound() {
   return (
@@ -12,13 +13,8 @@ export default function NotFound() {
 
       <div className="max-w-md w-full text-center relative z-10">
         {/* Logo */}
-        <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-subit-600 flex items-center justify-center shadow-glow">
-            <Zap className="w-5 h-5 text-white" />
-          </div>
-          <span className="text-xl font-bold text-neutral-900">
-            SUBITAI
-          </span>
+        <div className="flex items-center justify-center mb-8">
+          <Logo href="/" />
         </div>
 
         <p className="text-7xl font-bold bg-gradient-to-r from-subit-500 to-subit-700 bg-clip-text text-transparent mb-4">

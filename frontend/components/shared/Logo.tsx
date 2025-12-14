@@ -17,7 +17,7 @@ export default function Logo({
   className,
   imageClassName,
   textClassName,
-  src = '/favicon.svg',
+  src = '/FreeSample-Vectorizer-io-WhatsApp%20Image%202025-10-15%20at%2016.36.25.svg',
 }: LogoProps) {
   const containerClass = cn('inline-flex items-center gap-3', className)
   const imageClasses = cn('h-11 w-11 rounded-xl bg-subit-100 overflow-hidden', imageClassName)
