@@ -121,7 +121,7 @@ export default function UploadPageV2() {
           return
         }
       } catch (error) {
-        console.warn('Could not get video duration:', error)
+        if (process.env.NODE_ENV !== 'production') console.warn('Could not get video duration:', error)
         // Continue anyway - duration will be checked on server
       }
 
@@ -184,7 +184,7 @@ export default function UploadPageV2() {
         return
       }
     } catch (error: any) {
-      console.error('Failed to check quota:', error)
+      if (process.env.NODE_ENV !== 'production') console.error('Failed to check quota:', error)
       // Don't block if quota check fails - let server handle it
       toast.error('Failed to check quota. Proceeding anyway...')
     }
@@ -207,7 +207,7 @@ export default function UploadPageV2() {
         .maybeSingle()
 
       if (userCheckError) {
-        console.error('Error checking user profile:', userCheckError)
+        if (process.env.NODE_ENV !== 'production') console.error('Error checking user profile:', userCheckError)
         throw new Error('Failed to verify user account')
       }
 
@@ -222,7 +222,7 @@ export default function UploadPageV2() {
           })
 
         if (createUserError) {
-          console.error('Error creating user profile:', createUserError)
+          if (process.env.NODE_ENV !== 'production') console.error('Error creating user profile:', createUserError)
           throw new Error('Failed to create user profile. Please try signing out and back in.')
         }
       }
@@ -240,7 +240,7 @@ export default function UploadPageV2() {
         .single()
 
       if (projectError) {
-        console.error('Project creation error:', projectError)
+        if (process.env.NODE_ENV !== 'production') console.error('Project creation error:', projectError)
         throw projectError
       }
 
@@ -372,7 +372,7 @@ export default function UploadPageV2() {
         })
 
       if (subtitleError) {
-        console.error('Failed to save subtitles:', subtitleError)
+        if (process.env.NODE_ENV !== 'production') console.error('Failed to save subtitles:', subtitleError)
         throw new Error('Failed to save subtitles to database')
       }
 
@@ -389,7 +389,7 @@ export default function UploadPageV2() {
         .eq('id', newProjectId)
 
       if (updateError) {
-        console.error('Failed to update project status:', updateError)
+        if (process.env.NODE_ENV !== 'production') console.error('Failed to update project status:', updateError)
         throw new Error('Failed to update project status')
       }
 
@@ -405,7 +405,7 @@ export default function UploadPageV2() {
       }, 1500)
 
     } catch (error: any) {
-      console.error('Processing error:', error)
+      if (process.env.NODE_ENV !== 'production') console.error('Processing error:', error)
       setState('error')
 
       const isQuotaExceeded =
@@ -431,7 +431,7 @@ export default function UploadPageV2() {
             .update({ status: 'failed' })
             .eq('id', idToFail)
         } catch (updateError) {
-          console.error('Failed to mark project as failed:', updateError)
+          if (process.env.NODE_ENV !== 'production') console.error('Failed to mark project as failed:', updateError)
         }
       }
     }

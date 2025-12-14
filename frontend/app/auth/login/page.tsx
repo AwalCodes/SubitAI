@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { toast } from 'react-hot-toast'
-import { Loader2, Eye, EyeOff, Mail, Lock, ArrowRight, Zap } from 'lucide-react'
+import { Loader2, Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react'
+import Logo from '@/components/shared/Logo'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -77,14 +78,7 @@ export default function LoginPage() {
         <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-subit-200/40 rounded-full blur-3xl" />
         
         <div className="relative z-10 flex flex-col justify-center px-12 lg:px-16">
-          <Link href="/" className="flex items-center gap-3 mb-12">
-            <div className="w-12 h-12 rounded-xl bg-subit-600 flex items-center justify-center shadow-glow">
-              <Zap className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold text-neutral-900">
-              SUBITAI
-            </span>
-          </Link>
+          <Logo withText href="/" className="mb-12" />
           
           <h1 className="text-4xl lg:text-5xl font-bold text-neutral-900 mb-6 leading-tight">
             Generate subtitles<br />
@@ -116,13 +110,8 @@ export default function LoginPage() {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
-          <div className="lg:hidden flex items-center justify-center gap-2 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-subit-600 flex items-center justify-center shadow-glow">
-              <Zap className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-neutral-900">
-              SUBITAI
-            </span>
+          <div className="lg:hidden flex items-center justify-center mb-8">
+            <Logo withText href="/" />
           </div>
 
           <div className="text-center mb-8">

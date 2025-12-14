@@ -43,7 +43,7 @@ export interface SubtitleStyle {
   position: 'bottom' | 'center' | 'top'
   verticalOffset: number
   horizontalOffset: number
-  animation: 'none' | 'fade' | 'slide' | 'typewriter' | 'bounce' | 'glow'
+  animation: 'none' | 'fade' | 'slide' | 'slideDown' | 'slideLeft' | 'slideRight' | 'pop' | 'typewriter' | 'bounce' | 'glow' | 'karaoke' | 'zoom'
   animationDuration: number
   outlineColor: string
   outlineWidth: number
@@ -53,6 +53,14 @@ export interface SubtitleStyle {
   lineHeight: number
   displayMode: 'line-by-line' | 'multiple-lines' | 'word-by-word' | 'character-by-character'
   maxLines: number
+  // Advanced effects (Phase 3)
+  shadowOffsetX?: number
+  shadowOffsetY?: number
+  shadowBlur?: number
+  shadowColor?: string
+  backgroundBlur?: number
+  glowIntensity?: number
+  glowColor?: string
 }
 
 export interface Subtitle {
@@ -94,28 +102,52 @@ const DEFAULT_STYLE: SubtitleStyle = {
   lineHeight: 1.4,
   displayMode: 'line-by-line',
   maxLines: 2,
+  // Advanced effects defaults
+  shadowOffsetX: 0,
+  shadowOffsetY: 2,
+  shadowBlur: 4,
+  shadowColor: '#000000',
+  backgroundBlur: 0,
+  glowIntensity: 0,
+  glowColor: '#FFFFFF',
 }
 
 const FONT_OPTIONS = [
-  { value: 'Inter', label: 'Inter' },
-  { value: 'Arial', label: 'Arial' },
-  { value: 'Helvetica', label: 'Helvetica' },
-  { value: 'Roboto', label: 'Roboto' },
-  { value: 'Open Sans', label: 'Open Sans' },
-  { value: 'Montserrat', label: 'Montserrat' },
-  { value: 'Poppins', label: 'Poppins' },
-  { value: 'Playfair Display', label: 'Playfair Display' },
-  { value: 'Oswald', label: 'Oswald' },
-  { value: 'Lato', label: 'Lato' },
+  { value: 'Inter', label: 'Inter', category: 'sans' },
+  { value: 'Arial', label: 'Arial', category: 'sans' },
+  { value: 'Helvetica', label: 'Helvetica', category: 'sans' },
+  { value: 'Roboto', label: 'Roboto', category: 'sans' },
+  { value: 'Open Sans', label: 'Open Sans', category: 'sans' },
+  { value: 'Montserrat', label: 'Montserrat', category: 'sans' },
+  { value: 'Poppins', label: 'Poppins', category: 'sans' },
+  { value: 'Lato', label: 'Lato', category: 'sans' },
+  { value: 'Nunito', label: 'Nunito', category: 'sans' },
+  { value: 'Raleway', label: 'Raleway', category: 'sans' },
+  { value: 'Ubuntu', label: 'Ubuntu', category: 'sans' },
+  { value: 'Oswald', label: 'Oswald', category: 'display' },
+  { value: 'Playfair Display', label: 'Playfair Display', category: 'serif' },
+  { value: 'Merriweather', label: 'Merriweather', category: 'serif' },
+  { value: 'Lora', label: 'Lora', category: 'serif' },
+  { value: 'Source Serif Pro', label: 'Source Serif', category: 'serif' },
+  { value: 'Bebas Neue', label: 'Bebas Neue', category: 'display' },
+  { value: 'Anton', label: 'Anton', category: 'display' },
+  { value: 'Archivo Black', label: 'Archivo Black', category: 'display' },
+  { value: 'Quicksand', label: 'Quicksand', category: 'sans' },
 ]
 
 const ANIMATION_OPTIONS = [
-  { value: 'none', label: 'None', premium: false },
-  { value: 'fade', label: 'Fade In', premium: false },
-  { value: 'slide', label: 'Slide Up', premium: true },
-  { value: 'typewriter', label: 'Typewriter', premium: true },
-  { value: 'bounce', label: 'Bounce', premium: true },
-  { value: 'glow', label: 'Glow', premium: true },
+  { value: 'none', label: 'None', premium: false, description: 'No animation' },
+  { value: 'fade', label: 'Fade In', premium: false, description: 'Smooth opacity fade' },
+  { value: 'slide', label: 'Slide Up', premium: false, description: 'Slide from bottom' },
+  { value: 'slideDown', label: 'Slide Down', premium: true, description: 'Slide from top' },
+  { value: 'slideLeft', label: 'Slide Left', premium: true, description: 'Slide from right' },
+  { value: 'slideRight', label: 'Slide Right', premium: true, description: 'Slide from left' },
+  { value: 'pop', label: 'Pop', premium: true, description: 'Scale up with bounce' },
+  { value: 'typewriter', label: 'Typewriter', premium: true, description: 'Letter by letter' },
+  { value: 'bounce', label: 'Bounce', premium: true, description: 'Bouncy entrance' },
+  { value: 'glow', label: 'Glow Pulse', premium: true, description: 'Pulsating glow effect' },
+  { value: 'karaoke', label: 'Karaoke', premium: true, description: 'Word-by-word highlight' },
+  { value: 'zoom', label: 'Zoom', premium: true, description: 'Scale from center' },
 ]
 
 const POSITION_OPTIONS = [
@@ -171,7 +203,7 @@ export default function SubtitleEditor({
     setEditingSubtitles(subtitles)
   }, [subtitles])
 
-  
+
 
   useEffect(() => {
     const mediaElement = videoRef.current
@@ -376,7 +408,7 @@ export default function SubtitleEditor({
     }
   }, [isPlaying, renderSubtitles, isAudio])
 
-  
+
 
   const wrapText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number): string[] => {
     const words = text.split(' ')
@@ -848,67 +880,79 @@ export default function SubtitleEditor({
   }
 
   return (
-    <div className={`w-full bg-gradient-to-br from-neutral-50 to-white dark:from-neutral-950 dark:to-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden shadow-xl ${isFullscreen ? 'fixed inset-4 z-50' : ''}`}>
-      {/* Professional Header */}
-      <div className="bg-gradient-to-r from-neutral-900 to-neutral-800 dark:from-neutral-800 dark:to-neutral-900 border-b border-neutral-700 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h2 className="text-xl font-bold text-white">Subtitle Editor</h2>
-            <div className="flex items-center gap-2">
+    <div className={`w-full bg-gradient-to-br from-neutral-50 to-white dark:from-neutral-950 dark:to-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-xl flex flex-col ${isFullscreen ? 'fixed inset-4 z-50' : 'h-[85vh] min-h-[600px]'}`}>
+      {/* Sticky Header Toolbar */}
+      <div className="sticky top-0 z-40 bg-gradient-to-r from-neutral-900 to-neutral-800 dark:from-neutral-800 dark:to-neutral-900 border-b border-neutral-700 px-4 sm:px-6 py-3 flex-shrink-0">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+            <h2 className="text-lg sm:text-xl font-bold text-white whitespace-nowrap">Subtitle Editor</h2>
+            <div className="flex items-center gap-1 sm:gap-2">
               <button
                 onClick={() => setActivePanel('style')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activePanel === 'style'
-                  ? 'bg-subit-600 text-white'
-                  : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${activePanel === 'style'
+                  ? 'bg-subit-600 text-white shadow-md'
+                  : 'bg-neutral-700/80 text-neutral-300 hover:bg-neutral-600 hover:text-white'
                   }`}
               >
-                <div className="flex items-center gap-2">
-                  <Palette className="w-4 h-4" />
-                  <span>Style</span>
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <Palette className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Style</span>
                 </div>
               </button>
               <button
                 onClick={() => setActivePanel('edit')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activePanel === 'edit'
-                  ? 'bg-subit-600 text-white'
-                  : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${activePanel === 'edit'
+                  ? 'bg-subit-600 text-white shadow-md'
+                  : 'bg-neutral-700/80 text-neutral-300 hover:bg-neutral-600 hover:text-white'
                   }`}
               >
-                <div className="flex items-center gap-2">
-                  <Type className="w-4 h-4" />
-                  <span>Edit Text</span>
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <Type className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Edit Text</span>
                 </div>
               </button>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              onClick={handleExportVideo}
+              disabled={exporting || !isPro}
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-1.5 sm:gap-2 ${isPro
+                ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md'
+                : 'bg-neutral-700 text-neutral-400 cursor-not-allowed'
+                }`}
+              title={!isPro ? 'Video export requires Pro or Premium plan' : 'Export video with subtitles'}
+            >
+              <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">{exporting ? 'Exporting...' : 'Export'}</span>
+            </button>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-4 py-2 bg-subit-600 text-white rounded-lg font-medium hover:bg-subit-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="px-3 py-1.5 sm:px-4 sm:py-2 bg-subit-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-subit-700 transition-all duration-200 disabled:opacity-50 flex items-center gap-1.5 sm:gap-2 shadow-md"
             >
-              <Save className="w-4 h-4" />
-              <span>{saving ? 'Saving...' : 'Save'}</span>
+              <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">{saving ? 'Saving...' : 'Save'}</span>
             </button>
             <button
               onClick={() => setIsFullscreen(!isFullscreen)}
-              className="p-2 text-neutral-300 hover:text-white hover:bg-neutral-700 rounded-lg transition-colors"
+              className="p-1.5 sm:p-2 text-neutral-300 hover:text-white hover:bg-neutral-700 rounded-lg transition-colors"
+              title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
             >
-              {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+              {isFullscreen ? <Minimize2 className="w-4 h-4 sm:w-5 sm:h-5" /> : <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5" />}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Main Content - Side by Side Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
-        {/* Video Preview - Left Side (2/3 width) */}
-        <div className="lg:col-span-2 space-y-4">
+      {/* Main Content - Flex Layout for Better Control */}
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4 sm:p-6 overflow-hidden min-h-0">
+        {/* Video Preview - Left Side */}
+        <div className="flex-[2] flex flex-col min-h-0 lg:min-w-0">
           <div
-            className="bg-black rounded-lg overflow-hidden shadow-2xl relative"
+            className="bg-black rounded-xl overflow-hidden shadow-2xl relative flex-1 min-h-[200px]"
             style={{
-              aspectRatio: videoAspectRatio ? `${videoAspectRatio}` : '16/9',
-              maxHeight: '80vh'
+              aspectRatio: videoAspectRatio ? `${videoAspectRatio}` : '16/9'
             }}
           >
             {isAudio ? (
@@ -1010,7 +1054,7 @@ export default function SubtitleEditor({
                 </button>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={handleMute}
                   className="p-2 text-neutral-300 hover:text-white hover:bg-neutral-700 rounded-lg transition-colors"
@@ -1024,46 +1068,36 @@ export default function SubtitleEditor({
                   step="0.01"
                   value={isMuted ? 0 : volume}
                   onChange={handleVolumeChange}
-                  className="w-24"
+                  className="w-20 accent-subit-500"
                 />
               </div>
-
-              <button
-                onClick={handleExportVideo}
-                disabled={exporting || !isPro}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${isPro
-                  ? 'bg-green-600 text-white hover:bg-green-700'
-                  : 'bg-neutral-700 text-neutral-400 cursor-not-allowed'
-                  }`}
-              >
-                <Download className="w-4 h-4" />
-                <span>{exporting ? 'Exporting...' : 'Export Video'}</span>
-              </button>
             </div>
           </div>
         </div>
 
-        {/* Controls Panel - Right Side (1/3 width) */}
-        <div className="lg:col-span-1 space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
-          {activePanel === 'style' ? (
-            <StylePanel
-              style={style}
-              setStyle={setStyle}
-              showAdvanced={showAdvanced}
-              setShowAdvanced={setShowAdvanced}
-              isPremium={isPremium}
-              isPro={isPro}
-            />
-          ) : (
-            <EditPanel
-              subtitles={editingSubtitles}
-              setSubtitles={setEditingSubtitles}
-              currentTime={currentTime}
-              activeSegment={activeSegment}
-              onSeek={handleSeek}
-              formatTime={formatTime}
-            />
-          )}
+        {/* Controls Panel - Right Side */}
+        <div className="flex-1 min-w-[280px] max-w-[400px] flex flex-col min-h-0 lg:max-h-full">
+          <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar">
+            {activePanel === 'style' ? (
+              <StylePanel
+                style={style}
+                setStyle={setStyle}
+                showAdvanced={showAdvanced}
+                setShowAdvanced={setShowAdvanced}
+                isPremium={isPremium}
+                isPro={isPro}
+              />
+            ) : (
+              <EditPanel
+                subtitles={editingSubtitles}
+                setSubtitles={setEditingSubtitles}
+                currentTime={currentTime}
+                activeSegment={activeSegment}
+                onSeek={handleSeek}
+                formatTime={formatTime}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -1086,6 +1120,42 @@ function StylePanel({
   isPremium: boolean
   isPro: boolean
 }) {
+  // Style presets for quick selection
+  const STYLE_PRESETS = [
+    {
+      name: 'Classic',
+      emoji: '📝',
+      style: { ...DEFAULT_STYLE, backgroundColor: '#000000', backgroundOpacity: 0.7, color: '#FFFFFF', fontFamily: 'Arial', outlineWidth: 0 }
+    },
+    {
+      name: 'Modern',
+      emoji: '✨',
+      style: { ...DEFAULT_STYLE, backgroundColor: '#1a1a2e', backgroundOpacity: 0.85, color: '#FFFFFF', fontFamily: 'Poppins', borderRadius: 12 }
+    },
+    {
+      name: 'Neon',
+      emoji: '🌟',
+      premium: true,
+      style: { ...DEFAULT_STYLE, backgroundColor: 'transparent', backgroundOpacity: 0, color: '#00ff88', fontFamily: 'Montserrat', outlineColor: '#00ff88', outlineWidth: 1, glowIntensity: 15, glowColor: '#00ff88' }
+    },
+    {
+      name: 'Minimal',
+      emoji: '◻️',
+      style: { ...DEFAULT_STYLE, backgroundColor: '#ffffff', backgroundOpacity: 0.9, color: '#000000', fontFamily: 'Inter', padding: 8, borderRadius: 4 }
+    },
+    {
+      name: 'Cinematic',
+      emoji: '🎬',
+      premium: true,
+      style: { ...DEFAULT_STYLE, backgroundColor: 'transparent', backgroundOpacity: 0, color: '#FFFFFF', fontFamily: 'Playfair Display', outlineWidth: 3, outlineColor: '#000000', shadowBlur: 10, shadowColor: '#000000' }
+    },
+    {
+      name: 'Bold',
+      emoji: '💪',
+      style: { ...DEFAULT_STYLE, backgroundColor: '#ff4444', backgroundOpacity: 1, color: '#FFFFFF', fontFamily: 'Bebas Neue', fontSize: 28, padding: 16 }
+    },
+  ]
+
   return (
     <div className="space-y-6">
       <div>
@@ -1093,6 +1163,34 @@ function StylePanel({
           <Palette className="w-5 h-5" />
           Style Settings
         </h3>
+
+        {/* Style Presets */}
+        <div className="mb-4">
+          <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-2">Quick Presets</label>
+          <div className="grid grid-cols-3 gap-2">
+            {STYLE_PRESETS.map((preset) => (
+              <button
+                key={preset.name}
+                onClick={() => {
+                  if (preset.premium && !isPro) return
+                  setStyle({ ...style, ...preset.style })
+                }}
+                disabled={preset.premium && !isPro}
+                className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition-all text-xs ${preset.premium && !isPro
+                    ? 'border-neutral-200 dark:border-neutral-700 opacity-50 cursor-not-allowed'
+                    : 'border-neutral-200 dark:border-neutral-700 hover:border-subit-500 hover:bg-subit-50 dark:hover:bg-subit-900/20'
+                  }`}
+                title={preset.premium && !isPro ? 'Pro feature' : `Apply ${preset.name} style`}
+              >
+                <span className="text-base">{preset.emoji}</span>
+                <span className="text-neutral-700 dark:text-neutral-300">{preset.name}</span>
+                {preset.premium && !isPro && (
+                  <span className="text-[8px] text-amber-500 font-medium">PRO</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Font Settings */}
         <div className="space-y-4 bg-white dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700">
@@ -1428,6 +1526,118 @@ function StylePanel({
                   className="w-full"
                 />
               </div>
+            </div>
+          )}
+        </div>
+
+        {/* Effects Section - Premium */}
+        <div className="space-y-4 bg-white dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 flex items-center gap-2">
+              ✨ Effects
+              {!isPro && (
+                <span className="text-[10px] bg-gradient-to-r from-amber-500 to-orange-500 text-white px-1.5 py-0.5 rounded font-medium">PRO</span>
+              )}
+            </h4>
+          </div>
+
+          {isPro ? (
+            <div className="space-y-4">
+              {/* Text Shadow */}
+              <div>
+                <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-2">Text Shadow</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] text-neutral-500 mb-1">Offset X: {style.shadowOffsetX ?? 0}px</label>
+                    <input
+                      type="range"
+                      min="-10"
+                      max="10"
+                      value={style.shadowOffsetX ?? 0}
+                      onChange={(e) => setStyle({ ...style, shadowOffsetX: parseInt(e.target.value) })}
+                      className="w-full accent-subit-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-neutral-500 mb-1">Offset Y: {style.shadowOffsetY ?? 0}px</label>
+                    <input
+                      type="range"
+                      min="-10"
+                      max="10"
+                      value={style.shadowOffsetY ?? 2}
+                      onChange={(e) => setStyle({ ...style, shadowOffsetY: parseInt(e.target.value) })}
+                      className="w-full accent-subit-500"
+                    />
+                  </div>
+                </div>
+                <div className="mt-2">
+                  <label className="block text-[10px] text-neutral-500 mb-1">Blur: {style.shadowBlur ?? 0}px</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="20"
+                    value={style.shadowBlur ?? 4}
+                    onChange={(e) => setStyle({ ...style, shadowBlur: parseInt(e.target.value) })}
+                    className="w-full accent-subit-500"
+                  />
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <input
+                    type="color"
+                    value={style.shadowColor ?? '#000000'}
+                    onChange={(e) => setStyle({ ...style, shadowColor: e.target.value })}
+                    className="w-10 h-8 border border-neutral-300 dark:border-neutral-700 rounded cursor-pointer"
+                  />
+                  <span className="text-xs text-neutral-500">Shadow Color</span>
+                </div>
+              </div>
+
+              {/* Glow Effect */}
+              <div>
+                <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-2">Glow Effect</label>
+                <div>
+                  <label className="block text-[10px] text-neutral-500 mb-1">Intensity: {style.glowIntensity ?? 0}</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="20"
+                    value={style.glowIntensity ?? 0}
+                    onChange={(e) => setStyle({ ...style, glowIntensity: parseInt(e.target.value) })}
+                    className="w-full accent-subit-500"
+                  />
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <input
+                    type="color"
+                    value={style.glowColor ?? '#FFFFFF'}
+                    onChange={(e) => setStyle({ ...style, glowColor: e.target.value })}
+                    className="w-10 h-8 border border-neutral-300 dark:border-neutral-700 rounded cursor-pointer"
+                  />
+                  <span className="text-xs text-neutral-500">Glow Color</span>
+                </div>
+              </div>
+
+              {/* Background Blur */}
+              <div>
+                <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">
+                  Background Blur: {style.backgroundBlur ?? 0}px
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="20"
+                  value={style.backgroundBlur ?? 0}
+                  onChange={(e) => setStyle({ ...style, backgroundBlur: parseInt(e.target.value) })}
+                  className="w-full accent-subit-500"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-4">
+              <p className="text-xs text-neutral-500 mb-2">Unlock shadows, glow, and blur effects</p>
+              <a href="/pricing" className="text-xs text-subit-500 hover:text-subit-600 font-medium">
+                Upgrade to Pro →
+              </a>
             </div>
           )}
         </div>

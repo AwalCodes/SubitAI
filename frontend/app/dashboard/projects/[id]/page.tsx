@@ -131,10 +131,10 @@ export default function ProjectDetailPage() {
         // Auto-start polling if project is processing and no subtitles
         if (projectData.status === 'processing' && (!projectData.subtitles || projectData.subtitles.length === 0)) {
           // Polling will be handled by the separate useEffect
-          console.log('Project is processing, polling will start automatically')
+          if (process.env.NODE_ENV !== 'production') console.log('Project is processing, polling will start automatically')
         }
       } catch (error: any) {
-        console.error('Failed to fetch project:', error)
+        if (process.env.NODE_ENV !== 'production') console.error('Failed to fetch project:', error)
         setError(error.message || 'Failed to load project')
       } finally {
         setLoading(false)
@@ -158,7 +158,7 @@ export default function ProjectDetailPage() {
           setEnergyCost(typeof data.energyCost === 'number' ? data.energyCost : 0)
         }
       } catch (err) {
-        console.error('Failed to fetch project energy usage:', err)
+        if (process.env.NODE_ENV !== 'production') console.error('Failed to fetch project energy usage:', err)
       }
     }
 
@@ -177,7 +177,7 @@ export default function ProjectDetailPage() {
     const maxPolls = 240 // 20 minutes at 5 second intervals (model download can take time)
     const projectId = project.id
     
-    console.log('Starting subtitle polling for project:', projectId)
+    if (process.env.NODE_ENV !== 'production') console.log('Starting subtitle polling for project:', projectId)
     
     const pollInterval = setInterval(async () => {
       if (cancelled) {
@@ -186,7 +186,7 @@ export default function ProjectDetailPage() {
       }
       try {
         pollCount++
-        console.log(`Polling attempt ${pollCount}/${maxPolls} for project ${projectId}`)
+        if (process.env.NODE_ENV !== 'production') console.log(`Polling attempt ${pollCount}/${maxPolls} for project ${projectId}`)
         
         const supabase = createClient()
         const { data: updatedProject, error } = await supabase
@@ -204,7 +204,7 @@ export default function ProjectDetailPage() {
         if (updatedProject.subtitles && updatedProject.subtitles.length > 0) {
           const subtitleData = updatedProject.subtitles[0]
           if (subtitleData.json_data?.segments && subtitleData.json_data.segments.length > 0) {
-            console.log('Subtitles found! Stopping polling.')
+            if (process.env.NODE_ENV !== 'production') console.log('Subtitles found! Stopping polling.')
             clearInterval(pollInterval)
             setProject(updatedProject)
             setSubtitles(subtitleData.json_data.segments)
@@ -216,7 +216,7 @@ export default function ProjectDetailPage() {
         
         // Check for failure status
         if (updatedProject.status === 'failed') {
-          console.log('Subtitle generation failed')
+          if (process.env.NODE_ENV !== 'production') console.log('Subtitle generation failed')
           clearInterval(pollInterval)
           setGenerating(false)
           toast.error('Subtitle generation failed')
@@ -227,7 +227,7 @@ export default function ProjectDetailPage() {
         if (updatedProject.status === 'completed') {
           // Give it one more poll to get subtitles
           if (pollCount >= 5) {
-            console.log('Project marked as completed, fetching subtitles...')
+            if (process.env.NODE_ENV !== 'production') console.log('Project marked as completed, fetching subtitles...')
             // Try fetching one more time
             const { data: finalProject, error: finalError } = await supabase
               .from('projects')
@@ -255,13 +255,13 @@ export default function ProjectDetailPage() {
         
         // Stop polling after max attempts
         if (pollCount >= maxPolls) {
-          console.log('Max polling attempts reached')
+          if (process.env.NODE_ENV !== 'production') console.log('Max polling attempts reached')
           clearInterval(pollInterval)
           setGenerating(false)
           toast.error('Subtitle generation is taking longer than expected. Please refresh the page.')
         }
       } catch (error) {
-        console.error('Polling error:', error)
+        if (process.env.NODE_ENV !== 'production') console.error('Polling error:', error)
         pollCount++
         if (pollCount >= maxPolls) {
           clearInterval(pollInterval)
@@ -272,7 +272,7 @@ export default function ProjectDetailPage() {
     }, 5000) // Poll every 5 seconds
     
     return () => {
-      console.log('Cleaning up polling interval')
+      if (process.env.NODE_ENV !== 'production') console.log('Cleaning up polling interval')
       cancelled = true
       clearInterval(pollInterval)
     }
@@ -298,13 +298,13 @@ export default function ProjectDetailPage() {
       if (projectData.subtitles && projectData.subtitles.length > 0) {
         const subtitleData = projectData.subtitles[0]
         if (subtitleData.json_data?.segments) {
-          console.log('Loaded subtitles:', subtitleData.json_data.segments)
-          console.log('First subtitle:', subtitleData.json_data.segments[0])
+          if (process.env.NODE_ENV !== 'production') console.log('Loaded subtitles:', subtitleData.json_data.segments)
+          if (process.env.NODE_ENV !== 'production') console.log('First subtitle:', subtitleData.json_data.segments[0])
           setSubtitles(subtitleData.json_data.segments)
         }
       }
     } catch (error: any) {
-      console.error('Failed to fetch project:', error)
+      if (process.env.NODE_ENV !== 'production') console.error('Failed to fetch project:', error)
       toast.error('Failed to load project')
       if (error.response?.status === 404) {
         router.push('/dashboard')
@@ -315,22 +315,22 @@ export default function ProjectDetailPage() {
   }
 
   const handleGenerateSubtitles = async () => {
-    console.log('=== Generate Subtitles Clicked ===')
-    console.log('Project:', project)
+    if (process.env.NODE_ENV !== 'production') console.log('=== Generate Subtitles Clicked ===')
+    if (process.env.NODE_ENV !== 'production') console.log('Project:', project)
     
     if (!project) {
-      console.error('No project found!')
+      if (process.env.NODE_ENV !== 'production') console.error('No project found!')
       toast.error('No project loaded')
       return
     }
 
     try {
       setGenerating(true)
-      console.log(`Subtitle generation is currently handled by the worker UI flow`)
+      if (process.env.NODE_ENV !== 'production') console.log(`Subtitle generation is currently handled by the worker UI flow`)
       toast('Subtitle generation from this page is not implemented yet.')
     } catch (error: any) {
-      console.error('=== Generate Subtitles Error ===')
-      console.error('Full error:', error)
+      if (process.env.NODE_ENV !== 'production') console.error('=== Generate Subtitles Error ===')
+      if (process.env.NODE_ENV !== 'production') console.error('Full error:', error)
       const errorMessage = (error as any)?.message || 'Failed to generate subtitles'
       toast.error(errorMessage)
     } finally {
@@ -393,7 +393,7 @@ export default function ProjectDetailPage() {
       
       toast.success('Subtitles saved successfully!')
     } catch (error: any) {
-      console.error('Save error:', error)
+      if (process.env.NODE_ENV !== 'production') console.error('Save error:', error)
       toast.error(error.response?.data?.detail || 'Failed to save subtitles')
     } finally {
       setSaving(false)
@@ -470,7 +470,7 @@ export default function ProjectDetailPage() {
       downloadFile(srtContent, `${project.title}.srt`, 'text/plain')
       toast.success('SRT file downloaded!')
     } catch (error: any) {
-      console.error('Download error:', error)
+      if (process.env.NODE_ENV !== 'production') console.error('Download error:', error)
       toast.error('Failed to download SRT file')
     }
   }
@@ -483,7 +483,7 @@ export default function ProjectDetailPage() {
       downloadFile(vttContent, `${project.title}.vtt`, 'text/vtt')
       toast.success('VTT file downloaded!')
     } catch (error: any) {
-      console.error('Download error:', error)
+      if (process.env.NODE_ENV !== 'production') console.error('Download error:', error)
       toast.error('Failed to download VTT file')
     }
   }
@@ -496,7 +496,7 @@ export default function ProjectDetailPage() {
       downloadFile(txtContent, `${project.title}.txt`, 'text/plain')
       toast.success('TXT file downloaded!')
     } catch (error: any) {
-      console.error('Download error:', error)
+      if (process.env.NODE_ENV !== 'production') console.error('Download error:', error)
       toast.error('Failed to download TXT file')
     }
   }
@@ -509,7 +509,7 @@ export default function ProjectDetailPage() {
       downloadFile(jsonContent, `${project.title}.json`, 'application/json')
       toast.success('JSON file downloaded!')
     } catch (error: any) {
-      console.error('Download error:', error)
+      if (process.env.NODE_ENV !== 'production') console.error('Download error:', error)
       toast.error('Failed to download JSON file')
     }
   }
@@ -533,7 +533,7 @@ export default function ProjectDetailPage() {
           .remove([filePath])
 
         if (storageError) {
-          console.error('Failed to delete video file from storage:', storageError)
+          if (process.env.NODE_ENV !== 'production') console.error('Failed to delete video file from storage:', storageError)
         }
       }
 
@@ -546,7 +546,7 @@ export default function ProjectDetailPage() {
       toast.success('Project deleted successfully')
       router.push('/dashboard/projects')
     } catch (error: any) {
-      console.error('Delete error:', error)
+      if (process.env.NODE_ENV !== 'production') console.error('Delete error:', error)
       toast.error(error.response?.data?.detail || 'Failed to delete project')
     } finally {
       setDeleting(false)
@@ -857,7 +857,7 @@ export default function ProjectDetailPage() {
                             rafRef.current = null
                           }}
                           onError={(e) => {
-                            console.error('Audio playback error:', e)
+                            if (process.env.NODE_ENV !== 'production') console.error('Audio playback error:', e)
                             toast.error('Failed to load audio. Please refresh the page.')
                           }}
                         >
@@ -889,7 +889,7 @@ export default function ProjectDetailPage() {
                           onPlay={handlePlay}
                           onPause={handlePause}
                           onError={(e) => {
-                            console.error('Video playback error:', e)
+                            if (process.env.NODE_ENV !== 'production') console.error('Video playback error:', e)
                             toast.error('Failed to load video. Please refresh the page.')
                           }}
                         >

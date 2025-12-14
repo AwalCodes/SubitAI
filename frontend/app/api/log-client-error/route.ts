@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => null)
 
     if (body) {
-      console.error('Client error reported:', {
+      if (process.env.NODE_ENV !== 'production') console.error('Client error reported:', {
         name: body.name,
         message: body.message,
         stack: body.stack,
@@ -35,24 +35,24 @@ export async function POST(req: NextRequest) {
           })
           
           if (error) {
-            console.error('Failed to persist client error log:', error)
+            if (process.env.NODE_ENV !== 'production') console.error('Failed to persist client error log:', error)
           }
         } catch (dbError) {
-          console.error('Failed to persist client error log:', dbError)
+          if (process.env.NODE_ENV !== 'production') console.error('Failed to persist client error log:', dbError)
         }
       } else {
         // In production, service key should be set
         if (process.env.NODE_ENV === 'production') {
-          console.error('Supabase logging skipped: missing SUPABASE_SERVICE_ROLE_KEY in production')
+          // Skip noisy console output in production
         }
       }
     } else {
-      console.error('Client error reported with empty body')
+      if (process.env.NODE_ENV !== 'production') console.error('Client error reported with empty body')
     }
 
     return new NextResponse(null, { status: 204 })
   } catch (error) {
-    console.error('Failed to handle client error report:', error)
+    if (process.env.NODE_ENV !== 'production') console.error('Failed to handle client error report:', error)
     // Always return 204 to prevent error loops
     return new NextResponse(null, { status: 204 })
   }

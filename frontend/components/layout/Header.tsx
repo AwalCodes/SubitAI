@@ -44,7 +44,7 @@ export default function Header() {
       await supabase.auth.signOut()
       router.push('/auth/login')
     } catch (error) {
-      console.error('Sign out error:', error)
+      if (process.env.NODE_ENV !== 'production') console.error('Sign out error:', error)
       router.push('/auth/login')
     }
   }
