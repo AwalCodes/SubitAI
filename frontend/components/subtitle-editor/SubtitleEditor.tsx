@@ -566,7 +566,6 @@ export default function SubtitleEditor({
     try {
       setExporting(true)
       const exportToast = toast.loading('Preparing video export...', { duration: Infinity })
-
       toast.loading('Sending to export server...', { id: exportToast })
 
       // Prepare request data
@@ -615,7 +614,8 @@ export default function SubtitleEditor({
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
 
-      toast.success('Video exported successfully as MP4!', { id: exportToast })
+      toast.dismiss(exportToast)
+      toast.success('Video exported successfully as MP4!')
 
     } catch (error: any) {
       console.error('Export error:', error)

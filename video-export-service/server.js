@@ -78,11 +78,6 @@ app.post('/export', upload.single('video'), async (req, res) => {
     // Get style options
     const style = JSON.parse(req.body.style || '{}')
 
-    // Generate ASS file instead of SRT
-    const assContent = generateASS(subtitles, style)
-    const assFilePath = path.join(tempDir, `subtitles_${jobId}.ass`)
-    await fs.writeFile(assFilePath, assContent, 'utf8')
-
     // Output path
     outputVideoPath = path.join(outputDir, `output_${jobId}.mp4`)
 
@@ -92,9 +87,6 @@ app.post('/export', upload.single('video'), async (req, res) => {
       res.setHeader('Content-Disposition', `attachment; filename="subtitle-video-${jobId}.mp4"`)
 
       const command = ffmpeg(inputVideoPath)
-        .videoFilters(
-          `subtitles=${assFilePath}`
-        )
         .videoCodec('libx264')
         .audioCodec('aac')
         .audioBitrate('192k')
@@ -105,6 +97,8 @@ app.post('/export', upload.single('video'), async (req, res) => {
           '-movflags +faststart',
           '-pix_fmt yuv420p'
         ])
+        // Use drawtext to more closely match the editor's look (background box + padding + shadow)
+        .complexFilter(buildDrawTextFilter(subtitles, style))
         .output(outputVideoPath)
         .on('start', (cmd) => {
           console.log('FFmpeg command:', cmd)
@@ -163,9 +157,7 @@ app.post('/export', upload.single('video'), async (req, res) => {
   async function cleanup() {
     try {
       if (inputVideoPath) await fs.unlink(inputVideoPath).catch(() => { })
-      // Cleanup ass file instead of srt
-      if (assFilePath) await fs.unlink(assFilePath).catch(() => { })
-
+      // No temporary ass file in drawtext pipeline
       if (outputVideoPath) await fs.unlink(outputVideoPath).catch(() => { })
       if (req.file && req.file.path) await fs.unlink(req.file.path).catch(() => { })
     } catch (error) {
@@ -173,6 +165,101 @@ app.post('/export', upload.single('video'), async (req, res) => {
     }
   }
 })
+
+// Build FFmpeg filter_complex with drawtext overlays per subtitle segment
+function buildDrawTextFilter(segments, style) {
+  const fontSize = style?.fontSize || 24
+  const fontColor = (style?.color || '#FFFFFF')
+  const outlineColor = (style?.outlineColor || '#000000')
+  const outlineWidth = style?.outlineWidth || 2
+  const verticalOffset = style?.verticalOffset || 80
+  const horizontalOffset = style?.horizontalOffset || 0
+  const padding = style?.padding || 12
+  const shadowColor = style?.shadowColor || '#000000'
+  const shadowX = style?.shadowOffsetX ?? 0
+  const shadowY = style?.shadowOffsetY ?? 2
+  const boxColor = style?.backgroundColor || '#000000'
+  const boxAlpha = (() => {
+    const op = style?.backgroundOpacity ?? 0.7
+    return op > 1 ? Math.max(0, Math.min(100, op)) / 100 : Math.max(0, Math.min(1, op))
+  })()
+  const textAlign = style?.textAlign || 'center'
+  const position = style?.position || 'bottom'
+
+  const toFFColor = (hex, alpha = 1) => {
+    hex = (hex || '#FFFFFF').replace('#', '')
+    if (hex.length === 3) hex = hex.split('').map(c => c + c).join('')
+    const r = parseInt(hex.substr(0, 2), 16)
+    const g = parseInt(hex.substr(2, 2), 16)
+    const b = parseInt(hex.substr(4, 2), 16)
+    const a = Math.max(0, Math.min(1, alpha))
+    return `rgba(${r},${g},${b},${a})`
+  }
+
+  const escapeText = (t) => {
+    return String(t)
+      .replace(/:/g, '\\:')
+      .replace(/\n/g, '\\n')
+      .replace(/'/g, "\\\\'")
+  }
+
+  const xExpr = (() => {
+    if (textAlign === 'left') return `main_w*0.1+${horizontalOffset}`
+    if (textAlign === 'right') return `main_w-${horizontalOffset}-text_w-main_w*0.1`
+    return `(main_w-text_w)/2+${horizontalOffset}`
+  })()
+
+  const yExpr = (() => {
+    if (position === 'top') return `${verticalOffset}`
+    if (position === 'center') return `(main_h-text_h)/2`
+    return `main_h-${verticalOffset}-text_h`
+  })()
+
+  const base = `[0:v]`
+  let chain = `${base}`
+  let lastLabel = 'v0'
+  let filters = []
+
+  let idx = 0
+  for (const seg of segments) {
+    if (!seg.text || !String(seg.text).trim()) continue
+    const start = Math.max(0, Number(seg.start) || 0)
+    const end = Math.max(start + 0.01, Number(seg.end) || (start + 2))
+    const text = escapeText(seg.text)
+
+    const f = {
+      filter: 'drawtext',
+      options: {
+        text,
+        fontsize: fontSize,
+        fontcolor: toFFColor(fontColor, 1),
+        x: xExpr,
+        y: yExpr,
+        box: 1,
+        boxcolor: toFFColor(boxColor, boxAlpha),
+        boxborderw: padding,
+        shadowcolor: toFFColor(shadowColor, 1),
+        shadowx: shadowX,
+        shadowy: shadowY,
+        bordercolor: toFFColor(outlineColor, 1),
+        borderw: outlineWidth,
+        enable: `between(t\\,${start}\\,${end})`,
+      },
+      inputs: idx === 0 ? '0:v' : lastLabel,
+      outputs: `v${idx + 1}`
+    }
+    filters.push(f)
+    lastLabel = `v${idx + 1}`
+    idx++
+  }
+
+  if (filters.length === 0) {
+    // No subtitles, return pass-through
+    return []
+  }
+
+  return filters
+}
 
 // Generate SRT format
 function generateSRT(segments) {
