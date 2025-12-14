@@ -85,7 +85,7 @@ export default function HowItWorks() {
 
                   {/* Icon */}
                   <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${step.gradient} border border-neutral-200 mb-6 mt-2 group-hover:scale-110 transition-transform duration-300`}>
-                    <step.icon className={`w-8 h-8 bg-gradient-to-r ${step.color} bg-clip-text text-transparent`} />
+                    <step.icon className="w-8 h-8 text-subit-600" />
                   </div>
 
                   {/* Content */}
@@ -131,7 +131,6 @@ export default function HowItWorks() {
     </section>
   )
 }
-
 
 
 
