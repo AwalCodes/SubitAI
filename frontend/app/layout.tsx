@@ -94,6 +94,22 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  // Client-side safeguard: reload page if a stale runtime tries to load missing chunks
+  if (typeof window !== 'undefined') {
+    window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
+      const msg = String((event as any)?.reason?.message || '');
+      if (msg.includes('ChunkLoadError') || msg.includes('Loading chunk')) {
+        // Force a hard reload to fetch fresh HTML and chunk mappings
+        window.location.reload();
+      }
+    });
+    window.addEventListener('error', (event: ErrorEvent) => {
+      const msg = String(event.message || '');
+      if (msg.includes('ChunkLoadError') || msg.includes('Loading chunk')) {
+        window.location.reload();
+      }
+    });
+  }
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
       <head>
@@ -137,7 +153,6 @@ export default function RootLayout({
     </html>
   )
 }
-
 
 
 
