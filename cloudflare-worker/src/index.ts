@@ -320,7 +320,15 @@ function getCorsHeaders(env: Env, origin: string): Record<string, string> {
     : [];
 
   const allowAll = allowedOrigins.length === 0;
-  const isAllowedOrigin = allowAll || allowedOrigins.includes(origin);
+  let isAllowedOrigin = allowAll || allowedOrigins.includes(origin);
+  if (!isAllowedOrigin && origin) {
+    try {
+      const host = new URL(origin).hostname;
+      if (host && (host === 'subitai.com' || host.endsWith('.subitai.com'))) {
+        isAllowedOrigin = true;
+      }
+    } catch (_) { /* ignore URL parse errors */ }
+  }
 
   if (!isAllowedOrigin && !allowAll) {
     return {};
@@ -329,7 +337,7 @@ function getCorsHeaders(env: Env, origin: string): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': allowAll ? '*' : origin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
     'Access-Control-Allow-Credentials': allowAll ? 'false' : 'true',
     'Access-Control-Max-Age': '86400',
   };
@@ -360,7 +368,9 @@ app.use('*', async (c, next) => {
     path.startsWith('/transcribe') ||
     path.startsWith('/quota') ||
     path.startsWith('/languages') ||
-    path.startsWith('/health');
+    path.startsWith('/health') ||
+    path.startsWith('/stats') ||
+    path.startsWith('/download');
 
   const origin = c.req.header('Origin') || '';
   const headers = isApi ? getCorsHeaders(c.env, origin) : {};
@@ -406,6 +416,35 @@ app.get('/health', (c) => {
     timestamp: new Date().toISOString(),
     envOk: true,
   });
+});
+
+// Stats endpoint - basic usage summary for authenticated user
+app.get('/stats', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization');
+    if (!authHeader) {
+      return c.json({ success: false, error: 'Missing authorization' }, 401);
+    }
+    const user = await getUser(authHeader, c.env);
+    if (!user) {
+      return c.json({ success: false, error: 'Invalid authorization' }, 401);
+    }
+    const summary = await getQuotaSummary(user.id, c.env);
+    const tier = await getEffectiveSubscriptionTier(user.id, c.env);
+    const projectId = c.req.query('projectId') || null;
+    return c.json({
+      success: true,
+      subscriptionTier: tier || 'free',
+      dailyLimit: Number.isFinite(summary.limit) ? summary.limit : null,
+      usedToday: summary.usedToday || 0,
+      remaining: Number.isFinite(summary.remaining) ? summary.remaining : null,
+      projectId,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Stats endpoint error:', error);
+    return c.json({ success: false, error: 'Failed to fetch stats' }, 500);
+  }
 });
 
 // Quota endpoint - returns daily energy limits and current usage for authenticated user
