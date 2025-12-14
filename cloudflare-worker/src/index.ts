@@ -777,7 +777,7 @@ app.get('/languages', (c) => {
 
 // Fallback: proxy any non-matched route to origin
 export default {
-  fetch(request: Request, env: Env, ctx: ExecutionContext) {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     const url = new URL(request.url);
 
     // Let Hono handle API paths
@@ -799,9 +799,33 @@ export default {
       cf: {
         cacheTtl: isHtml ? 0 : isNextStatic ? 3600 : undefined,
         cacheEverything: !isHtml && isNextStatic,
+        cacheTtlByStatus: {
+          '200-299': isNextStatic ? 3600 : 0,
+          '404-404': 0,
+          '500-599': 0,
+        },
       },
     };
     const originReq = new Request(request, { cf: cfOpts.cf });
-    return fetch(originReq);
+    const res = await fetch(originReq);
+    if (isNextStatic && url.pathname.endsWith('.js')) {
+      const ct = res.headers.get('Content-Type') || '';
+      if (res.status !== 200 || !ct.includes('javascript')) {
+        const bypassReq = new Request(request, {
+          cf: {
+            cacheTtl: 0,
+            cacheEverything: false,
+            cacheTtlByStatus: {
+              '200-299': 0,
+              '404-404': 0,
+              '500-599': 0,
+            },
+          },
+        });
+        const freshRes = await fetch(bypassReq);
+        return freshRes;
+      }
+    }
+    return res;
   },
 };
