@@ -57,20 +57,23 @@ export async function transcribeAudio(
       throw new Error(`Groq API error: ${response.status} - ${errorText}`);
     }
 
-    const result = await response.json();
+    const result: any = await response.json();
     console.log('Groq API response received');
 
     // Process the response into our format
     const segments: TranscriptionSegment[] = [];
     
-    if (result.segments && Array.isArray(result.segments)) {
-      for (let i = 0; i < result.segments.length; i++) {
-        const seg = result.segments[i];
+    const rawSegments: Array<{ start?: number; end?: number; text?: string }> =
+      Array.isArray(result?.segments) ? (result.segments as Array<any>) : [];
+
+    if (rawSegments.length > 0) {
+      for (let i = 0; i < rawSegments.length; i++) {
+        const seg = rawSegments[i] || {};
         segments.push({
           id: i,
-          start: seg.start || 0,
-          end: seg.end || 0,
-          text: (seg.text || '').trim(),
+          start: Number(seg.start) || 0,
+          end: Number(seg.end) || 0,
+          text: String(seg.text || '').trim(),
         });
       }
     } else {
@@ -78,15 +81,15 @@ export async function transcribeAudio(
       segments.push({
         id: 0,
         start: 0,
-        end: result.duration || 0,
-        text: result.text || '',
+        end: Number(result?.duration) || 0,
+        text: String(result?.text || ''),
       });
     }
 
     return {
-      text: result.text || '',
-      language: result.language || language,
-      duration: result.duration || 0,
+      text: String(result?.text || ''),
+      language: String(result?.language || language),
+      duration: Number(result?.duration) || 0,
       segments,
     };
 
@@ -126,4 +129,3 @@ export async function transcribeWithRetry(
 
   throw lastError || new Error('Transcription failed after retries');
 }
-

@@ -13,6 +13,16 @@ interface User {
   subscription_tier?: string;
 }
 
+interface SupabaseAuthUser {
+  id: string;
+  email?: string;
+  user_metadata?: {
+    subscription_tier?: string;
+    [key: string]: any;
+  };
+  [key: string]: any;
+}
+
 /**
  * Validate authentication token and get user
  */
@@ -36,30 +46,30 @@ export async function getUser(
       },
     });
 
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Unknown error');
-      console.error('Supabase auth failed:', response.status, errorText);
-      return null;
-    }
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => 'Unknown error');
+    console.error('Supabase auth failed:', response.status, errorText);
+    return null;
+  }
 
-    let data;
-    try {
-      data = await response.json();
-    } catch (error) {
-      console.error('Failed to parse auth response:', error);
-      return null;
-    }
-    
-    if (!data || !data.id) {
-      console.error('Invalid auth response data');
-      return null;
-    }
-    
-    return {
-      id: data.id,
-      email: data.email || '',
-      subscription_tier: data.user_metadata?.subscription_tier || 'free',
-    };
+  let data: SupabaseAuthUser | null = null;
+  try {
+    data = (await response.json()) as SupabaseAuthUser;
+  } catch (error) {
+    console.error('Failed to parse auth response:', error);
+    return null;
+  }
+  
+  if (!data || typeof data !== 'object' || !data.id) {
+    console.error('Invalid auth response data');
+    return null;
+  }
+  
+  return {
+    id: data.id,
+    email: data.email || '',
+    subscription_tier: data.user_metadata?.subscription_tier || 'free',
+  };
 
   } catch (error) {
     console.error('Auth error:', error);
@@ -95,4 +105,3 @@ export function checkSubscriptionTier(
   
   return userTierIndex >= requiredTierIndex;
 }
-
