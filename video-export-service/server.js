@@ -187,13 +187,12 @@ function buildDrawTextFilter(segments, style) {
   const position = style?.position || 'bottom'
 
   const toFFColor = (hex, alpha = 1) => {
-    hex = (hex || '#FFFFFF').replace('#', '')
-    if (hex.length === 3) hex = hex.split('').map(c => c + c).join('')
-    const r = parseInt(hex.substr(0, 2), 16)
-    const g = parseInt(hex.substr(2, 2), 16)
-    const b = parseInt(hex.substr(4, 2), 16)
+    let clean = (hex || '#FFFFFF').replace('#', '')
+    if (clean.length === 3) {
+      clean = clean.split('').map(c => c + c).join('')
+    }
     const a = Math.max(0, Math.min(1, alpha))
-    return `rgba(${r},${g},${b},${a})`
+    return `0x${clean.toUpperCase()}@${a}`
   }
 
   const escapeText = (t) => {

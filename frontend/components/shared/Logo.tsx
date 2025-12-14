@@ -8,6 +8,7 @@ interface LogoProps {
   className?: string
   imageClassName?: string
   textClassName?: string
+  src?: string
 }
 
 export default function Logo({
@@ -16,6 +17,7 @@ export default function Logo({
   className,
   imageClassName,
   textClassName,
+  src = '/favicon.svg',
 }: LogoProps) {
   const containerClass = cn('inline-flex items-center gap-3', className)
   const imageClasses = cn('h-11 w-11 rounded-xl bg-subit-100 overflow-hidden', imageClassName)
@@ -23,7 +25,7 @@ export default function Logo({
   const content = (
     <>
       <Image
-        src="/FreeSample-Vectorizer-io-WhatsApp%20Image%202025-10-15%20at%2016.36.25.svg"
+        src={src}
         alt="SUBIT AI logo"
         width={44}
         height={44}
