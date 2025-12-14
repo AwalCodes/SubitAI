@@ -792,6 +792,16 @@ export default {
     }
 
     // For Next.js assets and any other paths, proxy to origin
-    return fetch(request);
+    const accept = request.headers.get('Accept') || '';
+    const isHtml = accept.includes('text/html');
+    const isNextStatic = url.pathname.startsWith('/_next/static/');
+    const cfOpts: RequestInit & { cf?: any } = {
+      cf: {
+        cacheTtl: isHtml ? 0 : isNextStatic ? 3600 : undefined,
+        cacheEverything: !isHtml && isNextStatic,
+      },
+    };
+    const originReq = new Request(request, { cf: cfOpts.cf });
+    return fetch(originReq);
   },
 };
