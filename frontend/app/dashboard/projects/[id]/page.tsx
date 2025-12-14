@@ -7,11 +7,9 @@ import { useUser } from '@/lib/providers'
 import { createClient } from '@/lib/supabase'
 import {
   Video,
-  Download,
   Play,
   Pause,
   Trash2,
-  Save,
   Plus,
   Edit,
   CheckCircle,
@@ -21,9 +19,6 @@ import {
   Languages,
   Share2,
   Zap,
-  ChevronDown,
-  FileText,
-  FileJson,
   FileAudio
 } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -89,7 +84,6 @@ export default function ProjectDetailPage() {
   const rafRef = useRef<number | null>(null)
   const [activeSegment, setActiveSegment] = useState<number | null>(null)
   const [activeWord, setActiveWord] = useState<{ segment: number; word: number } | null>(null)
-  const [showExportMenu, setShowExportMenu] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   
   // Detect if file is audio or video
@@ -400,9 +394,7 @@ export default function ProjectDetailPage() {
     }
   }
 
-  const handleSaveAllClick = () => {
-    handleSaveAll()
-  }
+  const handleSaveAllClick = () => {}
 
   // Helper function to format timestamp
   const formatTimestamp = (seconds: number, format: 'srt' | 'vtt'): string => {
@@ -415,104 +407,6 @@ export default function ProjectDetailPage() {
     return `${pad(h)}:${pad(m)}:${pad(s)}${sep}${pad(ms, 3)}`
   }
 
-  // Generate SRT content
-  const generateSRT = (segments: Subtitle[]): string => {
-    return segments.map((seg, idx) => {
-      const start = formatTimestamp(seg.start, 'srt')
-      const end = formatTimestamp(seg.end, 'srt')
-      return `${idx + 1}\n${start} --> ${end}\n${seg.text}\n`
-    }).join('\n')
-  }
-
-  // Generate VTT content
-  const generateVTT = (segments: Subtitle[]): string => {
-    const lines = ['WEBVTT\n']
-    segments.forEach((seg, idx) => {
-      const start = formatTimestamp(seg.start, 'vtt')
-      const end = formatTimestamp(seg.end, 'vtt')
-      lines.push(`${idx + 1}\n${start} --> ${end}\n${seg.text}\n`)
-    })
-    return lines.join('\n')
-  }
-
-  // Generate TXT content (plain text, no timestamps)
-  const generateTXT = (segments: Subtitle[]): string => {
-    return segments.map(seg => seg.text).join('\n\n')
-  }
-
-  // Generate JSON content
-  const generateJSON = (segments: Subtitle[]): string => {
-    return JSON.stringify({
-      segments: segments.map(seg => ({
-        start: seg.start,
-        end: seg.end,
-        text: seg.text
-      }))
-    }, null, 2)
-  }
-
-  // Download function
-  const downloadFile = (content: string, filename: string, mimeType: string) => {
-    const blob = new Blob([content], { type: mimeType })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    a.click()
-    window.URL.revokeObjectURL(url)
-  }
-
-  const handleDownloadSRT = async () => {
-    if (!project || subtitles.length === 0) return
-    setShowExportMenu(false)
-    try {
-      const srtContent = generateSRT(subtitles)
-      downloadFile(srtContent, `${project.title}.srt`, 'text/plain')
-      toast.success('SRT file downloaded!')
-    } catch (error: any) {
-      if (process.env.NODE_ENV !== 'production') console.error('Download error:', error)
-      toast.error('Failed to download SRT file')
-    }
-  }
-
-  const handleDownloadVTT = async () => {
-    if (!project || subtitles.length === 0) return
-    setShowExportMenu(false)
-    try {
-      const vttContent = generateVTT(subtitles)
-      downloadFile(vttContent, `${project.title}.vtt`, 'text/vtt')
-      toast.success('VTT file downloaded!')
-    } catch (error: any) {
-      if (process.env.NODE_ENV !== 'production') console.error('Download error:', error)
-      toast.error('Failed to download VTT file')
-    }
-  }
-
-  const handleDownloadTXT = async () => {
-    if (!project || subtitles.length === 0) return
-    setShowExportMenu(false)
-    try {
-      const txtContent = generateTXT(subtitles)
-      downloadFile(txtContent, `${project.title}.txt`, 'text/plain')
-      toast.success('TXT file downloaded!')
-    } catch (error: any) {
-      if (process.env.NODE_ENV !== 'production') console.error('Download error:', error)
-      toast.error('Failed to download TXT file')
-    }
-  }
-
-  const handleDownloadJSON = async () => {
-    if (!project || subtitles.length === 0) return
-    setShowExportMenu(false)
-    try {
-      const jsonContent = generateJSON(subtitles)
-      downloadFile(jsonContent, `${project.title}.json`, 'application/json')
-      toast.success('JSON file downloaded!')
-    } catch (error: any) {
-      if (process.env.NODE_ENV !== 'production') console.error('Download error:', error)
-      toast.error('Failed to download JSON file')
-    }
-  }
 
   const handleDelete = async () => {
     if (!project) return
@@ -723,66 +617,7 @@ export default function ProjectDetailPage() {
               </div>
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              {subtitles.length > 0 && (
-                <>
-                  <button
-                    onClick={handleSaveAllClick}
-                    disabled={saving}
-                    className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-white text-subit-600 rounded-lg font-medium hover:bg-subit-50 transition-colors disabled:opacity-50"
-                  >
-                    <Save className="w-4 h-4" />
-                    <span>{saving ? 'Saving...' : 'Save Changes'}</span>
-                  </button>
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowExportMenu(!showExportMenu)}
-                      className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-white/10 border border-white/40 rounded-lg text-white hover:bg-white/20 transition-colors"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>Export</span>
-                      <ChevronDown className={`w-4 h-4 transition-transform ${showExportMenu ? 'rotate-180' : ''}`} />
-                    </button>
-                    {showExportMenu && (
-                      <>
-                        <div 
-                          className="fixed inset-0 z-10" 
-                          onClick={() => setShowExportMenu(false)}
-                        />
-                        <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl border border-subit-200 shadow-xl z-20 py-2">
-                          <button
-                            onClick={handleDownloadSRT}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-subit-50 transition-colors text-gray-900"
-                          >
-                            <FileText className="w-4 h-4 text-subit-500" />
-                            <span className="text-sm font-medium">Download SRT</span>
-                          </button>
-                          <button
-                            onClick={handleDownloadVTT}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-subit-50 transition-colors text-gray-900"
-                          >
-                            <FileText className="w-4 h-4 text-subit-500" />
-                            <span className="text-sm font-medium">Download VTT</span>
-                          </button>
-                          <button
-                            onClick={handleDownloadTXT}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-subit-50 transition-colors text-gray-900"
-                          >
-                            <FileText className="w-4 h-4 text-subit-500" />
-                            <span className="text-sm font-medium">Download TXT</span>
-                          </button>
-                          <button
-                            onClick={handleDownloadJSON}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-subit-50 transition-colors text-gray-900"
-                          >
-                            <FileJson className="w-4 h-4 text-subit-500" />
-                            <span className="text-sm font-medium">Download JSON</span>
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </>
-              )}
+              
               <button
                 onClick={handleDelete}
                 disabled={deleting}

@@ -209,6 +209,36 @@ function toASSColor(hex) {
   return `&H${b}${g}${r}`
 }
 
+// Helper: Convert hex color and opacity (0..1 or 0..100) to ASS &HAABBGGRR
+function toASSColorWithAlpha(hex, opacity) {
+  if (opacity == null) opacity = 1
+  // Accept 0..1 or 0..100
+  const op = opacity > 1 ? Math.max(0, Math.min(100, opacity)) / 100 : Math.max(0, Math.min(1, opacity))
+  // ASS alpha: 00 = opaque, FF = fully transparent
+  const alpha = Math.max(0, Math.min(255, Math.round(255 * (1 - op))))
+  const alphaHex = alpha.toString(16).toUpperCase().padStart(2, '0')
+  let clean = (hex || '#000000').replace('#', '')
+  if (clean.length === 3) {
+    clean = clean.split('').map(c => c + c).join('')
+  }
+  const r = clean.substr(0, 2)
+  const g = clean.substr(2, 2)
+  const b = clean.substr(4, 2)
+  return `&H${alphaHex}${b}${g}${r}`
+}
+
+function getASSAlignment(style) {
+  const pos = (style?.position || 'bottom').toLowerCase()
+  const align = (style?.textAlign || 'center').toLowerCase()
+  const map = {
+    bottom: { left: 1, center: 2, right: 3 },
+    center: { left: 4, center: 5, right: 6 },
+    top: { left: 7, center: 8, right: 9 },
+  }
+  const row = map[pos] || map.bottom
+  return row[align] ?? 2
+}
+
 function formatASSTime(seconds) {
   const hours = Math.floor(seconds / 3600)
   const minutes = Math.floor((seconds % 3600) / 60)
@@ -225,17 +255,13 @@ function generateASS(segments, style) {
   const outlineColor = toASSColor(style?.outlineColor || '#000000')
   const outlineWidth = style?.outlineWidth || 2
   const verticalOffset = style?.verticalOffset || 20
+  const letterSpacing = style?.letterSpacing != null ? style.letterSpacing : 0
+  const shadow = style?.shadowBlur != null ? Math.max(0, Math.round(style.shadowBlur)) : 0
+  const backColour = toASSColorWithAlpha(style?.backgroundColor || '#000000', style?.backgroundOpacity != null ? style.backgroundOpacity : 0)
+  const borderStyle = (style?.backgroundOpacity && style.backgroundOpacity > 0) ? 3 : 1
 
-  // Alignment: 2=Bottom Center, 5=Top Center, 10=Center (approximated for ASS basic alignments)
-  // ASS Alignments: 1=Left-Bot, 2=Center-Bot, 3=Right-Bot, 5=Top-Left, 6=Top-Center, ...
-  let alignment = 2 // Bottom Center default
-  let marginV = verticalOffset
-
-  if (style?.position === 'top') {
-    alignment = 8 // Top Center
-  } else if (style?.position === 'center') {
-    alignment = 5 // Middle Center
-  }
+  const alignment = getASSAlignment(style)
+  const marginV = verticalOffset
 
   const animation = style?.animation || 'none'
   const animDuration = (style?.animationDuration || 0.3) * 1000
@@ -249,7 +275,7 @@ WrapStyle: 1
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,${fontFamily},${fontSize},${fontColor},&H000000FF,${outlineColor},&H00000000,-1,0,0,0,100,100,0,0,1,${outlineWidth},0,${alignment},10,10,${marginV},1
+Style: Default,${fontFamily},${fontSize},${fontColor},&H000000FF,${outlineColor},${backColour},-1,0,0,0,100,100,${letterSpacing},0,${borderStyle},${outlineWidth},${shadow},${alignment},10,10,${marginV},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text

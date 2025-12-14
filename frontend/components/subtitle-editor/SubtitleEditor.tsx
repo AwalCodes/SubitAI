@@ -25,7 +25,10 @@ import {
   VolumeX,
   Plus,
   Minus,
-  Split
+  Split,
+  ChevronDown,
+  FileText,
+  FileJson
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { FFmpeg } from '@ffmpeg/ffmpeg'
@@ -189,6 +192,51 @@ export default function SubtitleEditor({
   const [volume, setVolume] = useState(1)
   const [isMuted, setIsMuted] = useState(false)
   const [videoAspectRatio, setVideoAspectRatio] = useState<number | null>(null)
+  const [showExportMenu, setShowExportMenu] = useState(false)
+  const handleDownloadSRT = useCallback(() => {
+    const valid = editingSubtitles.filter(s => s.text && s.text.trim())
+    if (valid.length === 0) {
+      toast.error('No valid subtitles to export')
+      return
+    }
+    const content = generateSRTExport(valid)
+    const filename = `subtitles-${Date.now()}.srt`
+    downloadFileExport(content, filename, 'text/plain')
+    toast.success('SRT file downloaded!')
+  }, [editingSubtitles])
+  const handleDownloadVTT = useCallback(() => {
+    const valid = editingSubtitles.filter(s => s.text && s.text.trim())
+    if (valid.length === 0) {
+      toast.error('No valid subtitles to export')
+      return
+    }
+    const content = generateVTTExport(valid)
+    const filename = `subtitles-${Date.now()}.vtt`
+    downloadFileExport(content, filename, 'text/vtt')
+    toast.success('VTT file downloaded!')
+  }, [editingSubtitles])
+  const handleDownloadTXT = useCallback(() => {
+    const valid = editingSubtitles.filter(s => s.text && s.text.trim())
+    if (valid.length === 0) {
+      toast.error('No valid subtitles to export')
+      return
+    }
+    const content = generateTXTExport(valid)
+    const filename = `subtitles-${Date.now()}.txt`
+    downloadFileExport(content, filename, 'text/plain')
+    toast.success('TXT file downloaded!')
+  }, [editingSubtitles])
+  const handleDownloadJSON = useCallback(() => {
+    const valid = editingSubtitles.filter(s => s.text && s.text.trim())
+    if (valid.length === 0) {
+      toast.error('No valid subtitles to export')
+      return
+    }
+    const content = generateJSONExport(valid)
+    const filename = `subtitles-${Date.now()}.json`
+    downloadFileExport(content, filename, 'application/json')
+    toast.success('JSON file downloaded!')
+  }, [editingSubtitles])
 
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -914,18 +962,62 @@ export default function SubtitleEditor({
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              onClick={handleExportVideo}
-              disabled={exporting || !isPro}
-              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-1.5 sm:gap-2 ${isPro
-                ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md'
-                : 'bg-neutral-700 text-neutral-400 cursor-not-allowed'
-                }`}
-              title={!isPro ? 'Video export requires Pro or Premium plan' : 'Export video with subtitles'}
-            >
-              <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">{exporting ? 'Exporting...' : 'Export'}</span>
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-1.5 sm:gap-2 bg-emerald-600 text-white hover:bg-emerald-700 shadow-md"
+                title="Export video or subtitles"
+              >
+                <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Export</span>
+                <ChevronDown className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform ${showExportMenu ? 'rotate-180' : ''}`} />
+              </button>
+              {showExportMenu && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowExportMenu(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl border border-subit-200 shadow-xl z-20 py-2">
+                    <button
+                      onClick={() => { setShowExportMenu(false); handleExportVideo() }}
+                      disabled={!isPro || exporting}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${!isPro ? 'text-gray-400 cursor-not-allowed' : 'hover:bg-subit-50 text-gray-900'}`}
+                      title={!isPro ? 'Video export requires Pro or Premium plan' : 'Export MP4 with subtitles'}
+                    >
+                      <Film className="w-4 h-4 text-emerald-600" />
+                      <span className="text-sm font-medium">{exporting ? 'Exporting...' : 'Export Video (MP4)'}</span>
+                    </button>
+                    <div className="px-4 pt-2 pb-1 text-[12px] text-neutral-500">Export Subtitles</div>
+                    <button
+                      onClick={() => { setShowExportMenu(false); handleDownloadSRT() }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-subit-50 transition-colors text-gray-900"
+                    >
+                      <FileText className="w-4 h-4 text-subit-500" />
+                      <span className="text-sm font-medium">SRT</span>
+                    </button>
+                    <button
+                      onClick={() => { setShowExportMenu(false); handleDownloadVTT() }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-subit-50 transition-colors text-gray-900"
+                    >
+                      <FileText className="w-4 h-4 text-subit-500" />
+                      <span className="text-sm font-medium">VTT</span>
+                    </button>
+                    <button
+                      onClick={() => { setShowExportMenu(false); handleDownloadTXT() }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-subit-50 transition-colors text-gray-900"
+                    >
+                      <FileText className="w-4 h-4 text-subit-500" />
+                      <span className="text-sm font-medium">TXT</span>
+                    </button>
+                    <button
+                      onClick={() => { setShowExportMenu(false); handleDownloadJSON() }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-subit-50 transition-colors text-gray-900"
+                    >
+                      <FileJson className="w-4 h-4 text-subit-500" />
+                      <span className="text-sm font-medium">JSON</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
             <button
               onClick={handleSave}
               disabled={saving}
@@ -1103,6 +1195,65 @@ export default function SubtitleEditor({
     </div>
   )
 }
+
+function formatTimestampExport(seconds: number, format: 'srt' | 'vtt'): string {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = Math.floor(seconds % 60)
+  const ms = Math.floor((seconds % 1) * 1000)
+  const sep = format === 'srt' ? ',' : '.'
+  const pad = (num: number, size: number = 2) => String(num).padStart(size, '0')
+  return `${pad(h)}:${pad(m)}:${pad(s)}${sep}${pad(ms, 3)}`
+}
+
+function downloadFileExport(content: string, filename: string, mimeType: string) {
+  const blob = new Blob([content], { type: mimeType })
+  const url = window.URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  window.URL.revokeObjectURL(url)
+}
+
+function generateSRTExport(segments: Subtitle[]): string {
+  return segments.map((seg, idx) => {
+    const start = formatTimestampExport(seg.start, 'srt')
+    const end = formatTimestampExport(seg.end, 'srt')
+    return `${idx + 1}\n${start} --> ${end}\n${seg.text}\n`
+  }).join('\n')
+}
+
+function generateVTTExport(segments: Subtitle[]): string {
+  const lines = ['WEBVTT\n']
+  segments.forEach((seg, idx) => {
+    const start = formatTimestampExport(seg.start, 'vtt')
+    const end = formatTimestampExport(seg.end, 'vtt')
+    lines.push(`${idx + 1}\n${start} --> ${end}\n${seg.text}\n`)
+  })
+  return lines.join('\n')
+}
+
+function generateTXTExport(segments: Subtitle[]): string {
+  return segments.map(seg => seg.text).join('\n\n')
+}
+
+function generateJSONExport(segments: Subtitle[]): string {
+  return JSON.stringify({
+    segments: segments.map(seg => ({
+      start: seg.start,
+      end: seg.end,
+      text: seg.text
+    }))
+  }, null, 2)
+}
+
+function handleDownloadSRT(this: any) {
+  // `this` not used; helper exists at module scope
+}
+function handleDownloadVTT(this: any) {}
+function handleDownloadTXT(this: any) {}
+function handleDownloadJSON(this: any) {}
 
 // Style Panel Component
 function StylePanel({
