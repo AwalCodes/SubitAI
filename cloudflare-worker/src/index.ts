@@ -353,18 +353,25 @@ app.options('*', (c) => {
 // Middleware for logging
 app.use('*', logger());
 
-// CORS middleware - add headers to all responses
+// CORS middleware - add headers only for API endpoints
 app.use('*', async (c, next) => {
-  const origin = c.req.header('Origin') || '';
-  const headers = getCorsHeaders(c.env, origin);
+  const path = c.req.path || '';
+  const isApi =
+    path.startsWith('/transcribe') ||
+    path.startsWith('/quota') ||
+    path.startsWith('/languages') ||
+    path.startsWith('/health');
 
-  // Add CORS headers to response
+  const origin = c.req.header('Origin') || '';
+  const headers = isApi ? getCorsHeaders(c.env, origin) : {};
+
   await next();
 
-  // Apply CORS headers after the response is generated
-  Object.entries(headers).forEach(([key, value]) => {
-    c.res.headers.set(key, value);
-  });
+  if (isApi) {
+    Object.entries(headers).forEach(([key, value]) => {
+      c.res.headers.set(key, value);
+    });
+  }
 });
 
 // Error handling middleware
@@ -767,5 +774,24 @@ app.get('/languages', (c) => {
 });
 
 // Export for Cloudflare Workers
-export default app;
 
+// Fallback: proxy any non-matched route to origin
+export default {
+  fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    const url = new URL(request.url);
+
+    // Let Hono handle API paths
+    if (
+      url.pathname.startsWith('/transcribe') ||
+      url.pathname.startsWith('/quota') ||
+      url.pathname.startsWith('/languages') ||
+      url.pathname.startsWith('/health')
+    ) {
+      // @ts-ignore - Hono app is compatible with the standard fetch signature
+      return app.fetch(request, env, ctx);
+    }
+
+    // For Next.js assets and any other paths, proxy to origin
+    return fetch(request);
+  },
+};
