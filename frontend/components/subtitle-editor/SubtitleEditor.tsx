@@ -553,11 +553,6 @@ export default function SubtitleEditor({
   }, [onSave, editingSubtitles, style])
 
   const handleExportVideo = async () => {
-    if (!isPro) {
-      toast.error('Video export is available for Pro and Premium plans')
-      return
-    }
-
     if (!videoUrl || isAudio) {
       toast.error('Video not available for export')
       return
@@ -978,9 +973,9 @@ export default function SubtitleEditor({
                   <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl border border-subit-200 shadow-xl z-20 py-2">
                     <button
                       onClick={() => { setShowExportMenu(false); handleExportVideo() }}
-                      disabled={!isPro || exporting}
-                      className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${!isPro ? 'text-gray-400 cursor-not-allowed' : 'hover:bg-subit-50 text-gray-900'}`}
-                      title={!isPro ? 'Video export requires Pro or Premium plan' : 'Export MP4 with subtitles'}
+                      disabled={exporting}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-subit-50 text-gray-900"
+                      title="Export MP4 with subtitles"
                     >
                       <Film className="w-4 h-4 text-emerald-600" />
                       <span className="text-sm font-medium">{exporting ? 'Exporting...' : 'Export Video (MP4)'}</span>
