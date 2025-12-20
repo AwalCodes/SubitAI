@@ -13,18 +13,18 @@ export function middleware(req: NextRequest) {
   const canonicalSiteUrl = getCanonicalSiteUrl()
   if (!canonicalSiteUrl) return NextResponse.next()
 
-  const legacyHosts = new Set(['subit-ai.vercel.app'])
   const host = req.headers.get('host') || ''
   const hostWithoutPort = host.split(':')[0]
 
-  if (!legacyHosts.has(hostWithoutPort)) return NextResponse.next()
+  if (hostWithoutPort === 'subit-ai.vercel.app') {
+    const url = req.nextUrl.clone()
+    const canonical = new URL(canonicalSiteUrl)
+    url.protocol = canonical.protocol
+    url.host = canonical.host
+    return NextResponse.redirect(url, 308)
+  }
 
-  const url = req.nextUrl.clone()
-  const canonical = new URL(canonicalSiteUrl)
-  url.protocol = canonical.protocol
-  url.host = canonical.host
-
-  return NextResponse.redirect(url, 308)
+  return NextResponse.next()
 }
 
 export const config = {

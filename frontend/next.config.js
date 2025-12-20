@@ -3,7 +3,6 @@ const nextConfig = {
   images: {
     domains: [
       'localhost',
-      'subit-ai.vercel.app',
       'subitai.com',
       'www.subitai.com',
       'supabase.co',
