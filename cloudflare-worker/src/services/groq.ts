@@ -27,15 +27,15 @@ export async function transcribeAudio(
   try {
     // Create form data with audio file
     const formData = new FormData();
-    const audioBlob = new Blob([audioData], { type: 'audio/wav' });
+    const audioBlob = new Blob([audioData as any], { type: 'audio/wav' });
     formData.append('file', audioBlob, 'audio.wav');
     formData.append('model', 'whisper-large-v3');
-    
+
     // Add language if specified (not 'auto')
     if (language && language !== 'auto') {
       formData.append('language', language);
     }
-    
+
     // Enable timestamp words for better segmentation
     formData.append('response_format', 'verbose_json');
     formData.append('timestamp_granularities[]', 'segment');
@@ -62,7 +62,7 @@ export async function transcribeAudio(
 
     // Process the response into our format
     const segments: TranscriptionSegment[] = [];
-    
+
     const rawSegments: Array<{ start?: number; end?: number; text?: string }> =
       Array.isArray(result?.segments) ? (result.segments as Array<any>) : [];
 
@@ -117,7 +117,7 @@ export async function transcribeWithRetry(
     } catch (error: any) {
       lastError = error;
       console.error(`Attempt ${attempt} failed:`, error.message);
-      
+
       if (attempt < maxRetries) {
         // Exponential backoff
         const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
