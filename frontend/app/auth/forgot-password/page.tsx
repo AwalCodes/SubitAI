@@ -25,7 +25,7 @@ export default function ForgotPasswordPage() {
       setLoading(true)
 
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/auth/login`,
+        redirectTo: 'https://www.subitai.com/auth/login',
       })
 
       if (error) {
@@ -109,8 +109,8 @@ export default function ForgotPasswordPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <Link 
-              href="/auth/login" 
+            <Link
+              href="/auth/login"
               className="inline-flex items-center gap-2 text-sm text-neutral-600 hover:text-subit-700 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
