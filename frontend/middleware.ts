@@ -1,5 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 const isPublicRoute = createRouteMatcher([
   '/',
@@ -19,7 +20,11 @@ function getCanonicalSiteUrl() {
   return ''
 }
 
-export default clerkMiddleware(async (auth, req) => {
+function hasClerkEnv() {
+  return Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY)
+}
+
+function maybeLegacyRedirect(req: NextRequest) {
   const canonicalSiteUrl = getCanonicalSiteUrl()
   const host = req.headers.get('host') || ''
   const hostWithoutPort = host.split(':')[0]
@@ -33,10 +38,27 @@ export default clerkMiddleware(async (auth, req) => {
     return NextResponse.redirect(url, 308)
   }
 
-  if (!isPublicRoute(req)) {
-    await auth.protect();
+  return null
+}
+
+const clerkHandler = hasClerkEnv()
+  ? clerkMiddleware(async (auth, req) => {
+      if (!isPublicRoute(req)) {
+        await auth.protect();
+      }
+    })
+  : null
+
+export default async function middleware(req: NextRequest) {
+  const redirect = maybeLegacyRedirect(req)
+  if (redirect) return redirect
+
+  if (!clerkHandler) {
+    return NextResponse.next()
   }
-});
+
+  return clerkHandler(req)
+}
 
 export const config = {
   matcher: [
