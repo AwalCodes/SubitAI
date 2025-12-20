@@ -31,3 +31,28 @@ export const supabaseConfig = {
   url: supabaseUrl,
   anonKey: supabaseAnonKey,
 }
+
+/**
+ * Centrally manages the site URL for redirects and consistency.
+ * Forces the official domain in production even if accessed via legacy URLs.
+ */
+export const getSiteUrl = () => {
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://www.subitai.com'
+  }
+
+  const envUrl = process.env.NEXT_PUBLIC_SITE_URL
+  const normalizedEnvUrl = typeof envUrl === 'string' ? envUrl.replace(/\/$/, '') : ''
+  if (normalizedEnvUrl) return normalizedEnvUrl
+
+  // Fallback for client-side
+  if (typeof window !== 'undefined') {
+    // If we're on the legacy domain, force the new one even in client-side fallback
+    if (window.location.hostname === 'subit-ai.vercel.app') {
+      return 'https://www.subitai.com'
+    }
+    return window.location.origin
+  }
+
+  return ''
+}
