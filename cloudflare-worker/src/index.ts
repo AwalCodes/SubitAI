@@ -6,7 +6,8 @@
 import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { transcribeAudio } from './services/groq';
-import { validateAuth, getUser } from './services/auth';
+import { getUser } from './services/auth';
+/// <reference types="@cloudflare/workers-types" />
 import {
   generateSRT,
   generateVTT,
@@ -18,7 +19,7 @@ import {
 } from './utils/media';
 
 // Types
-interface Env {
+export interface Env {
   GROQ_API_KEY: string;
   SUPABASE_URL: string;
   SUPABASE_SERVICE_KEY: string;
