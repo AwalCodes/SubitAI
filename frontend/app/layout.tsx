@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { ClerkProvider } from '@clerk/nextjs'
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import { Providers } from '@/lib/providers'
@@ -111,48 +112,47 @@ export default function RootLayout({
     });
   }
   return (
-    <html lang="en" className="h-full" suppressHydrationWarning>
-      <head>
-        <OrganizationSchema />
-        <WebsiteSchema />
-        <SoftwareApplicationSchema />
-      </head>
-      <body className={`font-sans h-full antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light">
-          <Providers>
-            {children}
-            <CommandPalette />
-            <FloatingHelp />
-            <Toaster
-              position="top-right"
-              toastOptions={{
-                duration: 4000,
-                style: {
-                  background: '#363636',
-                  color: '#fff',
-                },
-                success: {
-                  duration: 3000,
-                  iconTheme: {
-                    primary: '#10b981',
-                    secondary: '#fff',
+    <ClerkProvider>
+      <html lang="en" className="h-full" suppressHydrationWarning>
+        <head>
+          <OrganizationSchema />
+          <WebsiteSchema />
+          <SoftwareApplicationSchema />
+        </head>
+        <body className={`font-sans h-full antialiased`}>
+          <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light">
+            <Providers>
+              {children}
+              <CommandPalette />
+              <FloatingHelp />
+              <Toaster
+                position="top-right"
+                toastOptions={{
+                  duration: 4000,
+                  style: {
+                    background: '#363636',
+                    color: '#fff',
                   },
-                },
-                error: {
-                  duration: 5000,
-                  iconTheme: {
-                    primary: '#ef4444',
-                    secondary: '#fff',
+                  success: {
+                    duration: 3000,
+                    iconTheme: {
+                      primary: '#10b981',
+                      secondary: '#fff',
+                    },
                   },
-                },
-              }}
-            />
-          </Providers>
-        </ThemeProvider>
-      </body>
-    </html>
+                  error: {
+                    duration: 5000,
+                    iconTheme: {
+                      primary: '#ef4444',
+                      secondary: '#fff',
+                    },
+                  },
+                }}
+              />
+            </Providers>
+          </ThemeProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   )
 }
-
-
-

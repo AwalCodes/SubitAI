@@ -33,12 +33,12 @@ export async function getUser(
   try {
     // Extract token from "Bearer <token>"
     const token = authHeader.replace('Bearer ', '').trim();
-    
+
     if (!token) {
       return null;
     }
 
-    // Verify token with Supabase
+    // 1. Try legacy Supabase Auth (if user is still using Supabase Auth)
     const response = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -46,30 +46,44 @@ export async function getUser(
       },
     });
 
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => 'Unknown error');
-    console.error('Supabase auth failed:', response.status, errorText);
-    return null;
-  }
+    if (response.ok) {
+      let data: SupabaseAuthUser | null = null;
+      try {
+        data = (await response.json()) as SupabaseAuthUser;
+        if (data && data.id) {
+          return {
+            id: data.id,
+            email: data.email || '',
+            subscription_tier: data.user_metadata?.subscription_tier || 'free',
+          };
+        }
+      } catch (error) {
+        console.error('Failed to parse legacy auth response:', error);
+      }
+    }
 
-  let data: SupabaseAuthUser | null = null;
-  try {
-    data = (await response.json()) as SupabaseAuthUser;
-  } catch (error) {
-    console.error('Failed to parse auth response:', error);
+    // 2. Try Clerk/Custom JWT Path
+    // Since Clerk users aren't in Supabase Auth, we decode the JWT locally.
+    // The JWT is signed with the Supabase JWT Secret (configured in Clerk).
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+
+      const payload = JSON.parse(atob(parts[1]));
+
+      // Basic validation of payload
+      if (payload.sub && (payload.aud === 'authenticated' || payload.iss?.includes('clerk'))) {
+        return {
+          id: payload.sub,
+          email: payload.email || '',
+          subscription_tier: 'free', // Will be fetched from DB later
+        };
+      }
+    } catch (error) {
+      console.error('Failed to decode Clerk/JWT token:', error);
+    }
+
     return null;
-  }
-  
-  if (!data || typeof data !== 'object' || !data.id) {
-    console.error('Invalid auth response data');
-    return null;
-  }
-  
-  return {
-    id: data.id,
-    email: data.email || '',
-    subscription_tier: data.user_metadata?.subscription_tier || 'free',
-  };
 
   } catch (error) {
     console.error('Auth error:', error);
@@ -102,6 +116,6 @@ export function checkSubscriptionTier(
   const tiers = ['free', 'pro', 'team'];
   const userTierIndex = tiers.indexOf(user.subscription_tier || 'free');
   const requiredTierIndex = tiers.indexOf(requiredTier);
-  
+
   return userTierIndex >= requiredTierIndex;
 }

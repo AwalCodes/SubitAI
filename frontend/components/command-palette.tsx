@@ -3,46 +3,51 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { Command } from 'cmdk'
-import { 
-  Search, 
-  Home, 
-  FileText, 
-  Upload, 
-  CreditCard, 
-  Settings, 
+import {
+  Search,
+  Home,
+  FileText,
+  Upload,
+  CreditCard,
+  Settings,
   LogOut,
   User,
   Sparkles
 } from 'lucide-react'
 import { useUser } from '@/lib/providers'
-import { createClient } from '@/lib/supabase'
+import { useClerk } from '@clerk/nextjs'
 
 export function CommandPalette() {
   const [open, setOpen] = React.useState(false)
   const router = useRouter()
   const { user } = useUser()
-
-  const supabase = createClient()
+  const { signOut } = useClerk()
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
+    await signOut()
     router.push('/auth/login')
   }
 
   const commands = [
-    { group: 'Navigation', items: [
-      { icon: Home, label: 'Dashboard', href: '/dashboard' },
-      { icon: FileText, label: 'My Projects', href: '/dashboard/projects' },
-      { icon: Upload, label: 'Upload Video', href: '/dashboard/upload-v2' },
-    ]},
-    { group: 'Account', items: [
-      { icon: User, label: 'Profile', href: '/dashboard/settings' },
-      { icon: CreditCard, label: 'Billing', href: '/dashboard/billing' },
-      { icon: Settings, label: 'Settings', href: '/dashboard/settings' },
-    ]},
-    { group: 'Actions', items: [
-      { icon: LogOut, label: 'Sign Out', action: handleSignOut },
-    ]},
+    {
+      group: 'Navigation', items: [
+        { icon: Home, label: 'Dashboard', href: '/dashboard' },
+        { icon: FileText, label: 'My Projects', href: '/dashboard/projects' },
+        { icon: Upload, label: 'Upload Video', href: '/dashboard/upload-v2' },
+      ]
+    },
+    {
+      group: 'Account', items: [
+        { icon: User, label: 'Profile', href: '/dashboard/settings' },
+        { icon: CreditCard, label: 'Billing', href: '/dashboard/billing' },
+        { icon: Settings, label: 'Settings', href: '/dashboard/settings' },
+      ]
+    },
+    {
+      group: 'Actions', items: [
+        { icon: LogOut, label: 'Sign Out', action: handleSignOut },
+      ]
+    },
   ]
 
   React.useEffect(() => {
@@ -79,8 +84,8 @@ export function CommandPalette() {
         <Command className="max-w-2xl w-full rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-2xl animate-in zoom-in-95 duration-200">
           <div className="flex items-center gap-3 border-b border-neutral-200 dark:border-neutral-800 px-4 py-3">
             <Search className="w-5 h-5 text-neutral-500" />
-            <Command.Input 
-              placeholder="Type a command or search..." 
+            <Command.Input
+              placeholder="Type a command or search..."
               className="flex-1 bg-transparent outline-none text-neutral-900 dark:text-neutral-100 placeholder-neutral-500"
             />
             <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-800 px-1.5 font-mono text-[10px] font-medium text-neutral-500">
@@ -93,7 +98,7 @@ export function CommandPalette() {
             </Command.Empty>
             {commands.map((group) => (
               <React.Fragment key={group.group}>
-                <Command.Group 
+                <Command.Group
                   heading={<div className="px-2 py-1.5 text-xs font-semibold text-neutral-500 uppercase">{group.group}</div>}
                 >
                   {group.items.map((item) => (

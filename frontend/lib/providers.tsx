@@ -1,28 +1,56 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
-import { User } from '@supabase/supabase-js'
+import { useUser as useClerkUser, useAuth } from '@clerk/nextjs'
 
 interface UserContextType {
-  user: User | null
+  user: any
   loading: boolean
   subscription: any
   refetch: () => void
+  supabase: any
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
 
-// Get supabase client once at module level
-const supabase = createClient()
-
 export function Providers({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { isLoaded, user: clerkUser } = useClerkUser()
+  const { getToken } = useAuth()
   const [subscription, setSubscription] = useState<any>(null)
-  const fetchingRef = useRef(false)
+  const [supabaseToken, setSupabaseToken] = useState<string | null>(null)
+
+  // Get Supabase token from Clerk
+  useEffect(() => {
+    const loadToken = async () => {
+      if (clerkUser) {
+        try {
+          // Provide 'supabase' as the template name configured in Clerk dashboard
+          const token = await getToken({ template: 'supabase' })
+          setSupabaseToken(token)
+          if (token) {
+            localStorage.setItem('access_token', token)
+          } else {
+            localStorage.removeItem('access_token')
+          }
+        } catch (e) {
+          console.error('Error getting Supabase token from Clerk:', e)
+          setSupabaseToken(null)
+          localStorage.removeItem('access_token')
+        }
+      } else {
+        setSupabaseToken(null)
+      }
+    }
+    loadToken()
+  }, [clerkUser, getToken])
+
+  // Create an authenticated Supabase client whenever the token changes
+  const supabase = useMemo(() => createClient(supabaseToken || undefined), [supabaseToken])
 
   const fetchSubscription = useCallback(async (userId: string) => {
+    if (!supabaseToken) return;
+
     try {
       // Fetch user's subscription tier from users table
       const { data: userData } = await supabase
@@ -60,86 +88,30 @@ export function Providers({ children }: { children: React.ReactNode }) {
       console.error('Error fetching subscription:', error)
       setSubscription(null)
     }
-  }, [])
-
-  const fetchUser = useCallback(async () => {
-    if (fetchingRef.current) return
-    fetchingRef.current = true
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (session?.user) {
-        setUser(session.user)
-        if (session.access_token) {
-          localStorage.setItem('access_token', session.access_token)
-        }
-        await fetchSubscription(session.user.id)
-      } else {
-        setUser(null)
-        setSubscription(null)
-        localStorage.removeItem('access_token')
-      }
-    } catch (error) {
-      console.error('Error fetching user:', error)
-      setUser(null)
-      setSubscription(null)
-    } finally {
-      setLoading(false)
-      fetchingRef.current = false
-    }
-  }, [fetchSubscription])
+  }, [supabase, supabaseToken])
 
   useEffect(() => {
-    // Initial fetch
-    fetchUser()
-
-    // Set up auth state listener
-    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth event:', event)
-        
-        if (event === 'SIGNED_OUT') {
-          setUser(null)
-          setSubscription(null)
-          localStorage.removeItem('access_token')
-          setLoading(false)
-        } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          if (session?.user) {
-            setUser(session.user)
-            if (session.access_token) {
-              localStorage.setItem('access_token', session.access_token)
-            }
-            // Fetch subscription in background without blocking
-            fetchSubscription(session.user.id)
-          }
-          setLoading(false)
-        } else if (event === 'INITIAL_SESSION') {
-          if (session?.user) {
-            setUser(session.user)
-            if (session.access_token) {
-              localStorage.setItem('access_token', session.access_token)
-            }
-            fetchSubscription(session.user.id)
-          }
-          setLoading(false)
-        }
-      }
-    )
-
-    return () => {
-      authSubscription.unsubscribe()
+    if (clerkUser) {
+      fetchSubscription(clerkUser.id)
+    } else {
+      setSubscription(null)
     }
-  }, [fetchUser, fetchSubscription])
+  }, [clerkUser, fetchSubscription])
 
   const refetch = useCallback(() => {
-    if (user?.id) {
-      fetchSubscription(user.id)
+    if (clerkUser?.id) {
+      fetchSubscription(clerkUser.id)
     }
-  }, [user?.id, fetchSubscription])
+  }, [clerkUser?.id, fetchSubscription])
 
   return (
-    <UserContext.Provider value={{ user, loading, subscription, refetch }}>
+    <UserContext.Provider value={{
+      user: clerkUser,
+      loading: !isLoaded,
+      subscription,
+      refetch,
+      supabase
+    }}>
       {children}
     </UserContext.Provider>
   )

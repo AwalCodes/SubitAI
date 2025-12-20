@@ -5,25 +5,28 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import Link from 'next/link'
 import { Settings, User, Bell, Trash2, ArrowLeft, Zap, LogOut, Mail } from 'lucide-react'
-import { createClient } from '@/lib/supabase'
+import { useClerk } from '@clerk/nextjs'
 import toast from 'react-hot-toast'
 
 export default function SettingsPage() {
   const { user, loading, subscription } = useUser()
   const router = useRouter()
-  const supabase = createClient()
+  const { signOut } = useClerk()
 
-  const planName = subscription?.plan === 'premium' || subscription?.plan === 'team' 
-    ? 'Premium Plan' 
-    : subscription?.plan === 'pro' 
-    ? 'Pro Plan' 
-    : 'Free Plan'
-  
+  const userEmail = user?.primaryEmailAddress?.emailAddress || user?.emailAddress || ''
+  const fullName = user?.fullName || (user?.firstName ? `${user?.firstName} ${user.lastName || ''}`.trim() : '')
+
+  const planName = subscription?.plan === 'premium' || subscription?.plan === 'team'
+    ? 'Premium Plan'
+    : subscription?.plan === 'pro'
+      ? 'Pro Plan'
+      : 'Free Plan'
+
   const planEnergy = subscription?.plan === 'premium' || subscription?.plan === 'team'
     ? 'Unlimited energy'
     : subscription?.plan === 'pro'
-    ? '300 energy per day'
-    : '30 energy per day'
+      ? '300 energy per day'
+      : '30 energy per day'
 
   useEffect(() => {
     if (!loading && !user) {
@@ -33,7 +36,7 @@ export default function SettingsPage() {
 
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut()
+      await signOut()
       router.push('/auth/login')
     } catch (error) {
       console.error('Sign out error:', error)
@@ -62,7 +65,7 @@ export default function SettingsPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link 
+              <Link
                 href="/dashboard"
                 className="p-2 rounded-lg bg-white hover:bg-neutral-100 text-neutral-600 hover:text-subit-700 transition-colors border border-neutral-200"
               >
@@ -90,15 +93,15 @@ export default function SettingsPage() {
                 <label className="block text-sm font-medium text-neutral-700 mb-2">Email</label>
                 <div className="flex items-center gap-3 px-4 py-3 bg-white border border-neutral-200 rounded-xl">
                   <Mail className="w-5 h-5 text-subit-600" />
-                  <span className="text-neutral-700">{user?.email || 'Not set'}</span>
+                  <span className="text-neutral-700">{userEmail || 'Not set'}</span>
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">Name</label>
-                <input 
+                <input
                   type="text"
-                  placeholder="Your name" 
-                  defaultValue={user?.user_metadata?.name || user?.user_metadata?.full_name || ''} 
+                  placeholder="Your name"
+                  defaultValue={fullName}
                   className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl text-neutral-900 placeholder-neutral-400 focus:ring-2 focus:ring-subit-500 focus:border-subit-500 transition-all"
                 />
               </div>

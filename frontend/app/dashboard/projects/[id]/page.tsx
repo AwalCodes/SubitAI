@@ -69,7 +69,7 @@ const isAudioFile = (filename?: string, url?: string): boolean => {
 export default function ProjectDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const { user, loading: userLoading, subscription } = useUser()
+  const { user, loading: userLoading, subscription, supabase } = useUser()
   const [project, setProject] = useState<Project | null>(null)
   const [subtitles, setSubtitles] = useState<Subtitle[]>([])
   const [loading, setLoading] = useState(true)
@@ -85,7 +85,7 @@ export default function ProjectDetailPage() {
   const [activeSegment, setActiveSegment] = useState<number | null>(null)
   const [activeWord, setActiveWord] = useState<{ segment: number; word: number } | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
-  
+
   // Detect if file is audio or video
   const isAudio = project ? isAudioFile(project.video_filename, project.video_url) : false
 
@@ -97,11 +97,10 @@ export default function ProjectDetailPage() {
 
   useEffect(() => {
     if (!user || !params.id) return
-    
+
     const fetchProject = async () => {
       try {
         setLoading(true)
-        const supabase = createClient()
         const { data: projectData, error } = await supabase
           .from('projects')
           .select(`
@@ -110,7 +109,7 @@ export default function ProjectDetailPage() {
           `)
           .eq('id', params.id as string)
           .single()
-        
+
         if (error) throw error
         setProject(projectData)
 
@@ -134,7 +133,7 @@ export default function ProjectDetailPage() {
         setLoading(false)
       }
     }
-    
+
     fetchProject()
   }, [user, params.id])
 
@@ -170,9 +169,9 @@ export default function ProjectDetailPage() {
     let cancelled = false
     const maxPolls = 240 // 20 minutes at 5 second intervals (model download can take time)
     const projectId = project.id
-    
+
     if (process.env.NODE_ENV !== 'production') console.log('Starting subtitle polling for project:', projectId)
-    
+
     const pollInterval = setInterval(async () => {
       if (cancelled) {
         clearInterval(pollInterval)
@@ -181,8 +180,7 @@ export default function ProjectDetailPage() {
       try {
         pollCount++
         if (process.env.NODE_ENV !== 'production') console.log(`Polling attempt ${pollCount}/${maxPolls} for project ${projectId}`)
-        
-        const supabase = createClient()
+
         const { data: updatedProject, error } = await supabase
           .from('projects')
           .select(`
@@ -191,9 +189,9 @@ export default function ProjectDetailPage() {
           `)
           .eq('id', projectId)
           .single()
-        
+
         if (error) throw error
-        
+
         // Check if subtitles were generated
         if (updatedProject.subtitles && updatedProject.subtitles.length > 0) {
           const subtitleData = updatedProject.subtitles[0]
@@ -207,7 +205,7 @@ export default function ProjectDetailPage() {
             return
           }
         }
-        
+
         // Check for failure status
         if (updatedProject.status === 'failed') {
           if (process.env.NODE_ENV !== 'production') console.log('Subtitle generation failed')
@@ -216,7 +214,7 @@ export default function ProjectDetailPage() {
           toast.error('Subtitle generation failed')
           return
         }
-        
+
         // Check if status changed to completed (even without subtitles in response yet)
         if (updatedProject.status === 'completed') {
           // Give it one more poll to get subtitles
@@ -231,7 +229,7 @@ export default function ProjectDetailPage() {
               `)
               .eq('id', projectId)
               .single()
-            
+
             if (finalError) throw finalError
             if (finalProject.subtitles && finalProject.subtitles.length > 0) {
               const subtitleData = finalProject.subtitles[0]
@@ -246,7 +244,7 @@ export default function ProjectDetailPage() {
             }
           }
         }
-        
+
         // Stop polling after max attempts
         if (pollCount >= maxPolls) {
           if (process.env.NODE_ENV !== 'production') console.log('Max polling attempts reached')
@@ -264,7 +262,7 @@ export default function ProjectDetailPage() {
         }
       }
     }, 5000) // Poll every 5 seconds
-    
+
     return () => {
       if (process.env.NODE_ENV !== 'production') console.log('Cleaning up polling interval')
       cancelled = true
@@ -275,7 +273,6 @@ export default function ProjectDetailPage() {
   const fetchProject = async () => {
     try {
       setLoading(true)
-      const supabase = createClient()
       const { data: projectData, error } = await supabase
         .from('projects')
         .select(`
@@ -284,7 +281,7 @@ export default function ProjectDetailPage() {
         `)
         .eq('id', params.id as string)
         .single()
-      
+
       if (error) throw error
       setProject(projectData)
 
@@ -311,7 +308,7 @@ export default function ProjectDetailPage() {
   const handleGenerateSubtitles = async () => {
     if (process.env.NODE_ENV !== 'production') console.log('=== Generate Subtitles Clicked ===')
     if (process.env.NODE_ENV !== 'production') console.log('Project:', project)
-    
+
     if (!project) {
       if (process.env.NODE_ENV !== 'production') console.error('No project found!')
       toast.error('No project loaded')
@@ -339,7 +336,7 @@ export default function ProjectDetailPage() {
 
   const handleSaveEdit = () => {
     if (editingIndex === null) return
-    
+
     const updatedSubtitles = [...subtitles]
     updatedSubtitles[editingIndex].text = editText
     setSubtitles(updatedSubtitles)
@@ -366,25 +363,24 @@ export default function ProjectDetailPage() {
           language: project.subtitles?.[0]?.language || 'en'
         }
       }
-      
+
       // Add style to json_data if provided
       if (style) {
         updateData.json_data.style = style
       }
-      
-      const supabase = createClient()
+
       const { error } = await supabase
         .from('subtitles')
         .update({ json_data: updateData.json_data })
         .eq('project_id', project.id)
-      
+
       if (error) throw error
-      
+
       // Update local state
       if (updatedSubtitles) {
         setSubtitles(updatedSubtitles)
       }
-      
+
       toast.success('Subtitles saved successfully!')
     } catch (error: any) {
       if (process.env.NODE_ENV !== 'production') console.error('Save error:', error)
@@ -394,7 +390,7 @@ export default function ProjectDetailPage() {
     }
   }
 
-  const handleSaveAllClick = () => {}
+  const handleSaveAllClick = () => { }
 
   // Helper function to format timestamp
   const formatTimestamp = (seconds: number, format: 'srt' | 'vtt'): string => {
@@ -417,8 +413,7 @@ export default function ProjectDetailPage() {
 
     try {
       setDeleting(true)
-      const supabase = createClient()
-      
+
       // Attempt to delete the associated video file from storage first (best-effort)
       if (project.video_filename && user?.id) {
         const filePath = `${user.id}/${project.video_filename}`
@@ -435,7 +430,7 @@ export default function ProjectDetailPage() {
         .from('projects')
         .delete()
         .eq('id', project.id)
-      
+
       if (error) throw error
       toast.success('Project deleted successfully')
       router.push('/dashboard/projects')
@@ -509,7 +504,7 @@ export default function ProjectDetailPage() {
     if (rafRef.current) cancelAnimationFrame(rafRef.current)
     rafRef.current = null
   }
-  
+
 
   useEffect(() => {
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }
@@ -617,7 +612,7 @@ export default function ProjectDetailPage() {
               </div>
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              
+
               <button
                 onClick={handleDelete}
                 disabled={deleting}
@@ -780,11 +775,10 @@ export default function ProjectDetailPage() {
                       return (
                         <div
                           key={index}
-                          className={`border rounded-xl p-4 sm:p-5 transition-colors ${
-                            isActiveSeg
-                              ? 'border-subit-300 bg-subit-50/80 shadow-sm'
-                              : 'border-neutral-200 bg-white hover:border-subit-300 hover:bg-neutral-50'
-                          }`}
+                          className={`border rounded-xl p-4 sm:p-5 transition-colors ${isActiveSeg
+                            ? 'border-subit-300 bg-subit-50/80 shadow-sm'
+                            : 'border-neutral-200 bg-white hover:border-subit-300 hover:bg-neutral-50'
+                            }`}
                         >
                           <div className="flex items-start justify-between mb-2">
                             <span className="text-sm text-gray-600">
@@ -848,8 +842,8 @@ export default function ProjectDetailPage() {
             <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-subit-200 p-6 shadow-sm">
               <h3 className="font-semibold text-gray-900 mb-3">Next Steps</h3>
               <div className="space-y-2">
-                <button 
-                  onClick={() => router.push('/dashboard/upload-v2')} 
+                <button
+                  onClick={() => router.push('/dashboard/upload-v2')}
                   className="w-full py-2.5 bg-subit-600 hover:bg-subit-700 text-white rounded-lg transition-colors"
                 >
                   Process Another {isAudio ? 'Audio' : 'Video'}
@@ -859,7 +853,7 @@ export default function ProjectDetailPage() {
             <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-subit-200 p-6 shadow-sm">
               <h3 className="font-semibold text-gray-900 mb-3">Share Project</h3>
               <div className="space-y-2">
-                <button 
+                <button
                   onClick={async () => {
                     if (!project?.id) {
                       toast.error('Project not found')
@@ -885,7 +879,7 @@ export default function ProjectDetailPage() {
                       }
                       document.body.removeChild(textArea)
                     }
-                  }} 
+                  }}
                   className="w-full py-2.5 bg-subit-600 hover:bg-subit-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   <Share2 className="w-4 h-4" />

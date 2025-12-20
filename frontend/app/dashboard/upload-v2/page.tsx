@@ -34,11 +34,8 @@ type UploadState =
   | 'success'
   | 'error';
 
-// Reuse the shared browser Supabase client so we share auth/session state
-const supabase = getBrowserSupabaseClient()
-
 export default function UploadPageV2() {
-  const { user, loading, subscription } = useUser()
+  const { user, loading, subscription, supabase } = useUser()
   const router = useRouter()
 
   useEffect(() => {

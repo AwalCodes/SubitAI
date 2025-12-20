@@ -13,18 +13,33 @@ if (!supabaseUrl || !supabaseAnonKey) {
   }
 }
 
-// Create a client with localStorage for persistence
-const supabaseClient = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
+// Create a default client for public requests
+const supabaseClient = createSupabaseClient(supabaseUrl!, supabaseAnonKey!, {
   auth: {
-    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
+    persistSession: false, // Clerk will handle session persistence
+    autoRefreshToken: false,
+    detectSessionInUrl: false
   }
 })
 
-// Client-side Supabase client accessor
-export const createClient = () => supabaseClient
+/**
+ * Client-side Supabase client accessor.
+ * If a Clerk token is provided, it creates an authenticated client.
+ */
+export const createClient = (clerkToken?: string) => {
+  if (!clerkToken) return supabaseClient
+
+  return createSupabaseClient(supabaseUrl!, supabaseAnonKey!, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${clerkToken}`,
+      },
+    },
+    auth: {
+      persistSession: false,
+    }
+  })
+}
 
 // Supabase configuration
 export const supabaseConfig = {

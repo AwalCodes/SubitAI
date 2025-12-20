@@ -9,9 +9,9 @@ CREATE TYPE subscription_tier AS ENUM ('free', 'pro', 'team');
 CREATE TYPE project_status AS ENUM ('uploading', 'processing', 'completed', 'failed');
 CREATE TYPE billing_status AS ENUM ('active', 'canceled', 'past_due', 'unpaid');
 
--- Users table (extends Supabase auth.users)
+-- Users table (Manually synced from Clerk or created on first upload)
 CREATE TABLE public.users (
-    id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+    id TEXT PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     full_name TEXT,
     avatar_url TEXT,
@@ -24,7 +24,7 @@ CREATE TABLE public.users (
 -- Projects table
 CREATE TABLE public.projects (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
+    user_id TEXT REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
     title TEXT NOT NULL,
     description TEXT,
     video_url TEXT,
@@ -51,7 +51,7 @@ CREATE TABLE public.subtitles (
 -- Billing table
 CREATE TABLE public.billing (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
+    user_id TEXT REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
     stripe_subscription_id TEXT,
     plan subscription_tier NOT NULL,
     status billing_status DEFAULT 'active',
@@ -64,7 +64,7 @@ CREATE TABLE public.billing (
 -- Usage tracking table
 CREATE TABLE public.usage_tracking (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
+    user_id TEXT REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
     project_id UUID REFERENCES public.projects(id) ON DELETE CASCADE,
     action_type TEXT NOT NULL, -- 'upload', 'transcribe', 'export'
     energy_cost INTEGER DEFAULT 0,
@@ -105,16 +105,16 @@ DROP POLICY IF EXISTS "Users can update their own videos" ON storage.objects;
 
 -- Create storage policies
 CREATE POLICY "Users can upload their own videos" ON storage.objects
-    FOR INSERT WITH CHECK (bucket_id = 'videos' AND auth.uid()::text = (storage.foldername(name))[1]);
+    FOR INSERT WITH CHECK (bucket_id = 'videos' AND (auth.jwt() ->> 'sub') = (storage.foldername(name))[1]);
 
 CREATE POLICY "Users can view their own videos" ON storage.objects
-    FOR SELECT USING (bucket_id = 'videos' AND auth.uid()::text = (storage.foldername(name))[1]);
+    FOR SELECT USING (bucket_id = 'videos' AND (auth.jwt() ->> 'sub') = (storage.foldername(name))[1]);
 
 CREATE POLICY "Users can delete their own videos" ON storage.objects
-    FOR DELETE USING (bucket_id = 'videos' AND auth.uid()::text = (storage.foldername(name))[1]);
+    FOR DELETE USING (bucket_id = 'videos' AND (auth.jwt() ->> 'sub') = (storage.foldername(name))[1]);
 
 CREATE POLICY "Users can update their own videos" ON storage.objects
-    FOR UPDATE USING (bucket_id = 'videos' AND auth.uid()::text = (storage.foldername(name))[1]);
+    FOR UPDATE USING (bucket_id = 'videos' AND (auth.jwt() ->> 'sub') = (storage.foldername(name))[1]);
 
 -- RLS Policies
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
@@ -126,23 +126,23 @@ ALTER TABLE public.client_error_logs ENABLE ROW LEVEL SECURITY;
 
 -- Users policies
 CREATE POLICY "Users can view own profile" ON public.users
-    FOR SELECT USING (auth.uid() = id);
+    FOR SELECT USING ((auth.jwt() ->> 'sub') = id);
 
 CREATE POLICY "Users can update own profile" ON public.users
-    FOR UPDATE USING (auth.uid() = id);
+    FOR UPDATE USING ((auth.jwt() ->> 'sub') = id);
 
 -- Projects policies
 CREATE POLICY "Users can view own projects" ON public.projects
-    FOR SELECT USING (auth.uid() = user_id);
+    FOR SELECT USING ((auth.jwt() ->> 'sub') = user_id);
 
 CREATE POLICY "Users can create own projects" ON public.projects
-    FOR INSERT WITH CHECK (auth.uid() = user_id);
+    FOR INSERT WITH CHECK ((auth.jwt() ->> 'sub') = user_id);
 
 CREATE POLICY "Users can update own projects" ON public.projects
-    FOR UPDATE USING (auth.uid() = user_id);
+    FOR UPDATE USING ((auth.jwt() ->> 'sub') = user_id);
 
 CREATE POLICY "Users can delete own projects" ON public.projects
-    FOR DELETE USING (auth.uid() = user_id);
+    FOR DELETE USING ((auth.jwt() ->> 'sub') = user_id);
 
 -- Subtitles policies
 CREATE POLICY "Users can view own subtitles" ON public.subtitles
@@ -150,7 +150,7 @@ CREATE POLICY "Users can view own subtitles" ON public.subtitles
         EXISTS (
             SELECT 1 FROM public.projects 
             WHERE projects.id = subtitles.project_id 
-            AND projects.user_id = auth.uid()
+            AND projects.user_id = (auth.jwt() ->> 'sub')
         )
     );
 
@@ -159,7 +159,7 @@ CREATE POLICY "Users can create subtitles for own projects" ON public.subtitles
         EXISTS (
             SELECT 1 FROM public.projects 
             WHERE projects.id = subtitles.project_id 
-            AND projects.user_id = auth.uid()
+            AND projects.user_id = (auth.jwt() ->> 'sub')
         )
     );
 
@@ -168,23 +168,23 @@ CREATE POLICY "Users can update own subtitles" ON public.subtitles
         EXISTS (
             SELECT 1 FROM public.projects 
             WHERE projects.id = subtitles.project_id 
-            AND projects.user_id = auth.uid()
+            AND projects.user_id = (auth.jwt() ->> 'sub')
         )
     );
 
 -- Billing policies
 CREATE POLICY "Users can view own billing" ON public.billing
-    FOR SELECT USING (auth.uid() = user_id);
+    FOR SELECT USING ((auth.jwt() ->> 'sub') = user_id);
 
 CREATE POLICY "Users can create own billing records" ON public.billing
-    FOR INSERT WITH CHECK (auth.uid() = user_id);
+    FOR INSERT WITH CHECK ((auth.jwt() ->> 'sub') = user_id);
 
 CREATE POLICY "Users can update own billing" ON public.billing
-    FOR UPDATE USING (auth.uid() = user_id);
+    FOR UPDATE USING ((auth.jwt() ->> 'sub') = user_id);
 
 -- Usage tracking policies
 CREATE POLICY "Users can view own usage" ON public.usage_tracking
-    FOR SELECT USING (auth.uid() = user_id);
+    FOR SELECT USING ((auth.jwt() ->> 'sub') = user_id);
 
 CREATE POLICY "System can create usage records" ON public.usage_tracking
     FOR INSERT WITH CHECK (true);
@@ -230,37 +230,6 @@ CREATE TRIGGER update_subtitles_updated_at BEFORE UPDATE ON public.subtitles
 
 CREATE TRIGGER update_billing_updated_at BEFORE UPDATE ON public.billing
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- Function to create user profile on signup
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER 
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, pg_temp
-AS $$
-BEGIN
-    INSERT INTO public.users (id, email, full_name, avatar_url, subscription_tier)
-    VALUES (
-        NEW.id,
-        COALESCE(NEW.email, ''),
-        NEW.raw_user_meta_data->>'full_name',
-        NEW.raw_user_meta_data->>'avatar_url',
-        'free'
-    )
-    ON CONFLICT (id) DO UPDATE SET
-        email = COALESCE(EXCLUDED.email, users.email),
-        updated_at = NOW();
-    RETURN NEW;
-END;
-$$;
-
--- Drop existing trigger if it exists
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-
--- Trigger to create user profile
-CREATE TRIGGER on_auth_user_created
-    AFTER INSERT ON auth.users
-    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- Create storage buckets (only if they don't exist)
 INSERT INTO storage.buckets (id, name, public) 

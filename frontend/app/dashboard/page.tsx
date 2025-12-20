@@ -3,13 +3,13 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useUser } from '@/lib/providers'
 import { useRouter } from 'next/navigation'
+import { useClerk } from '@clerk/nextjs'
 import { Plus, Video, Clock, CheckCircle, AlertCircle, Zap, ArrowRight, Sparkles, LayoutDashboard, Settings, LogOut, Home, FolderOpen, TrendingUp, Trash2, Crown, User } from 'lucide-react'
-import { createClient } from '@/lib/supabase'
-import Link from 'next/link'
 import { OnboardingModal } from '@/components/onboarding-modal'
 import { fetchQuota, type QuotaInfo } from '@/lib/api-v2'
 import toast from 'react-hot-toast'
 import Logo from '@/components/shared/Logo'
+import Link from 'next/link'
 
 interface Project {
   id: string
@@ -20,14 +20,14 @@ interface Project {
 }
 
 export default function Dashboard() {
-  const { user, loading, subscription } = useUser()
+  const { user, loading, subscription, supabase } = useUser()
   const router = useRouter()
+  const { signOut } = useClerk()
   const [projects, setProjects] = useState<Project[]>([])
-  const supabase = createClient()
 
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut()
+      await signOut()
       router.push('/auth/login')
     } catch (error) {
       console.error('Sign out error:', error)
@@ -42,23 +42,22 @@ export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const isPremium = subscription?.plan === 'premium' || subscription?.plan === 'team'
-  const remainingEnergy = isPremium 
-    ? '∞' 
+  const remainingEnergy = isPremium
+    ? '∞'
     : (!quotaLoading && quota && quota.remaining !== null ? quota.remaining : 0)
 
   const fetchProjects = useCallback(async () => {
     if (!user?.id) return
-    
+
     try {
       setProjectsLoading(true)
-      const supabase = createClient()
       const { data: projects, error } = await supabase
         .from('projects')
         .select('id, title, status, created_at, video_duration')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(10)
-      
+
       if (error) throw error
       setProjects(projects || [])
     } catch (error: any) {
@@ -252,11 +251,10 @@ export default function Dashboard() {
             <Link
               key={link.href}
               href={link.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                link.active
-                  ? 'bg-subit-50 text-subit-700 border border-subit-200'
-                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
-              }`}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${link.active
+                ? 'bg-subit-50 text-subit-700 border border-subit-200'
+                : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
+                }`}
             >
               <link.icon className="w-5 h-5" />
               <span className="font-medium">{link.label}</span>
@@ -266,7 +264,7 @@ export default function Dashboard() {
 
         {/* User Section */}
         <div className="p-4 border-t border-neutral-200">
-          <Link 
+          <Link
             href="/dashboard/settings"
             className="flex items-center gap-3 px-3 py-2 mb-3 rounded-xl hover:bg-neutral-100 transition-all duration-200 cursor-pointer group"
           >
@@ -276,9 +274,9 @@ export default function Dashboard() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-neutral-900 truncate group-hover:text-subit-700 transition-colors">{user?.email}</p>
               <p className="text-xs text-neutral-500">
-                {subscription?.plan === 'premium' ? 'Premium Plan' : 
-                 subscription?.plan === 'pro' ? 'Pro Plan' : 
-                 'Free Plan'}
+                {subscription?.plan === 'premium' ? 'Premium Plan' :
+                  subscription?.plan === 'pro' ? 'Pro Plan' :
+                    'Free Plan'}
               </p>
             </div>
             <Settings className="w-4 h-4 text-neutral-500 group-hover:text-subit-700 transition-colors opacity-0 group-hover:opacity-100" />
@@ -298,7 +296,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-between px-4 py-3">
           <Logo withText href="/" />
           <div className="flex items-center gap-2">
-            <Link 
+            <Link
               href="/pricing"
               className="flex items-center gap-1.5 px-3 py-1.5 bg-subit-50 border border-subit-200 rounded-lg hover:bg-subit-100 transition-colors group"
             >
@@ -363,7 +361,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between">
                   <p className="text-3xl font-bold text-neutral-900">{stat.value}</p>
                   {stat.label === 'Energy' && (
-                    <Link 
+                    <Link
                       href="/pricing"
                       onClick={(e) => e.stopPropagation()}
                       className="ml-2 p-1.5 rounded-lg bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors group/upgrade"
@@ -434,15 +432,14 @@ export default function Dashboard() {
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
-                            <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 ${
-                              project.status === 'completed' 
-                                ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' 
-                                : project.status === 'processing' 
-                                ? 'bg-blue-50 text-blue-600 border border-blue-200' 
-                                : project.status === 'failed' 
-                                ? 'bg-red-50 text-red-600 border border-red-200'
-                                : 'bg-neutral-100 text-neutral-500'
-                            }`}>
+                            <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 ${project.status === 'completed'
+                              ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                              : project.status === 'processing'
+                                ? 'bg-blue-50 text-blue-600 border border-blue-200'
+                                : project.status === 'failed'
+                                  ? 'bg-red-50 text-red-600 border border-red-200'
+                                  : 'bg-neutral-100 text-neutral-500'
+                              }`}>
                               {getStatusText(project.status)}
                             </span>
                             <button

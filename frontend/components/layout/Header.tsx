@@ -1,10 +1,10 @@
- 'use client'
+'use client'
 
 import { useState, useEffect } from 'react'
- import Link from 'next/link'
- import { usePathname, useRouter } from 'next/navigation'
- import { useUser } from '@/lib/providers'
- import { createClient } from '@/lib/supabase'
+import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
+import { useUser } from '@/lib/providers'
+import { useClerk } from '@clerk/nextjs'
 import { Menu, X, LayoutDashboard, LogOut, User, ChevronDown } from 'lucide-react'
 import Logo from '@/components/shared/Logo'
 
@@ -22,13 +22,15 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const { user, loading, subscription } = useUser()
-  const supabase = createClient()
+  const { signOut } = useClerk()
 
-  const planName = subscription?.plan === 'premium' || subscription?.plan === 'team' 
-    ? 'Premium Plan' 
-    : subscription?.plan === 'pro' 
-    ? 'Pro Plan' 
-    : 'Free Plan'
+  const userEmail = user?.primaryEmailAddress?.emailAddress || user?.emailAddress || ''
+
+  const planName = subscription?.plan === 'premium' || subscription?.plan === 'team'
+    ? 'Premium Plan'
+    : subscription?.plan === 'pro'
+      ? 'Pro Plan'
+      : 'Free Plan'
 
   useEffect(() => {
     const handleScroll = () => {
@@ -41,7 +43,7 @@ export default function Header() {
   const handleSignOut = async () => {
     setUserMenuOpen(false)
     try {
-      await supabase.auth.signOut()
+      await signOut()
       router.push('/auth/login')
     } catch (error) {
       if (process.env.NODE_ENV !== 'production') console.error('Sign out error:', error)
@@ -58,11 +60,10 @@ export default function Header() {
   const isDarkPage = false
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      scrolled
-        ? 'bg-white/90 backdrop-blur-xl border-b border-neutral-200 shadow-sm'
-        : 'bg-white/80 backdrop-blur-xl'
-    }`}>
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
+      ? 'bg-white/90 backdrop-blur-xl border-b border-neutral-200 shadow-sm'
+      : 'bg-white/80 backdrop-blur-xl'
+      }`}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 lg:h-20 items-center justify-between">
           {/* Logo */}
@@ -74,11 +75,10 @@ export default function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  isActive(link.href)
-                    ? 'text-subit-600 bg-subit-50'
-                    : 'text-neutral-600 hover:text-subit-600 hover:bg-neutral-100'
-                }`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isActive(link.href)
+                  ? 'text-subit-600 bg-subit-50'
+                  : 'text-neutral-600 hover:text-subit-600 hover:bg-neutral-100'
+                  }`}
               >
                 {link.label}
               </Link>
@@ -93,12 +93,11 @@ export default function Header() {
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 ${
-                    'bg-neutral-100 hover:bg-neutral-200 text-neutral-700'
-                  }`}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 ${'bg-neutral-100 hover:bg-neutral-200 text-neutral-700'
+                    }`}
                 >
                   <div className="w-8 h-8 rounded-lg bg-subit-600 flex items-center justify-center text-white text-sm font-bold">
-                    {user.email?.charAt(0).toUpperCase() || 'U'}
+                    {userEmail.charAt(0).toUpperCase() || 'U'}
                   </div>
                   <ChevronDown className={`w-4 h-4 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
@@ -108,7 +107,7 @@ export default function Header() {
                     <div className="fixed inset-0 z-10" onClick={() => setUserMenuOpen(false)} />
                     <div className="absolute right-0 top-full mt-2 w-56 py-2 bg-white rounded-xl shadow-xl border border-neutral-200 z-20">
                       <div className="px-4 py-3 border-b border-neutral-100">
-                        <p className="text-sm font-medium text-neutral-900 truncate">{user.email}</p>
+                        <p className="text-sm font-medium text-neutral-900 truncate">{userEmail}</p>
                         <p className="text-xs text-neutral-500">{planName}</p>
                       </div>
                       <Link
@@ -117,8 +116,8 @@ export default function Header() {
                         className="flex items-center gap-3 px-4 py-3 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
                       >
                         <LayoutDashboard className="w-4 h-4" />
-                    Dashboard
-                  </Link>
+                        Dashboard
+                      </Link>
                       <Link
                         href="/dashboard/settings"
                         onClick={() => setUserMenuOpen(false)}
@@ -128,7 +127,7 @@ export default function Header() {
                         Settings
                       </Link>
                       <div className="border-t border-neutral-100 mt-2 pt-2">
-                  <button
+                        <button
                           onClick={() => {
                             setUserMenuOpen(false)
                             handleSignOut()
@@ -136,40 +135,38 @@ export default function Header() {
                           className="flex items-center gap-3 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
                         >
                           <LogOut className="w-4 h-4" />
-                    Sign out
-                  </button>
+                          Sign out
+                        </button>
                       </div>
                     </div>
-                </>
+                  </>
                 )}
               </div>
-              ) : (
-                <>
-                <Link 
-                  href="/auth/login" 
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    'text-neutral-600 hover:text-subit-600'
-                  }`}
+            ) : (
+              <>
+                <Link
+                  href="/auth/login"
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${'text-neutral-600 hover:text-subit-600'
+                    }`}
                 >
-                    Log in
-                  </Link>
-                <Link 
-                  href="/auth/signup" 
+                  Log in
+                </Link>
+                <Link
+                  href="/auth/signup"
                   className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-subit-600 hover:bg-subit-700 text-white shadow-glow transition-all duration-200 hover:-translate-y-0.5"
                 >
                   Get Started
-                  </Link>
-                </>
-              )}
-            </div>
+                </Link>
+              </>
+            )}
+          </div>
 
           {/* Mobile toggle */}
           <button
             type="button"
             onClick={() => setMobileOpen(!mobileOpen)}
-            className={`lg:hidden p-2 rounded-lg transition-colors ${
-              'text-neutral-600 hover:bg-neutral-100'
-            }`}
+            className={`lg:hidden p-2 rounded-lg transition-colors ${'text-neutral-600 hover:bg-neutral-100'
+              }`}
             aria-label="Toggle navigation menu"
           >
             {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -184,61 +181,60 @@ export default function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`block px-4 py-3 rounded-xl text-base font-medium transition-colors ${
-                    isActive(link.href)
-                      ? 'text-subit-600 bg-subit-50'
-                      : 'text-neutral-700 hover:text-subit-600 hover:bg-neutral-100'
-                  }`}
+                  className={`block px-4 py-3 rounded-xl text-base font-medium transition-colors ${isActive(link.href)
+                    ? 'text-subit-600 bg-subit-50'
+                    : 'text-neutral-700 hover:text-subit-600 hover:bg-neutral-100'
+                    }`}
                   onClick={() => setMobileOpen(false)}
                 >
                   {link.label}
                 </Link>
               ))}
             </nav>
-            
+
             <div className="mt-4 pt-4 border-t border-neutral-200 space-y-2">
               {loading ? (
                 <div className="h-12 bg-neutral-100 rounded-xl animate-pulse" />
               ) : user ? (
-                  <>
-                    <Link
-                      href="/dashboard"
-                      onClick={() => setMobileOpen(false)}
+                <>
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMobileOpen(false)}
                     className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl text-base font-semibold bg-subit-600 text-white"
-                    >
+                  >
                     <LayoutDashboard className="w-5 h-5" />
                     Go to Dashboard
-                    </Link>
-                    <button
-                      onClick={() => {
-                        setMobileOpen(false)
-                        handleSignOut()
-                      }}
+                  </Link>
+                  <button
+                    onClick={() => {
+                      setMobileOpen(false)
+                      handleSignOut()
+                    }}
                     className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl text-base font-medium text-red-600 bg-red-50"
-                    >
+                  >
                     <LogOut className="w-5 h-5" />
-                      Sign out
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <Link
-                      href="/auth/login"
-                      onClick={() => setMobileOpen(false)}
+                    Sign out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/auth/login"
+                    onClick={() => setMobileOpen(false)}
                     className="block w-full px-4 py-3 rounded-xl text-center text-base font-medium text-neutral-700 bg-neutral-100 hover:bg-neutral-200"
-                    >
-                      Log in
-                    </Link>
-                    <Link
-                      href="/auth/signup"
-                      onClick={() => setMobileOpen(false)}
+                  >
+                    Log in
+                  </Link>
+                  <Link
+                    href="/auth/signup"
+                    onClick={() => setMobileOpen(false)}
                     className="block w-full px-4 py-3 rounded-xl text-center text-base font-semibold bg-subit-600 text-white"
-                    >
+                  >
                     Get Started Free
-                    </Link>
-                  </>
-                )}
-              </div>
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
         )}
       </div>

@@ -3,20 +3,7 @@
  * Improved error handling, retry logic, and real upload progress
  */
 
-import { createClient as getBrowserSupabaseClient } from '@/lib/supabase';
-
 const WORKER_URL = process.env.NEXT_PUBLIC_WORKER_URL || 'http://localhost:8787';
-
-if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PUBLIC_WORKER_URL) {
-  if (typeof window === 'undefined') {
-    throw new Error('NEXT_PUBLIC_WORKER_URL must be set in production');
-  } else {
-    console.error('NEXT_PUBLIC_WORKER_URL is not set in production');
-  }
-}
-
-// Reuse the single browser Supabase client to avoid multiple GoTrueClient instances
-const supabase = getBrowserSupabaseClient();
 
 // Types
 interface TranscribeOptions {
@@ -64,24 +51,18 @@ export interface QuotaInfo {
 /**
  * Get current auth token
  *
- * Prefer the cached access_token we store in localStorage via Providers,
- * and fall back to Supabase auth session if needed.
+ * Use the access_token we store in localStorage via Providers,
+ * which is synced from Clerk's Supabase JWT template.
  */
 async function getAuthToken(): Promise<string | null> {
   if (typeof window !== 'undefined') {
     try {
-      const storedToken = window.localStorage.getItem('access_token');
-      if (storedToken) {
-        return storedToken;
-      }
+      return window.localStorage.getItem('access_token');
     } catch (error) {
-      // Ignore localStorage errors and fall back to Supabase
       console.error('Error reading access_token from localStorage:', error);
     }
   }
-
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token || null;
+  return null;
 }
 
 /**
