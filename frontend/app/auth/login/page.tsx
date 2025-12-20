@@ -19,7 +19,9 @@ export default function LoginPage() {
   const getSiteUrl = () => {
     const envUrl = process.env.NEXT_PUBLIC_SITE_URL
     const normalizedEnvUrl = typeof envUrl === 'string' ? envUrl.replace(/\/$/, '') : ''
-    return normalizedEnvUrl || window.location.origin
+    if (normalizedEnvUrl) return normalizedEnvUrl
+    if (process.env.NODE_ENV === 'production') return 'https://www.subitai.com'
+    return window.location.origin
   }
 
   const handleLogin = async (e: React.FormEvent) => {
