@@ -43,7 +43,7 @@ export const getSiteUrl = () => {
 
   const envUrl = process.env.NEXT_PUBLIC_SITE_URL
   const normalizedEnvUrl = typeof envUrl === 'string' ? envUrl.replace(/\/$/, '') : ''
-  if (normalizedEnvUrl) return normalizedEnvUrl
+  if (normalizedEnvUrl && !normalizedEnvUrl.includes('subit-ai.vercel.app')) return normalizedEnvUrl
 
   // Fallback for client-side
   if (typeof window !== 'undefined') {

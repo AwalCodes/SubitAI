@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 function getCanonicalSiteUrl() {
+  if (process.env.NODE_ENV === 'production') return 'https://www.subitai.com'
+
   const envUrl = process.env.NEXT_PUBLIC_SITE_URL
   const normalizedEnvUrl = typeof envUrl === 'string' ? envUrl.replace(/\/$/, '') : ''
 
   if (normalizedEnvUrl) return normalizedEnvUrl
-  if (process.env.NODE_ENV === 'production') return 'https://www.subitai.com'
   return ''
 }
 
