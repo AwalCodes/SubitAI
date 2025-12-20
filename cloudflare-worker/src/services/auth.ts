@@ -2,7 +2,13 @@
 // This file now only validates Clerk JWTs locally.
 // It no longer attempts Supabase legacy auth, avoiding mixed auth flows.
 
-import { Env } from '../index';
+// Define Env interface for Cloudflare Worker bindings
+interface Env {
+  GROQ_API_KEY: string;
+  SUPABASE_URL: string;
+  SUPABASE_SERVICE_KEY: string;
+  ALLOWED_ORIGINS: string;
+}
 
 export interface User {
   id: string;
@@ -29,7 +35,7 @@ export async function getUser(
     const payload = JSON.parse(atob(parts[1]));
 
     // Basic validation: ensure "sub" claim exists and token is intended for authenticated users
-    if (payload.sub && (payload.aud === 'authenticated' || payload.iss?.includes('clerk')) {
+    if (payload.sub && (payload.aud === 'authenticated' || payload.iss?.includes('clerk'))) {
       return {
         id: payload.sub,
         email: payload.email || '',
