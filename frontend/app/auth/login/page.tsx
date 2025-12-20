@@ -52,7 +52,7 @@ export default function LoginPage() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${getSiteUrl()}/auth/callback`,
+          redirectTo: 'https://www.subitai.com/auth/callback',
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

@@ -59,7 +59,7 @@ export default function SignupPage() {
           data: {
             full_name: formData.fullName
           },
-          emailRedirectTo: `${getSiteUrl()}/auth/callback`,
+          emailRedirectTo: 'https://www.subitai.com/auth/callback',
         }
       })
 
@@ -81,7 +81,7 @@ export default function SignupPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${getSiteUrl()}/auth/callback`,
+          redirectTo: 'https://www.subitai.com/auth/callback',
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
