@@ -16,6 +16,12 @@ export default function LoginPage() {
   const router = useRouter()
   const supabase = createClient()
 
+  const getSiteUrl = () => {
+    const envUrl = process.env.NEXT_PUBLIC_SITE_URL
+    const normalizedEnvUrl = typeof envUrl === 'string' ? envUrl.replace(/\/$/, '') : ''
+    return normalizedEnvUrl || window.location.origin
+  }
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -50,7 +56,7 @@ export default function LoginPage() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${getSiteUrl()}/auth/callback`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

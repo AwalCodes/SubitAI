@@ -21,6 +21,12 @@ export default function SignupPage() {
   const router = useRouter()
   const supabase = createClient()
 
+  const getSiteUrl = () => {
+    const envUrl = process.env.NEXT_PUBLIC_SITE_URL
+    const normalizedEnvUrl = typeof envUrl === 'string' ? envUrl.replace(/\/$/, '') : ''
+    return normalizedEnvUrl || window.location.origin
+  }
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target
     setFormData(prev => ({
@@ -56,7 +62,8 @@ export default function SignupPage() {
         options: {
           data: {
             full_name: formData.fullName
-          }
+          },
+          emailRedirectTo: `${getSiteUrl()}/auth/callback`,
         }
       })
 
@@ -78,7 +85,7 @@ export default function SignupPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${getSiteUrl()}/auth/callback`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
