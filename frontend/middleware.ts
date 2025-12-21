@@ -1,6 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import type { NextFetchEvent } from 'next/server';
 
 const isPublicRoute = createRouteMatcher([
   '/',
@@ -49,7 +50,7 @@ const clerkHandler = hasClerkEnv()
     })
   : null
 
-export default async function middleware(req: NextRequest) {
+export default async function middleware(req: NextRequest, event: NextFetchEvent) {
   const redirect = maybeLegacyRedirect(req)
   if (redirect) return redirect
 
@@ -57,7 +58,7 @@ export default async function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
-  return clerkHandler(req)
+  return clerkHandler(req, event)
 }
 
 export const config = {
