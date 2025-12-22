@@ -40,6 +40,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         }
       } else {
         setSupabaseToken(null)
+        localStorage.removeItem('access_token')
       }
     }
     loadToken()
@@ -47,6 +48,37 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   // Create an authenticated Supabase client whenever the token changes
   const supabase = useMemo(() => createClient(supabaseToken || undefined), [supabaseToken])
+
+  const syncUserProfile = useCallback(async () => {
+    if (!clerkUser?.id || !supabaseToken) return
+
+    try {
+      const fullName = (clerkUser.fullName || clerkUser.firstName || '').trim()
+      const avatarUrl = clerkUser.imageUrl || ''
+      const email = clerkUser.primaryEmailAddress?.emailAddress || clerkUser.emailAddresses?.[0]?.emailAddress || ''
+
+      // Upsert basic profile fields.
+      // IMPORTANT: do NOT overwrite subscription_tier here so manual/admin changes in Supabase remain effective.
+      const { error } = await supabase
+        .from('users')
+        .upsert(
+          {
+            id: clerkUser.id,
+            email,
+            full_name: fullName || null,
+            avatar_url: avatarUrl || null,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'id' }
+        )
+
+      if (error) {
+        console.error('Failed to sync user profile to Supabase:', error)
+      }
+    } catch (error) {
+      console.error('Failed to sync user profile to Supabase:', error)
+    }
+  }, [clerkUser, supabase, supabaseToken])
 
   const fetchSubscription = useCallback(async (userId: string) => {
     if (!supabaseToken) return;
@@ -91,12 +123,17 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, [supabase, supabaseToken])
 
   useEffect(() => {
-    if (clerkUser) {
-      fetchSubscription(clerkUser.id)
-    } else {
+    if (!clerkUser) {
       setSubscription(null)
+      return
     }
-  }, [clerkUser, fetchSubscription])
+
+    // Ensure Supabase profile exists / is updated, then fetch subscription.
+    // This prevents missing rows from causing subscription checks to fail.
+    syncUserProfile().finally(() => {
+      fetchSubscription(clerkUser.id)
+    })
+  }, [clerkUser, fetchSubscription, syncUserProfile])
 
   const refetch = useCallback(() => {
     if (clerkUser?.id) {
