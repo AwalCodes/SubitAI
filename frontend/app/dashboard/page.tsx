@@ -68,7 +68,7 @@ export default function Dashboard() {
       setProjectsLoading(false)
       setInitialLoad(false)
     }
-  }, [user?.id])
+  }, [supabase, user?.id])
 
   useEffect(() => {
     if (!loading && !user) {
@@ -80,7 +80,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return
     fetchProjects()
-  }, [user, fetchProjects])
+  }, [user, supabase, fetchProjects])
 
   useEffect(() => {
     if (!user) return

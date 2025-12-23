@@ -17,8 +17,8 @@ const FloatingHelp = dynamic(() => import('@/components/floating-help').then(mod
 
 
 export const metadata: Metadata = {
-  title: 'SUBITAI - AI-Powered Subtitle Generator',
-  description: 'Generate professional subtitles for your videos using advanced AI technology. Fast, accurate, and customizable.',
+  title: 'SUBITAI - Free Subtitle Generator',
+  description: 'Generate professional subtitles for your videos in seconds. Fast, accurate, and customizable.',
   keywords: ['AI', 'subtitles', 'video', 'transcription', 'Whisper', 'accessibility'],
   authors: [{ name: 'SUBITAI Team' }],
   creator: 'SUBITAI',
@@ -50,22 +50,22 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: '/',
-    title: 'SUBITAI - AI-Powered Subtitle Generator',
-    description: 'Generate professional subtitles for your videos using advanced AI technology. Fast, accurate, and customizable.',
+    title: 'SUBITAI - Free Subtitle Generator',
+    description: 'Generate professional subtitles for your videos in seconds. Fast, accurate, and customizable.',
     siteName: 'SUBITAI',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'SUBITAI - AI-Powered Subtitle Generator',
+        alt: 'SUBITAI - Free Subtitle Generator',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SUBITAI - AI-Powered Subtitle Generator',
-    description: 'Generate professional subtitles for your videos using advanced AI technology.',
+    title: 'SUBITAI - Free Subtitle Generator',
+    description: 'Generate professional subtitles for your videos in seconds.',
     images: ['/og-image.png'],
     site: '@subitai',
     creator: '@subitai',
