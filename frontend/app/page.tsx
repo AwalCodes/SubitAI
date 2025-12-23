@@ -7,8 +7,8 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 
 export const metadata: Metadata = {
-  title: 'SUBITAI - AI-Powered Subtitle Generator | Fast & Accurate Transcription',
-  description: 'Generate professional subtitles for your videos in seconds using advanced AI. Support for 50+ languages, multiple export formats (SRT, VTT, TXT), and a free tier to get started.',
+  title: 'SUBITAI - Free Subtitle Generator | Fast & Accurate Transcription',
+  description: 'Generate professional subtitles for your videos in seconds. Support for 50+ languages, multiple export formats (SRT, VTT, TXT), and a free plan to get started.',
   keywords: [
     'AI subtitle generator',
     'automatic subtitles',
@@ -22,8 +22,8 @@ export const metadata: Metadata = {
     'free subtitle generator',
   ],
   openGraph: {
-    title: 'SUBITAI - AI-Powered Subtitle Generator',
-    description: 'Generate professional subtitles for your videos in seconds. Free tier available.',
+    title: 'SUBITAI - Free Subtitle Generator',
+    description: 'Generate professional subtitles for your videos in seconds. Free plan available.',
     url: 'https://subitai.com',
     type: 'website',
   },

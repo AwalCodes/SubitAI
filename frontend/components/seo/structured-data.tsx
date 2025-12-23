@@ -6,8 +6,8 @@ export function OrganizationSchema() {
     '@type': 'Organization',
     name: 'SUBITAI',
     url: 'https://subitai.com',
-    logo: 'https://subitai.com/favicon.svg?v=2',
-    description: 'AI-Powered Subtitle Generator - Generate professional subtitles for your videos using advanced AI technology.',
+    logo: 'https://subitai.com/favicon-96x96.png?v=2',
+    description: 'Free subtitle generator - Generate professional subtitles for your videos in seconds.',
     sameAs: [
       'https://twitter.com/subitai',
     ],
@@ -32,7 +32,7 @@ export function WebsiteSchema() {
     '@type': 'WebSite',
     name: 'SUBITAI',
     url: 'https://subitai.com',
-    description: 'AI-Powered Subtitle Generator',
+    description: 'Free subtitle generator',
     potentialAction: {
       '@type': 'SearchAction',
       target: 'https://subitai.com/search?q={search_term_string}',
@@ -56,7 +56,7 @@ export function SoftwareApplicationSchema() {
     applicationCategory: 'MultimediaApplication',
     operatingSystem: 'Web',
     url: 'https://subitai.com',
-    description: 'AI-Powered Subtitle Generator - Generate professional subtitles for your videos using advanced AI technology.',
+    description: 'Free subtitle generator - Generate professional subtitles for your videos in seconds.',
     offers: {
       '@type': 'AggregateOffer',
       lowPrice: '0',

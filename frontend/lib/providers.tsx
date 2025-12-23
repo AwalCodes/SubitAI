@@ -57,23 +57,49 @@ export function Providers({ children }: { children: React.ReactNode }) {
       const avatarUrl = clerkUser.imageUrl || ''
       const email = clerkUser.primaryEmailAddress?.emailAddress || clerkUser.emailAddresses?.[0]?.emailAddress || ''
 
-      // Upsert basic profile fields.
-      // IMPORTANT: do NOT overwrite subscription_tier here so manual/admin changes in Supabase remain effective.
-      const { error } = await supabase
+      // IMPORTANT:
+      // - Do NOT overwrite subscription_tier on update so manual/admin changes remain effective.
+      // - Prefer select->insert/update over upsert to behave predictably under RLS.
+      const { data: existing, error: selectError } = await supabase
         .from('users')
-        .upsert(
-          {
+        .select('id')
+        .eq('id', clerkUser.id)
+        .maybeSingle()
+
+      if (selectError) {
+        console.error('Failed to check existing user profile in Supabase:', selectError)
+        return
+      }
+
+      if (!existing) {
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert({
             id: clerkUser.id,
             email,
             full_name: fullName || null,
             avatar_url: avatarUrl || null,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: 'id' }
-        )
+            subscription_tier: 'free',
+          })
 
-      if (error) {
-        console.error('Failed to sync user profile to Supabase:', error)
+        if (insertError) {
+          console.error('Failed to insert user profile in Supabase:', insertError)
+        }
+        return
+      }
+
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({
+          email,
+          full_name: fullName || null,
+          avatar_url: avatarUrl || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', clerkUser.id)
+
+      if (updateError) {
+        console.error('Failed to update user profile in Supabase:', updateError)
       }
     } catch (error) {
       console.error('Failed to sync user profile to Supabase:', error)

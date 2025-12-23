@@ -5,11 +5,17 @@ import type { NextFetchEvent } from 'next/server';
 
 const isPublicRoute = createRouteMatcher([
   '/',
+  '/pricing',
+  '/features',
+  '/about',
+  '/blog(.*)',
   '/auth/login(.*)',
   '/auth/signup(.*)',
   '/auth/forgot-password(.*)',
   '/terms',
   '/privacy',
+  '/sitemap.xml',
+  '/robots.txt',
   '/api/(.*)',
 ]);
 
