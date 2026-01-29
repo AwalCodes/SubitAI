@@ -202,16 +202,18 @@ function buildDrawTextFilter(segments, style) {
       .replace(/'/g, "\\\\'")
   }
 
+  const SAFE_ZONE = 0.1 // 10% padding
+
   const xExpr = (() => {
-    if (textAlign === 'left') return `main_w*0.1+${horizontalOffset}`
-    if (textAlign === 'right') return `main_w-${horizontalOffset}-text_w-main_w*0.1`
+    if (textAlign === 'left') return `main_w*${SAFE_ZONE}+${horizontalOffset}`
+    if (textAlign === 'right') return `main_w-main_w*${SAFE_ZONE}-${horizontalOffset}-text_w`
     return `(main_w-text_w)/2+${horizontalOffset}`
   })()
 
   const yExpr = (() => {
-    if (position === 'top') return `${verticalOffset}`
+    if (position === 'top') return `main_h*${SAFE_ZONE}+${verticalOffset}`
     if (position === 'center') return `(main_h-text_h)/2`
-    return `main_h-${verticalOffset}-text_h`
+    return `main_h-main_h*${SAFE_ZONE}-text_h-${verticalOffset}`
   })()
 
   const base = `[0:v]`
@@ -335,19 +337,22 @@ function formatASSTime(seconds) {
 }
 
 function generateASS(segments, style) {
-  const fontSize = style?.fontSize || 24
+  const fontSize = style?.fontSize || 48
   const fontFamily = style?.fontFamily || 'Arial'
   const fontColor = toASSColor(style?.color || '#FFFFFF')
   const outlineColor = toASSColor(style?.outlineColor || '#000000')
   const outlineWidth = style?.outlineWidth || 2
-  const verticalOffset = style?.verticalOffset || 20
+  const verticalOffset = style?.verticalOffset || 0
   const letterSpacing = style?.letterSpacing != null ? style.letterSpacing : 0
   const shadow = style?.shadowBlur != null ? Math.max(0, Math.round(style.shadowBlur)) : 0
   const backColour = toASSColorWithAlpha(style?.backgroundColor || '#000000', style?.backgroundOpacity != null ? style.backgroundOpacity : 0)
   const borderStyle = (style?.backgroundOpacity && style.backgroundOpacity > 0) ? 3 : 1
 
   const alignment = getASSAlignment(style)
-  const marginV = verticalOffset
+
+  // Safe Zone Margin (10% of 1080p = 108)
+  const marginV = 108 + verticalOffset
+  const marginLR = 192 // 10% of 1920
 
   const animation = style?.animation || 'none'
   const animDuration = (style?.animationDuration || 0.3) * 1000
@@ -361,7 +366,7 @@ WrapStyle: 1
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,${fontFamily},${fontSize},${fontColor},&H000000FF,${outlineColor},${backColour},-1,0,0,0,100,100,${letterSpacing},0,${borderStyle},${outlineWidth},${shadow},${alignment},10,10,${marginV},1
+Style: Default,${fontFamily},${fontSize},${fontColor},&H0000FFFF,${outlineColor},${backColour},-1,0,0,0,100,100,${letterSpacing},0,${borderStyle},${outlineWidth},${shadow},${alignment},${marginLR},${marginLR},${marginV},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -375,33 +380,28 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     let text = seg.text.trim()
     let tags = ''
 
-    // Apply Animations via ASS Tags
-    if (animation === 'fade') {
-      // \fad(fadeIn, fadeOut) in ms
-      tags += `\\fad(${animDuration},${animDuration})`
-    } else if (animation === 'slide') {
-      // Slide up effect using \move
-      // We assume sliding from slightly lower Y to target Y
-      // This requires knowing precise coordinates, which is tricky in generic ASS without resolution info.
-      // Fallback to simple fade for stability if strict slide is hard, or use generic move.
-      // Approximating slide up from Bottom+50 to Bottom
-      // \move(x1,y1,x2,y2)
-      // Standard move is hard to calculate without exact screen pos. 
-      // Let's use \fad as fallback or \t based transforms?
-      // Actually, \move is coordinate based.
-      // A safer bet for "slide" without coords is just \fad for now or strict move if assumed 1080p.
-      // Let's implement fade for slide for robustness unless we mandate 1080p.
-      tags += `\\fad(${animDuration},${animDuration})`
-    } else if (animation === 'typewriter') {
-      // Simple typewriter simulated by standard display (no specific tag unless doing karaoke per char)
-      // Leaving plain (pop-in) or adding a transform
-    } else if (animation === 'bounce') {
-      // \t for scaling?
-      // \t(start, end, \fscx120\fscy120) -> bounce effect
-      tags += `{\\t(0,200,\\fscx110\\fscy110)\\t(200,400,\\fscx100\\fscy100)}`
-    } else if (animation === 'glow') {
-      // Outline blur?
-      tags += `{\\bord${outlineWidth + 2}\\blur5}`
+    // Word-level data handling (Karaoke / Pop)
+    if (seg.words && seg.words.length > 0 && (animation === 'karaoke' || animation === 'pop')) {
+      text = ''
+      seg.words.forEach((word, idx) => {
+        const duration = Math.round((word.end - word.start) * 100) // in centiseconds
+        if (animation === 'karaoke') {
+          text += `{\\k${duration}}${word.text} `
+        } else if (animation === 'pop') {
+          // Pop effect: scale up and down quickly
+          const highlightColor = toASSColor(style?.highlightColor || '#FFD700')
+          text += `{\\t(${Math.round(word.start * 100)},${Math.round(word.start * 100 + 100)},\\fscx120\\fscy120\\c${highlightColor})\\t(${Math.round(word.start * 100 + 100)},${Math.round(word.end * 100)},\\fscx100\\fscy100\\c${fontColor})}${word.text} `
+        }
+      })
+    } else {
+      // Line-level Animations
+      if (animation === 'fade') {
+        tags += `\\fad(${animDuration},${animDuration})`
+      } else if (animation === 'bounce') {
+        tags += `\\t(0,200,\\fscx110\\fscy110)\\t(200,400,\\fscx100\\fscy100)`
+      } else if (animation === 'zoom') {
+        tags += `\\fscx0\\fscy0\\t(0,300,\\fscx100\\fscy100)`
+      }
     }
 
     content += `Dialogue: 0,${start},${end},Default,,0,0,0,,{${tags}}${text}\n`

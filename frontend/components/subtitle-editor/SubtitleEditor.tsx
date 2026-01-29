@@ -33,7 +33,9 @@ import {
 import toast from 'react-hot-toast'
 import { FFmpeg } from '@ffmpeg/ffmpeg'
 import { fetchFile, toBlobURL } from '@ffmpeg/util'
-import { generateSRT } from '@/lib/utils'
+import { STYLE_PRESETS, SAFE_ZONE_PADDING, SubtitlePreset } from '@/lib/styles.config'
+import { StylePresetPicker } from './StylePresetPicker'
+import { TemplateEditor } from './TemplateEditor'
 
 export interface SubtitleStyle {
   fontFamily: string
@@ -44,7 +46,7 @@ export interface SubtitleStyle {
   backgroundOpacity: number
   textAlign: 'left' | 'center' | 'right'
   position: 'bottom' | 'center' | 'top'
-  verticalOffset: number
+  verticalOffset: number // This will now be treated as % from edge (0-100)
   horizontalOffset: number
   animation: 'none' | 'fade' | 'slide' | 'slideDown' | 'slideLeft' | 'slideRight' | 'pop' | 'typewriter' | 'bounce' | 'glow' | 'karaoke' | 'zoom'
   animationDuration: number
@@ -56,7 +58,7 @@ export interface SubtitleStyle {
   lineHeight: number
   displayMode: 'line-by-line' | 'multiple-lines' | 'word-by-word' | 'character-by-character'
   maxLines: number
-  // Advanced effects (Phase 3)
+  // Advanced effects
   shadowOffsetX?: number
   shadowOffsetY?: number
   shadowBlur?: number
@@ -64,6 +66,9 @@ export interface SubtitleStyle {
   backgroundBlur?: number
   glowIntensity?: number
   glowColor?: string
+  textShadow?: string
+  highlightColor?: string
+  highlightScale?: number
 }
 
 export interface Subtitle {
@@ -304,93 +309,138 @@ export default function SubtitleEditor({
     canvas: HTMLCanvasElement,
     text: string,
     style: SubtitleStyle,
-    elapsed: number = 0
+    elapsed: number = 0,
+    activeWord?: { start: number; end: number; text: string }
   ) => {
     ctx.save()
 
-    const fontSize = style.fontSize
-    ctx.font = `${style.fontWeight} ${fontSize}px ${style.fontFamily}, sans-serif`
+    // Calculate responsive font size based on video height
+    // Base height for reference is 1080p
+    const scaleFactor = canvas.height / 1080
+    const responsiveFontSize = style.fontSize * scaleFactor
+
+    ctx.font = `${style.fontWeight} ${responsiveFontSize}px ${style.fontFamily}, sans-serif`
     ctx.textAlign = style.textAlign === 'center' ? 'center' : style.textAlign === 'left' ? 'left' : 'right'
     ctx.textBaseline = 'middle'
-    ctx.letterSpacing = `${style.letterSpacing}px`
+    ctx.letterSpacing = `${style.letterSpacing * scaleFactor}px`
 
-    let displayText = text
-    if (style.displayMode === 'word-by-word' || style.displayMode === 'character-by-character') {
-      const words = text.split(' ')
-      const chars = text.split('')
-      const duration = 0.5
-      const progress = Math.min(elapsed / duration, 1)
-      if (style.displayMode === 'word-by-word') {
-        const wordCount = Math.ceil(words.length * progress)
-        displayText = words.slice(0, wordCount).join(' ')
-      } else {
-        const charCount = Math.ceil(chars.length * progress)
-        displayText = chars.slice(0, charCount).join('')
-      }
-    }
+    // Safe Zone Padding
+    const horizontalSafePadding = canvas.width * SAFE_ZONE_PADDING
+    const verticalSafePadding = canvas.height * SAFE_ZONE_PADDING
 
     const lines = style.displayMode === 'multiple-lines'
-      ? wrapText(ctx, displayText, canvas.width * 0.8, style.maxLines)
-      : [displayText]
+      ? wrapText(ctx, text, canvas.width - (horizontalSafePadding * 2), style.maxLines)
+      : [text]
 
     let baseX = canvas.width / 2
-    let baseY = canvas.height - style.verticalOffset
+    let baseY = canvas.height - (canvas.height * (style.verticalOffset / 100))
+
+    // Position adjustments with Safe Zone Enforcement
     if (style.position === 'center') {
       baseY = canvas.height / 2
     } else if (style.position === 'top') {
-      baseY = style.verticalOffset
-    }
-    baseX += style.horizontalOffset
-    if (style.textAlign === 'left') {
-      baseX = style.horizontalOffset + (canvas.width * 0.1)
-    } else if (style.textAlign === 'right') {
-      baseX = canvas.width - style.horizontalOffset - (canvas.width * 0.1)
+      baseY = Math.max(verticalSafePadding, canvas.height * (style.verticalOffset / 100))
+    } else {
+      // Bottom positioning
+      baseY = Math.min(canvas.height - verticalSafePadding, canvas.height - (canvas.height * (style.verticalOffset / 100)))
     }
 
-    const lineHeight = fontSize * style.lineHeight
+    baseX += (style.horizontalOffset * scaleFactor)
+
+    // Align adjustments with Safe Zone Enforcement
+    if (style.textAlign === 'left') {
+      baseX = horizontalSafePadding + (style.horizontalOffset * scaleFactor)
+    } else if (style.textAlign === 'right') {
+      baseX = canvas.width - horizontalSafePadding - (style.horizontalOffset * scaleFactor)
+    }
+
+    const lineHeight = responsiveFontSize * style.lineHeight
     const totalHeight = lines.length * lineHeight
     const startY = baseY - (totalHeight / 2) + (lineHeight / 2)
 
+    // Shadow support
+    if (style.textShadow) {
+      ctx.shadowColor = style.shadowColor || 'rgba(0,0,0,0.5)'
+      ctx.shadowBlur = (style.shadowBlur || 4) * scaleFactor
+      ctx.shadowOffsetX = (style.shadowOffsetX || 0) * scaleFactor
+      ctx.shadowOffsetY = (style.shadowOffsetY || 2) * scaleFactor
+    }
+
+    // Draw Background
     if (style.backgroundColor && style.backgroundOpacity > 0 && lines.length > 0) {
       const lineWidths = lines.map(line => ctx.measureText(line).width)
       const maxWidth = Math.max(...lineWidths)
-      const bgX = baseX - (style.textAlign === 'center' ? maxWidth / 2 : style.textAlign === 'left' ? 0 : maxWidth)
-      const bgY = startY - (lineHeight / 2) - style.padding
-      const bgWidth = maxWidth + style.padding * 2
-      const bgHeight = totalHeight + style.padding * 2
+      const padding = style.padding * scaleFactor
+      const bgWidth = maxWidth + padding * 2
+      const bgHeight = totalHeight + padding * 2
+
+      const bgX = baseX - (style.textAlign === 'center' ? maxWidth / 2 : style.textAlign === 'left' ? 0 : maxWidth) - padding
+      const bgY = startY - (lineHeight / 2) - padding
+
       ctx.fillStyle = style.backgroundColor
       ctx.globalAlpha = style.backgroundOpacity
       ctx.beginPath()
+      const radius = style.borderRadius * scaleFactor
       if (ctx.roundRect) {
-        ctx.roundRect(bgX, bgY, bgWidth, bgHeight, style.borderRadius)
+        ctx.roundRect(bgX, bgY, bgWidth, bgHeight, radius)
       } else {
-        const r = style.borderRadius
-        ctx.moveTo(bgX + r, bgY)
-        ctx.lineTo(bgX + bgWidth - r, bgY)
-        ctx.quadraticCurveTo(bgX + bgWidth, bgY, bgX + bgWidth, bgY + r)
-        ctx.lineTo(bgX + bgWidth, bgY + bgHeight - r)
-        ctx.quadraticCurveTo(bgX + bgWidth, bgY + bgHeight, bgX + bgWidth - r, bgY + bgHeight)
-        ctx.lineTo(bgX + r, bgY + bgHeight)
-        ctx.quadraticCurveTo(bgX, bgY + bgHeight, bgX, bgY + bgHeight - r)
-        ctx.lineTo(bgX, bgY + r)
-        ctx.quadraticCurveTo(bgX, bgY, bgX + r, bgY)
-        ctx.closePath()
+        // Fallback for older browsers
+        ctx.rect(bgX, bgY, bgWidth, bgHeight)
       }
       ctx.fill()
     }
 
+    // Draw Text
     lines.forEach((line, index) => {
       const y = startY + (index * lineHeight)
+
+      // Outline
       if (style.outlineWidth > 0) {
         ctx.strokeStyle = style.outlineColor
-        ctx.lineWidth = style.outlineWidth
+        ctx.lineWidth = style.outlineWidth * scaleFactor
         ctx.globalAlpha = 1
         ctx.strokeText(line, baseX, y)
       }
+
+      // Main Text
       ctx.fillStyle = style.color
       ctx.globalAlpha = 1
-      ctx.fillText(line, baseX, y)
+
+      if (style.displayMode === 'word-by-word' && activeWord) {
+        // Karaoke/Word-by-word highlight logic
+        const words = line.split(' ')
+        let currentX = baseX
+
+        if (style.textAlign === 'center') {
+          currentX -= ctx.measureText(line).width / 2
+        } else if (style.textAlign === 'right') {
+          currentX -= ctx.measureText(line).width
+        }
+
+        words.forEach(word => {
+          const isHighlighted = activeWord.text.toLowerCase().includes(word.toLowerCase().replace(/[^\w]/g, ''))
+
+          ctx.save()
+          if (isHighlighted) {
+            ctx.fillStyle = style.highlightColor || style.color
+            if (style.highlightScale) {
+              const scale = style.highlightScale
+              ctx.translate(currentX + ctx.measureText(word).width / 2, y)
+              ctx.scale(scale, scale)
+              ctx.translate(-(currentX + ctx.measureText(word).width / 2), -y)
+            }
+          }
+
+          ctx.fillText(word, currentX, y)
+          ctx.restore()
+
+          currentX += ctx.measureText(word + ' ').width
+        })
+      } else {
+        ctx.fillText(line, baseX, y)
+      }
     })
+
     ctx.restore()
   }, [])
 
@@ -417,7 +467,16 @@ export default function SubtitleEditor({
 
     if (activeSeg) {
       const elapsed = isPlaying ? currentVideoTime - activeSeg.start : 0
-      drawSubtitleOnCanvas(ctx, canvas, activeSeg.text, style, elapsed)
+
+      // Find active word if data exists
+      let activeWord = undefined
+      if (activeSeg.words && activeSeg.words.length > 0) {
+        activeWord = activeSeg.words.find(
+          w => currentVideoTime >= w.start && currentVideoTime <= w.end
+        )
+      }
+
+      drawSubtitleOnCanvas(ctx, canvas, activeSeg.text, style, elapsed, activeWord)
     }
   }, [editingSubtitles, style, isAudio, isPlaying, drawSubtitleOnCanvas])
 
@@ -1246,9 +1305,9 @@ function generateJSONExport(segments: Subtitle[]): string {
 function handleDownloadSRT(this: any) {
   // `this` not used; helper exists at module scope
 }
-function handleDownloadVTT(this: any) {}
-function handleDownloadTXT(this: any) {}
-function handleDownloadJSON(this: any) {}
+function handleDownloadVTT(this: any) { }
+function handleDownloadTXT(this: any) { }
+function handleDownloadJSON(this: any) { }
 
 // Style Panel Component
 function StylePanel({
@@ -1266,531 +1325,43 @@ function StylePanel({
   isPremium: boolean
   isPro: boolean
 }) {
-  // Style presets for quick selection
-  const STYLE_PRESETS = [
-    {
-      name: 'Classic',
-      emoji: '📝',
-      style: { ...DEFAULT_STYLE, backgroundColor: '#000000', backgroundOpacity: 0.7, color: '#FFFFFF', fontFamily: 'Arial', outlineWidth: 0 }
-    },
-    {
-      name: 'Modern',
-      emoji: '✨',
-      style: { ...DEFAULT_STYLE, backgroundColor: '#1a1a2e', backgroundOpacity: 0.85, color: '#FFFFFF', fontFamily: 'Poppins', borderRadius: 12 }
-    },
-    {
-      name: 'Neon',
-      emoji: '🌟',
-      premium: true,
-      style: { ...DEFAULT_STYLE, backgroundColor: 'transparent', backgroundOpacity: 0, color: '#00ff88', fontFamily: 'Montserrat', outlineColor: '#00ff88', outlineWidth: 1, glowIntensity: 15, glowColor: '#00ff88' }
-    },
-    {
-      name: 'Minimal',
-      emoji: '◻️',
-      style: { ...DEFAULT_STYLE, backgroundColor: '#ffffff', backgroundOpacity: 0.9, color: '#000000', fontFamily: 'Inter', padding: 8, borderRadius: 4 }
-    },
-    {
-      name: 'Cinematic',
-      emoji: '🎬',
-      premium: true,
-      style: { ...DEFAULT_STYLE, backgroundColor: 'transparent', backgroundOpacity: 0, color: '#FFFFFF', fontFamily: 'Playfair Display', outlineWidth: 3, outlineColor: '#000000', shadowBlur: 10, shadowColor: '#000000' }
-    },
-    {
-      name: 'Bold',
-      emoji: '💪',
-      style: { ...DEFAULT_STYLE, backgroundColor: '#ff4444', backgroundOpacity: 1, color: '#FFFFFF', fontFamily: 'Bebas Neue', fontSize: 28, padding: 16 }
-    },
-  ]
+  const [currentPresetId, setCurrentPresetId] = useState<string>('classic-dark')
+
+  const handlePresetSelect = (preset: SubtitlePreset) => {
+    setCurrentPresetId(preset.id)
+    setStyle({
+      ...style,
+      ...preset.style,
+      // Ensure we keep the current displayMode if it's already set to something specific
+      displayMode: preset.category === 'WORD' ? 'word-by-word' :
+        preset.category === 'DYNAMIC' ? 'word-by-word' :
+          style.displayMode
+    })
+  }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4 flex items-center gap-2">
-          <Palette className="w-5 h-5" />
-          Style Settings
-        </h3>
+    <div className="space-y-6 pt-2">
+      <StylePresetPicker
+        currentPresetId={currentPresetId}
+        onSelect={handlePresetSelect}
+      />
 
-        {/* Style Presets */}
-        <div className="mb-4">
-          <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-2">Quick Presets</label>
-          <div className="grid grid-cols-3 gap-2">
-            {STYLE_PRESETS.map((preset) => (
-              <button
-                key={preset.name}
-                onClick={() => {
-                  if (preset.premium && !isPro) return
-                  setStyle({ ...style, ...preset.style })
-                }}
-                disabled={preset.premium && !isPro}
-                className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition-all text-xs ${preset.premium && !isPro
-                    ? 'border-neutral-200 dark:border-neutral-700 opacity-50 cursor-not-allowed'
-                    : 'border-neutral-200 dark:border-neutral-700 hover:border-subit-500 hover:bg-subit-50 dark:hover:bg-subit-900/20'
-                  }`}
-                title={preset.premium && !isPro ? 'Pro feature' : `Apply ${preset.name} style`}
-              >
-                <span className="text-base">{preset.emoji}</span>
-                <span className="text-neutral-700 dark:text-neutral-300">{preset.name}</span>
-                {preset.premium && !isPro && (
-                  <span className="text-[8px] text-amber-500 font-medium">PRO</span>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
+      <div className="h-px bg-zinc-800 my-6" />
 
-        {/* Font Settings */}
-        <div className="space-y-4 bg-white dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700">
-          <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">Font</h4>
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">Font Family</label>
-              <select
-                value={style.fontFamily}
-                onChange={(e) => setStyle({ ...style, fontFamily: e.target.value })}
-                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 text-sm"
-              >
-                {FONT_OPTIONS.map(font => (
-                  <option key={font.value} value={font.value}>{font.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">
-                Font Size: {style.fontSize}px
-              </label>
-              <input
-                type="range"
-                min="12"
-                max="72"
-                value={style.fontSize}
-                onChange={(e) => setStyle({ ...style, fontSize: parseInt(e.target.value) })}
-                className="w-full"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">Font Weight</label>
-              <select
-                value={style.fontWeight}
-                onChange={(e) => setStyle({ ...style, fontWeight: e.target.value as any })}
-                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 text-sm"
-              >
-                <option value="normal">Normal</option>
-                <option value="600">Semi-Bold</option>
-                <option value="bold">Bold</option>
-                <option value="700">Extra Bold</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Colors */}
-        <div className="space-y-4 bg-white dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700">
-          <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">Colors</h4>
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">Text Color</label>
-              <div className="flex gap-2">
-                <input
-                  type="color"
-                  value={style.color}
-                  onChange={(e) => setStyle({ ...style, color: e.target.value })}
-                  className="w-12 h-10 border border-neutral-300 dark:border-neutral-700 rounded-lg cursor-pointer"
-                />
-                <input
-                  type="text"
-                  value={style.color}
-                  onChange={(e) => setStyle({ ...style, color: e.target.value })}
-                  className="flex-1 px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 text-sm"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">Background Color</label>
-              <div className="flex gap-2">
-                <input
-                  type="color"
-                  value={style.backgroundColor}
-                  onChange={(e) => setStyle({ ...style, backgroundColor: e.target.value })}
-                  className="w-12 h-10 border border-neutral-300 dark:border-neutral-700 rounded-lg cursor-pointer"
-                />
-                <input
-                  type="text"
-                  value={style.backgroundColor}
-                  onChange={(e) => setStyle({ ...style, backgroundColor: e.target.value })}
-                  className="flex-1 px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 text-sm"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">
-                Background Opacity: {Math.round(style.backgroundOpacity * 100)}%
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                value={style.backgroundOpacity}
-                onChange={(e) => setStyle({ ...style, backgroundOpacity: parseFloat(e.target.value) })}
-                className="w-full"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Position */}
-        <div className="space-y-4 bg-white dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700">
-          <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">Position</h4>
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">Vertical Position</label>
-              <div className="grid grid-cols-3 gap-2">
-                {POSITION_OPTIONS.map(pos => (
-                  <button
-                    key={pos.value}
-                    onClick={() => {
-                      if (pos.premium && !isPremium) {
-                        toast.error('Center position is available for Premium plans')
-                        return
-                      }
-                      setStyle({ ...style, position: pos.value as any })
-                    }}
-                    className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${style.position === pos.value
-                      ? 'bg-subit-600 text-white'
-                      : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600'
-                      } ${pos.premium && !isPremium ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    disabled={pos.premium && !isPremium}
-                  >
-                    {pos.premium && !isPremium && <Lock className="w-3 h-3 inline mr-1" />}
-                    {pos.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">
-                Vertical Offset: {style.verticalOffset}px
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="200"
-                value={style.verticalOffset}
-                onChange={(e) => setStyle({ ...style, verticalOffset: parseInt(e.target.value) })}
-                className="w-full"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">Text Align</label>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setStyle({ ...style, textAlign: 'left' })}
-                  className={`flex-1 px-3 py-2 rounded-lg border transition-colors ${style.textAlign === 'left'
-                    ? 'bg-subit-600 text-white border-subit-600'
-                    : 'bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100'
-                    }`}
-                >
-                  <AlignLeft className="w-4 h-4 mx-auto" />
-                </button>
-                <button
-                  onClick={() => setStyle({ ...style, textAlign: 'center' })}
-                  className={`flex-1 px-3 py-2 rounded-lg border transition-colors ${style.textAlign === 'center'
-                    ? 'bg-subit-600 text-white border-subit-600'
-                    : 'bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100'
-                    }`}
-                >
-                  <AlignCenter className="w-4 h-4 mx-auto" />
-                </button>
-                <button
-                  onClick={() => setStyle({ ...style, textAlign: 'right' })}
-                  className={`flex-1 px-3 py-2 rounded-lg border transition-colors ${style.textAlign === 'right'
-                    ? 'bg-subit-600 text-white border-subit-600'
-                    : 'bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100'
-                    }`}
-                >
-                  <AlignRight className="w-4 h-4 mx-auto" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Display Mode */}
-        <div className="space-y-4 bg-white dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700">
-          <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">Display Mode</h4>
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">How subtitles appear</label>
-              <select
-                value={style.displayMode}
-                onChange={(e) => setStyle({ ...style, displayMode: e.target.value as any })}
-                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 text-sm"
-              >
-                <option value="line-by-line">Line by Line</option>
-                <option value="multiple-lines">Multiple Lines (wrapped)</option>
-                <option value="word-by-word">Word by Word</option>
-                <option value="character-by-character">Character by Character</option>
-              </select>
-            </div>
-            {style.displayMode === 'multiple-lines' && (
-              <div>
-                <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">
-                  Max Lines: {style.maxLines}
-                </label>
-                <input
-                  type="range"
-                  min="1"
-                  max="5"
-                  value={style.maxLines}
-                  onChange={(e) => setStyle({ ...style, maxLines: parseInt(e.target.value) })}
-                  className="w-full"
-                />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Animation */}
-        <div className="space-y-4 bg-white dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700">
-          <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">Animation</h4>
-          <div>
-            <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">Animation Type</label>
-            <select
-              value={style.animation}
-              onChange={(e) => {
-                const anim = e.target.value as any
-                const option = ANIMATION_OPTIONS.find(o => o.value === anim)
-                if (option && option.premium && !isPremium) {
-                  toast.error('This animation is available for Premium plans')
-                  return
-                }
-                setStyle({ ...style, animation: anim })
-              }}
-              className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 text-sm"
-            >
-              {ANIMATION_OPTIONS.map(anim => (
-                <option key={anim.value} value={anim.value} disabled={anim.premium && !isPremium}>
-                  {anim.label} {anim.premium && !isPremium ? '🔒' : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Advanced Settings */}
-        <div>
-          <button
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="w-full px-4 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
-          >
-            {showAdvanced ? 'Hide' : 'Show'} Advanced Settings
-          </button>
-
-          {showAdvanced && (
-            <div className="mt-4 space-y-4 bg-white dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700">
-              <div>
-                <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">
-                  Outline Width: {style.outlineWidth}px
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="10"
-                  value={style.outlineWidth}
-                  onChange={(e) => setStyle({ ...style, outlineWidth: parseInt(e.target.value) })}
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">Outline Color</label>
-                <div className="flex gap-2">
-                  <input
-                    type="color"
-                    value={style.outlineColor}
-                    onChange={(e) => setStyle({ ...style, outlineColor: e.target.value })}
-                    className="w-12 h-10 border border-neutral-300 dark:border-neutral-700 rounded-lg cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={style.outlineColor}
-                    onChange={(e) => setStyle({ ...style, outlineColor: e.target.value })}
-                    className="flex-1 px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 text-sm"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">
-                  Border Radius: {style.borderRadius}px
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="20"
-                  value={style.borderRadius}
-                  onChange={(e) => setStyle({ ...style, borderRadius: parseInt(e.target.value) })}
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">
-                  Padding: {style.padding}px
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="30"
-                  value={style.padding}
-                  onChange={(e) => setStyle({ ...style, padding: parseInt(e.target.value) })}
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">
-                  Letter Spacing: {style.letterSpacing}px
-                </label>
-                <input
-                  type="range"
-                  min="-2"
-                  max="5"
-                  step="0.1"
-                  value={style.letterSpacing}
-                  onChange={(e) => setStyle({ ...style, letterSpacing: parseFloat(e.target.value) })}
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">
-                  Line Height: {style.lineHeight}
-                </label>
-                <input
-                  type="range"
-                  min="1"
-                  max="2"
-                  step="0.1"
-                  value={style.lineHeight}
-                  onChange={(e) => setStyle({ ...style, lineHeight: parseFloat(e.target.value) })}
-                  className="w-full"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Effects Section - Premium */}
-        <div className="space-y-4 bg-white dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 flex items-center gap-2">
-              ✨ Effects
-              {!isPro && (
-                <span className="text-[10px] bg-gradient-to-r from-amber-500 to-orange-500 text-white px-1.5 py-0.5 rounded font-medium">PRO</span>
-              )}
-            </h4>
-          </div>
-
-          {isPro ? (
-            <div className="space-y-4">
-              {/* Text Shadow */}
-              <div>
-                <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-2">Text Shadow</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-[10px] text-neutral-500 mb-1">Offset X: {style.shadowOffsetX ?? 0}px</label>
-                    <input
-                      type="range"
-                      min="-10"
-                      max="10"
-                      value={style.shadowOffsetX ?? 0}
-                      onChange={(e) => setStyle({ ...style, shadowOffsetX: parseInt(e.target.value) })}
-                      className="w-full accent-subit-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] text-neutral-500 mb-1">Offset Y: {style.shadowOffsetY ?? 0}px</label>
-                    <input
-                      type="range"
-                      min="-10"
-                      max="10"
-                      value={style.shadowOffsetY ?? 2}
-                      onChange={(e) => setStyle({ ...style, shadowOffsetY: parseInt(e.target.value) })}
-                      className="w-full accent-subit-500"
-                    />
-                  </div>
-                </div>
-                <div className="mt-2">
-                  <label className="block text-[10px] text-neutral-500 mb-1">Blur: {style.shadowBlur ?? 0}px</label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="20"
-                    value={style.shadowBlur ?? 4}
-                    onChange={(e) => setStyle({ ...style, shadowBlur: parseInt(e.target.value) })}
-                    className="w-full accent-subit-500"
-                  />
-                </div>
-                <div className="flex items-center gap-2 mt-2">
-                  <input
-                    type="color"
-                    value={style.shadowColor ?? '#000000'}
-                    onChange={(e) => setStyle({ ...style, shadowColor: e.target.value })}
-                    className="w-10 h-8 border border-neutral-300 dark:border-neutral-700 rounded cursor-pointer"
-                  />
-                  <span className="text-xs text-neutral-500">Shadow Color</span>
-                </div>
-              </div>
-
-              {/* Glow Effect */}
-              <div>
-                <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-2">Glow Effect</label>
-                <div>
-                  <label className="block text-[10px] text-neutral-500 mb-1">Intensity: {style.glowIntensity ?? 0}</label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="20"
-                    value={style.glowIntensity ?? 0}
-                    onChange={(e) => setStyle({ ...style, glowIntensity: parseInt(e.target.value) })}
-                    className="w-full accent-subit-500"
-                  />
-                </div>
-                <div className="flex items-center gap-2 mt-2">
-                  <input
-                    type="color"
-                    value={style.glowColor ?? '#FFFFFF'}
-                    onChange={(e) => setStyle({ ...style, glowColor: e.target.value })}
-                    className="w-10 h-8 border border-neutral-300 dark:border-neutral-700 rounded cursor-pointer"
-                  />
-                  <span className="text-xs text-neutral-500">Glow Color</span>
-                </div>
-              </div>
-
-              {/* Background Blur */}
-              <div>
-                <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">
-                  Background Blur: {style.backgroundBlur ?? 0}px
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="20"
-                  value={style.backgroundBlur ?? 0}
-                  onChange={(e) => setStyle({ ...style, backgroundBlur: parseInt(e.target.value) })}
-                  className="w-full accent-subit-500"
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-4">
-              <p className="text-xs text-neutral-500 mb-2">Unlock shadows, glow, and blur effects</p>
-              <a href="/pricing" className="text-xs text-subit-500 hover:text-subit-600 font-medium">
-                Upgrade to Pro →
-              </a>
-            </div>
-          )}
-        </div>
+      <div className="flex items-center gap-2 px-1 text-zinc-400 mb-2">
+        <Settings2 className="w-4 h-4" />
+        <h3 className="text-sm font-semibold text-zinc-200">Customize Style</h3>
       </div>
+
+      <TemplateEditor
+        style={style}
+        onChange={(updates) => setStyle({ ...style, ...updates })}
+      />
     </div>
   )
 }
+
+
 
 // Edit Panel Component
 function EditPanel({
