@@ -83,7 +83,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
           })
 
         if (insertError) {
-          console.error('Failed to insert user profile in Supabase:', insertError)
+          // 23505 is PostgreSQL's unique violation code (duplicate key)
+          // If the user was created by another concurrent request, that's fine
+          if (insertError.code !== '23505') {
+            console.error('Failed to insert user profile in Supabase:', insertError)
+          }
         }
         return
       }
