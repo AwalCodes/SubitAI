@@ -53,17 +53,24 @@ export function Providers({ children }: { children: React.ReactNode }) {
     if (!clerkUser?.id || !supabaseToken) return
 
     try {
-      // DEBUG: Log the IDs to check for mismatches
-      console.log('Syncing user profile:', {
-        clerkId: clerkUser.id,
+      // DEBUG: Log the IDs with char codes to check for hidden characters or encoding issues
+      const idInfo = {
+        id: clerkUser.id,
+        length: clerkUser.id.length,
+        charCodes: Array.from(clerkUser.id).map(c => c.charCodeAt(0))
+      }
+      console.log('Syncing user profile (Detailed):', {
+        idInfo,
         hasToken: !!supabaseToken
       })
 
-      // Decode token to check 'sub' claim (optional but helpful for debugging)
+      // Decode token to check 'sub' claim
       try {
         const payload = JSON.parse(atob(supabaseToken.split('.')[1]))
-        console.log('Supabase JWT Payload:', {
+        console.log('Supabase JWT Payload (Detailed):', {
           sub: payload.sub,
+          subLength: payload.sub?.length,
+          subCharCodes: payload.sub ? Array.from(payload.sub).map((c: any) => c.charCodeAt(0)) : [],
           matches: payload.sub === clerkUser.id
         })
       } catch (e) {
@@ -74,35 +81,51 @@ export function Providers({ children }: { children: React.ReactNode }) {
       const avatarUrl = clerkUser.imageUrl || ''
       const email = clerkUser.primaryEmailAddress?.emailAddress || clerkUser.emailAddresses?.[0]?.emailAddress || ''
 
-      // Attempt upsert instead of select->insert to handle race conditions better
-      // Even if RLS blocks the select, upsert might still work or give a specific error
-      const { error: upsertError } = await supabase
+      // Use select -> (insert or update) instead of upsert to be more explicit about RLS behavior
+      const { data: existing, error: selectError } = await supabase
         .from('users')
-        .upsert({
-          id: clerkUser.id,
-          email,
-          full_name: fullName || null,
-          avatar_url: avatarUrl || null,
-          updated_at: new Date().toISOString(),
-          // We don't touch subscription_tier here to avoid resetting it
-        }, {
-          onConflict: 'id',
-          ignoreDuplicates: false // We want to update email/name if they changed
-        })
+        .select('id')
+        .eq('id', clerkUser.id)
+        .maybeSingle()
 
-      if (upsertError) {
-        // 42501 is RLS violation, 23505 is duplicate key
-        console.error('User sync error detail:', {
-          code: upsertError.code,
-          message: upsertError.message,
-          hint: upsertError.hint
-        })
+      if (selectError) {
+        console.error('Select error in user sync:', selectError)
+      }
 
-        if (upsertError.code !== '23505' && upsertError.code !== '42501') {
-          console.error('Failed to sync user profile:', upsertError)
+      if (!existing) {
+        console.log('User not found in public.users, attempting insert...')
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert({
+            id: clerkUser.id,
+            email,
+            full_name: fullName || null,
+            avatar_url: avatarUrl || null,
+            subscription_tier: 'free',
+          })
+
+        if (insertError) {
+          console.error('Insert error in user sync (if 409, row exists but is hidden by RLS):', insertError)
+        } else {
+          console.log('User profile created successfully')
         }
       } else {
-        console.log('User profile synced successfully')
+        console.log('User found in public.users, attempting update...')
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({
+            email,
+            full_name: fullName || null,
+            avatar_url: avatarUrl || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', clerkUser.id)
+
+        if (updateError) {
+          console.error('Update error in user sync:', updateError)
+        } else {
+          console.log('User profile updated successfully')
+        }
       }
     } catch (error) {
       console.error('Critical failure in syncUserProfile:', error)

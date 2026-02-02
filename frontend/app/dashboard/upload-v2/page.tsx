@@ -199,7 +199,11 @@ export default function UploadPageV2() {
 
       // User profile sync is handled by Providers component
       // However, we verify here to debug the FK violation
-      console.log('Attempting project creation for user:', user?.id)
+      console.log('Attempting project creation for user (Detailed):', {
+        id: user?.id,
+        length: user?.id?.length,
+        charCodes: user?.id ? Array.from(user.id as string).map(c => c.charCodeAt(0)) : []
+      })
 
       // Create project in database first
       const { data: projectData, error: projectError } = await supabase
@@ -455,6 +459,7 @@ export default function UploadPageV2() {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <div className="bg-subit-50 border-b border-neutral-200">
+        <meta name="mobile-web-app-capable" content="yes" />
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>

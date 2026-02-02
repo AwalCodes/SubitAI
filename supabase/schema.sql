@@ -131,6 +131,9 @@ CREATE POLICY "Users can view own profile" ON public.users
 CREATE POLICY "Users can update own profile" ON public.users
     FOR UPDATE USING ((auth.jwt() ->> 'sub') = id);
 
+CREATE POLICY "Users can register own profile" ON public.users
+    FOR INSERT WITH CHECK ((auth.jwt() ->> 'sub') = id);
+
 -- Projects policies
 CREATE POLICY "Users can view own projects" ON public.projects
     FOR SELECT USING ((auth.jwt() ->> 'sub') = user_id);
