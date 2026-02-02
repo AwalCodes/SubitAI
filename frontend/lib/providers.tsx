@@ -53,60 +53,59 @@ export function Providers({ children }: { children: React.ReactNode }) {
     if (!clerkUser?.id || !supabaseToken) return
 
     try {
+      // DEBUG: Log the IDs to check for mismatches
+      console.log('Syncing user profile:', {
+        clerkId: clerkUser.id,
+        hasToken: !!supabaseToken
+      })
+
+      // Decode token to check 'sub' claim (optional but helpful for debugging)
+      try {
+        const payload = JSON.parse(atob(supabaseToken.split('.')[1]))
+        console.log('Supabase JWT Payload:', {
+          sub: payload.sub,
+          matches: payload.sub === clerkUser.id
+        })
+      } catch (e) {
+        console.warn('Failed to decode Supabase token payload')
+      }
+
       const fullName = (clerkUser.fullName || clerkUser.firstName || '').trim()
       const avatarUrl = clerkUser.imageUrl || ''
       const email = clerkUser.primaryEmailAddress?.emailAddress || clerkUser.emailAddresses?.[0]?.emailAddress || ''
 
-      // IMPORTANT:
-      // - Do NOT overwrite subscription_tier on update so manual/admin changes remain effective.
-      // - Prefer select->insert/update over upsert to behave predictably under RLS.
-      const { data: existing, error: selectError } = await supabase
+      // Attempt upsert instead of select->insert to handle race conditions better
+      // Even if RLS blocks the select, upsert might still work or give a specific error
+      const { error: upsertError } = await supabase
         .from('users')
-        .select('id')
-        .eq('id', clerkUser.id)
-        .maybeSingle()
-
-      if (selectError) {
-        console.error('Failed to check existing user profile in Supabase:', selectError)
-        return
-      }
-
-      if (!existing) {
-        const { error: insertError } = await supabase
-          .from('users')
-          .insert({
-            id: clerkUser.id,
-            email,
-            full_name: fullName || null,
-            avatar_url: avatarUrl || null,
-            subscription_tier: 'free',
-          })
-
-        if (insertError) {
-          // 23505 is PostgreSQL's unique violation code (duplicate key)
-          // If the user was created by another concurrent request, that's fine
-          if (insertError.code !== '23505') {
-            console.error('Failed to insert user profile in Supabase:', insertError)
-          }
-        }
-        return
-      }
-
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({
+        .upsert({
+          id: clerkUser.id,
           email,
           full_name: fullName || null,
           avatar_url: avatarUrl || null,
           updated_at: new Date().toISOString(),
+          // We don't touch subscription_tier here to avoid resetting it
+        }, {
+          onConflict: 'id',
+          ignoreDuplicates: false // We want to update email/name if they changed
         })
-        .eq('id', clerkUser.id)
 
-      if (updateError) {
-        console.error('Failed to update user profile in Supabase:', updateError)
+      if (upsertError) {
+        // 42501 is RLS violation, 23505 is duplicate key
+        console.error('User sync error detail:', {
+          code: upsertError.code,
+          message: upsertError.message,
+          hint: upsertError.hint
+        })
+
+        if (upsertError.code !== '23505' && upsertError.code !== '42501') {
+          console.error('Failed to sync user profile:', upsertError)
+        }
+      } else {
+        console.log('User profile synced successfully')
       }
     } catch (error) {
-      console.error('Failed to sync user profile to Supabase:', error)
+      console.error('Critical failure in syncUserProfile:', error)
     }
   }, [clerkUser, supabase, supabaseToken])
 

@@ -198,6 +198,9 @@ export default function UploadPageV2() {
       setProgressMessage('Creating project...')
 
       // User profile sync is handled by Providers component
+      // However, we verify here to debug the FK violation
+      console.log('Attempting project creation for user:', user?.id)
+
       // Create project in database first
       const { data: projectData, error: projectError } = await supabase
         .from('projects')
@@ -211,7 +214,12 @@ export default function UploadPageV2() {
         .single()
 
       if (projectError) {
-        if (process.env.NODE_ENV !== 'production') console.error('Project creation error:', projectError)
+        console.error('Project creation error details:', {
+          code: projectError.code,
+          message: projectError.message,
+          userId: user?.id,
+          hint: projectError.hint
+        })
         throw projectError
       }
 

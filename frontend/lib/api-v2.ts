@@ -109,6 +109,7 @@ export async function fetchQuota(): Promise<QuotaInfo> {
   return withRetry(async () => {
     // Add cache-busting parameter to ensure fresh data
     const url = `${WORKER_URL}/quota?_t=${Date.now()}`;
+    console.log('Fetching quota from:', url)
     const response = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,
