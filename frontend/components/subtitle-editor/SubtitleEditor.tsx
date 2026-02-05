@@ -56,7 +56,7 @@ export interface SubtitleStyle {
   padding: number
   letterSpacing: number
   lineHeight: number
-  displayMode: 'line-by-line' | 'multiple-lines' | 'word-by-word' | 'character-by-character'
+  displayMode: 'line-by-line' | 'multiple-lines' | 'word-by-word' | 'character-by-character' | 'word-highlight' | 'word-only'
   maxLines: number
   // Advanced effects
   shadowOffsetX?: number
@@ -69,6 +69,7 @@ export interface SubtitleStyle {
   textShadow?: string
   highlightColor?: string
   highlightScale?: number
+  highlightBackground?: string
 }
 
 export interface Subtitle {
@@ -406,8 +407,9 @@ export default function SubtitleEditor({
       ctx.fillStyle = style.color
       ctx.globalAlpha = 1
 
-      if (style.displayMode === 'word-by-word' && activeWord) {
-        // Karaoke/Word-by-word highlight logic
+      // Handle different display modes
+      if ((style.displayMode === 'word-by-word' || style.displayMode === 'word-highlight') && activeWord) {
+        // Word-highlight: Show all words but highlight the active one
         const words = line.split(' ')
         let currentX = baseX
 
@@ -418,24 +420,100 @@ export default function SubtitleEditor({
         }
 
         words.forEach(word => {
-          const isHighlighted = activeWord.text.toLowerCase().includes(word.toLowerCase().replace(/[^\w]/g, ''))
+          const cleanWord = word.toLowerCase().replace(/[^\w]/g, '')
+          const activeClean = activeWord.text.toLowerCase().replace(/[^\w]/g, '')
+          const isHighlighted = cleanWord === activeClean || activeWord.text.toLowerCase().includes(cleanWord)
+          const wordWidth = ctx.measureText(word).width
+          const spaceWidth = ctx.measureText(' ').width
 
           ctx.save()
+
           if (isHighlighted) {
-            ctx.fillStyle = style.highlightColor || style.color
-            if (style.highlightScale) {
-              const scale = style.highlightScale
-              ctx.translate(currentX + ctx.measureText(word).width / 2, y)
-              ctx.scale(scale, scale)
-              ctx.translate(-(currentX + ctx.measureText(word).width / 2), -y)
+            // Draw highlight background if specified
+            if (style.highlightBackground) {
+              const bgPadding = 4 * scaleFactor
+              ctx.fillStyle = style.highlightBackground
+              ctx.globalAlpha = 1
+              if (ctx.roundRect) {
+                ctx.beginPath()
+                ctx.roundRect(
+                  currentX - bgPadding,
+                  y - (responsiveFontSize / 2) - bgPadding,
+                  wordWidth + bgPadding * 2,
+                  responsiveFontSize + bgPadding * 2,
+                  4 * scaleFactor
+                )
+                ctx.fill()
+              } else {
+                ctx.fillRect(
+                  currentX - bgPadding,
+                  y - (responsiveFontSize / 2) - bgPadding,
+                  wordWidth + bgPadding * 2,
+                  responsiveFontSize + bgPadding * 2
+                )
+              }
             }
+
+            // Apply highlight color
+            ctx.fillStyle = style.highlightColor || style.color
+
+            // Apply scale transform if specified
+            if (style.highlightScale && style.highlightScale !== 1) {
+              const scale = style.highlightScale
+              ctx.translate(currentX + wordWidth / 2, y)
+              ctx.scale(scale, scale)
+              ctx.translate(-(currentX + wordWidth / 2), -y)
+            }
+          }
+
+          // Draw outline for the word if needed
+          if (style.outlineWidth > 0) {
+            ctx.strokeStyle = style.outlineColor
+            ctx.lineWidth = style.outlineWidth * scaleFactor
+            ctx.strokeText(word, currentX, y)
           }
 
           ctx.fillText(word, currentX, y)
           ctx.restore()
 
-          currentX += ctx.measureText(word + ' ').width
+          currentX += wordWidth + spaceWidth
         })
+      } else if (style.displayMode === 'word-only' && activeWord) {
+        // Word-only: Show ONLY the current word, centered
+        const wordText = activeWord.text.toUpperCase()
+
+        // Recalculate position for center display
+        const wordX = canvas.width / 2
+        const wordY = canvas.height / 2 // Always center for word-only mode
+
+        ctx.save()
+        ctx.textAlign = 'center'
+
+        // Apply highlight color if set
+        if (style.highlightColor) {
+          ctx.fillStyle = style.highlightColor
+        }
+
+        // Apply scale for pop effect
+        if (style.highlightScale && style.highlightScale !== 1) {
+          const scale = style.highlightScale
+          ctx.translate(wordX, wordY)
+          ctx.scale(scale, scale)
+          ctx.translate(-wordX, -wordY)
+        }
+
+        // Draw outline
+        if (style.outlineWidth > 0) {
+          ctx.strokeStyle = style.outlineColor
+          ctx.lineWidth = style.outlineWidth * scaleFactor
+          ctx.strokeText(wordText, wordX, wordY)
+        }
+
+        ctx.fillText(wordText, wordX, wordY)
+        ctx.restore()
+
+        // Skip normal line drawing for word-only mode
+        return
       } else {
         ctx.fillText(line, baseX, y)
       }
