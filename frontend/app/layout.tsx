@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { ClerkProvider } from '@clerk/nextjs'
+import { ConditionalClerkProvider } from '@/components/providers/conditional-clerk-provider'
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import { Providers } from '@/lib/providers'
@@ -112,7 +112,7 @@ export default function RootLayout({
     });
   }
   return (
-    <ClerkProvider>
+    <ConditionalClerkProvider>
       <html lang="en" className="h-full" suppressHydrationWarning>
         <head>
           <OrganizationSchema />
@@ -153,6 +153,6 @@ export default function RootLayout({
           </ThemeProvider>
         </body>
       </html>
-    </ClerkProvider>
+    </ConditionalClerkProvider>
   )
 }
