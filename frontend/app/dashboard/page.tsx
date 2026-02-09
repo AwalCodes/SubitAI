@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useUser } from '@/lib/providers'
 import { useRouter } from 'next/navigation'
-import { useClerk } from '@clerk/nextjs'
+import { useClerk } from '@/lib/clerk-safe'
 import { Plus, Video, Clock, CheckCircle, AlertCircle, Zap, ArrowRight, Sparkles, LayoutDashboard, Settings, LogOut, Home, FolderOpen, TrendingUp, Trash2, Crown, User } from 'lucide-react'
 import { OnboardingModal } from '@/components/onboarding-modal'
 import { fetchQuota, type QuotaInfo } from '@/lib/api-v2'

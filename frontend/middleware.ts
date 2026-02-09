@@ -28,7 +28,10 @@ function getCanonicalSiteUrl() {
 }
 
 function hasClerkEnv() {
-  return Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY)
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+  const secretKey = process.env.CLERK_SECRET_KEY
+  // Only enable Clerk if the publishable key is a valid Clerk key (starts with pk_)
+  return Boolean(publishableKey && publishableKey.startsWith('pk_') && secretKey && secretKey.startsWith('sk_'))
 }
 
 function maybeLegacyRedirect(req: NextRequest) {
@@ -50,10 +53,10 @@ function maybeLegacyRedirect(req: NextRequest) {
 
 const clerkHandler = hasClerkEnv()
   ? clerkMiddleware(async (auth, req) => {
-      if (!isPublicRoute(req)) {
-        await auth.protect();
-      }
-    })
+    if (!isPublicRoute(req)) {
+      await auth.protect();
+    }
+  })
   : null
 
 export default async function middleware(req: NextRequest, event: NextFetchEvent) {
