@@ -1,23 +1,7 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { clerkMiddleware } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import type { NextFetchEvent } from 'next/server';
-
-const isPublicRoute = createRouteMatcher([
-  '/',
-  '/pricing',
-  '/features',
-  '/about',
-  '/blog(.*)',
-  '/auth/login(.*)',
-  '/auth/signup(.*)',
-  '/auth/forgot-password(.*)',
-  '/terms',
-  '/privacy',
-  '/sitemap.xml',
-  '/robots.txt',
-  '/api/(.*)',
-]);
 
 function getCanonicalSiteUrl() {
   if (process.env.NODE_ENV === 'production') return 'https://www.subitai.com'
@@ -51,12 +35,10 @@ function maybeLegacyRedirect(req: NextRequest) {
   return null
 }
 
+// Use Clerk middleware WITHOUT auth.protect() to avoid redirect loops.
+// Client-side pages handle their own auth checks and redirects.
 const clerkHandler = hasClerkEnv()
-  ? clerkMiddleware(async (auth, req) => {
-    if (!isPublicRoute(req)) {
-      await auth.protect();
-    }
-  })
+  ? clerkMiddleware()
   : null
 
 export default async function middleware(req: NextRequest, event: NextFetchEvent) {
@@ -78,3 +60,4 @@ export const config = {
     '/(api|trpc)(.*)',
   ],
 };
+

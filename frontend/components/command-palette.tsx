@@ -15,7 +15,7 @@ import {
   Sparkles
 } from 'lucide-react'
 import { useUser } from '@/lib/providers'
-import { useClerk } from '@clerk/nextjs'
+import { useClerk } from '@/lib/clerk-safe'
 
 export function CommandPalette() {
   const [open, setOpen] = React.useState(false)

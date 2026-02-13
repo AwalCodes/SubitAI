@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useUser } from '@/lib/providers'
-import { useClerk } from '@clerk/nextjs'
+import { useClerk } from '@/lib/clerk-safe'
 import { Menu, X, LayoutDashboard, LogOut, User, ChevronDown } from 'lucide-react'
 import Logo from '@/components/shared/Logo'
 

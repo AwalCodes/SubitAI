@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import Link from 'next/link'
 import { Settings, User, Bell, Trash2, ArrowLeft, Zap, LogOut, Mail } from 'lucide-react'
-import { useClerk } from '@clerk/nextjs'
+import { useClerk } from '@/lib/clerk-safe'
 import toast from 'react-hot-toast'
 
 export default function SettingsPage() {
