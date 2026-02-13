@@ -2,13 +2,12 @@ import { Metadata } from 'next'
 import Hero from '@/components/landing/Hero'
 import Features from '@/components/landing/Features'
 import HowItWorks from '@/components/landing/HowItWorks'
-import Pricing from '@/components/landing/Pricing'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 
 export const metadata: Metadata = {
-  title: 'SUBITAI - Free Subtitle Generator | Fast & Accurate Transcription',
-  description: 'Generate professional subtitles for your videos in seconds. Support for 50+ languages, multiple export formats (SRT, VTT, TXT), and a free plan to get started.',
+  title: 'SUBITAI - 100% Free Professional Subtitle Generator | AI-Powered',
+  description: 'Generate professional subtitles for your videos in seconds — completely free, no credit card required. 95%+ accuracy with AI, 50+ languages, unlimited exports. Trusted by 10,000+ creators.',
   keywords: [
     'AI subtitle generator',
     'automatic subtitles',
@@ -22,8 +21,8 @@ export const metadata: Metadata = {
     'free subtitle generator',
   ],
   openGraph: {
-    title: 'SUBITAI - Free Subtitle Generator',
-    description: 'Generate professional subtitles for your videos in seconds. Free plan available.',
+    title: 'SUBITAI - 100% Free Professional Subtitle Generator',
+    description: 'Generate professional subtitles for your videos in seconds — completely free. No credit card, no watermarks, no limits.',
     url: 'https://subitai.com',
     type: 'website',
   },
@@ -40,7 +39,6 @@ export default function HomePage() {
         <Hero />
         <HowItWorks />
         <Features />
-        <Pricing />
       </main>
       <Footer />
     </div>

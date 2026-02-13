@@ -33,7 +33,7 @@ export default function HowItWorks() {
   const { user } = useUser()
 
   return (
-    <section className="py-24 bg-white relative overflow-hidden">
+    <section id="how-it-works" className="py-24 bg-white relative overflow-hidden">
       {/* Background elements */}
       <div className="absolute inset-0">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-subit-200/30 rounded-full blur-3xl" />
@@ -64,7 +64,7 @@ export default function HowItWorks() {
         <div className="relative max-w-5xl mx-auto">
           {/* Connection line for desktop */}
           <div className="hidden lg:block absolute top-24 left-[15%] right-[15%] h-0.5 bg-gradient-to-r from-subit-400 via-subit-500 to-subit-600 opacity-30" />
-          
+
           <div className="grid lg:grid-cols-3 gap-8 lg:gap-6">
             {steps.map((step, index) => (
               <motion.div
@@ -121,7 +121,7 @@ export default function HowItWorks() {
               href={user ? "/dashboard/upload-v2" : "/auth/signup"}
               className="group inline-flex items-center gap-2 px-8 py-4 bg-subit-600 hover:bg-subit-700 text-white font-semibold rounded-xl transition-all duration-300 shadow-glow"
             >
-              {user ? "Create Subtitles Now" : "Start Free Trial"}
+              {user ? "Create Subtitles Now" : "Start Creating — It's Free"}
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             <span className="text-neutral-500 text-sm">No credit card required</span>
