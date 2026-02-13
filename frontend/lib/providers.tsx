@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useUser as useClerkUser, useAuth } from '@clerk/nextjs'
+import { setTokenGetter } from '@/lib/api-v2'
 
 interface UserContextType {
   user: any
@@ -20,7 +21,17 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [subscription, setSubscription] = useState<any>(null)
   const [supabaseToken, setSupabaseToken] = useState<string | null>(null)
 
-  // Get Supabase token from Clerk
+  // Register the Clerk getToken function so api-v2 always gets fresh tokens
+  useEffect(() => {
+    if (clerkUser) {
+      setTokenGetter(() => getToken({ template: 'supabase' }))
+    } else {
+      setTokenGetter(null)
+    }
+    return () => setTokenGetter(null)
+  }, [clerkUser, getToken])
+
+  // Get Supabase token from Clerk (for Supabase client + localStorage fallback)
   useEffect(() => {
     const loadToken = async () => {
       if (clerkUser) {

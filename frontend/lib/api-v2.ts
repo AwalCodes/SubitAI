@@ -49,12 +49,37 @@ export interface QuotaInfo {
 }
 
 /**
- * Get current auth token
+ * Token getter function, set by Providers to always return a fresh token.
+ * Clerk's getToken() caches internally and only hits the network when the
+ * cached token is about to expire, so it's safe to call on every request.
+ */
+let _tokenGetter: (() => Promise<string | null>) | null = null;
+
+/**
+ * Called by Providers to register the live Clerk getToken function.
+ * This allows api-v2 to always fetch a fresh (non-expired) JWT.
+ */
+export function setTokenGetter(getter: (() => Promise<string | null>) | null) {
+  _tokenGetter = getter;
+}
+
+/**
+ * Get current auth token - always fresh from Clerk.
  *
- * Use the access_token we store in localStorage via Providers,
- * which is synced from Clerk's Supabase JWT template.
+ * Falls back to localStorage for edge cases where the getter
+ * hasn't been registered yet (e.g., during SSR or initial load).
  */
 async function getAuthToken(): Promise<string | null> {
+  // Prefer the live Clerk getter (always returns a fresh token)
+  if (_tokenGetter) {
+    try {
+      return await _tokenGetter();
+    } catch (error) {
+      console.error('Error getting fresh token from Clerk:', error);
+    }
+  }
+
+  // Fallback to localStorage (may be stale, but better than nothing)
   if (typeof window !== 'undefined') {
     try {
       return window.localStorage.getItem('access_token');
