@@ -3,7 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { useUser } from '@/lib/providers'
-import { Sparkles, ArrowRight, Play, Zap, Users, Star, Shield, CreditCard } from 'lucide-react'
+import { Sparkles, ArrowRight, Play, Zap, Users, Star, Shield, CreditCard, Globe } from 'lucide-react'
 
 export default function Hero() {
   const { user, loading } = useUser()
@@ -43,7 +43,7 @@ export default function Hero() {
           {/* Subtitle */}
           <p className="text-lg sm:text-xl text-neutral-600 mb-6 max-w-2xl mx-auto leading-relaxed">
             Transform any video into perfectly-timed subtitles in seconds.
-            Powered by world-class AI with 95%+ accuracy — no limits, no watermarks, no hidden costs.
+            Powered by world-class AI with 95%+ accuracy — no watermarks, no hidden costs.
           </p>
 
           {/* Trust badges */}
@@ -53,11 +53,11 @@ export default function Hero() {
               No Credit Card
             </div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-neutral-50 border border-neutral-200 rounded-full text-xs font-medium text-neutral-600">
-              <Zap className="w-3.5 h-3.5 text-amber-500" />
-              Unlimited Exports
+              <Globe className="w-3.5 h-3.5 text-blue-500" />
+              50+ Languages
             </div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-neutral-50 border border-neutral-200 rounded-full text-xs font-medium text-neutral-600">
-              <Shield className="w-3.5 h-3.5 text-blue-500" />
+              <Shield className="w-3.5 h-3.5 text-emerald-500" />
               No Watermarks
             </div>
           </div>
