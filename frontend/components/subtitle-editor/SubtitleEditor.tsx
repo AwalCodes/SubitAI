@@ -58,6 +58,9 @@ export interface SubtitleStyle {
   lineHeight: number
   displayMode: 'line-by-line' | 'multiple-lines' | 'word-by-word' | 'character-by-character' | 'word-highlight' | 'word-only'
   maxLines: number
+  // Text styling
+  textTransform?: 'none' | 'uppercase' | 'lowercase'
+  fontStyle?: 'normal' | 'italic'
   // Advanced effects
   shadowOffsetX?: number
   shadowOffsetY?: number
@@ -320,7 +323,13 @@ export default function SubtitleEditor({
     const scaleFactor = canvas.height / 1080
     const responsiveFontSize = style.fontSize * scaleFactor
 
-    ctx.font = `${style.fontWeight} ${responsiveFontSize}px ${style.fontFamily}, sans-serif`
+    // Apply textTransform to the raw text
+    let displayText = text
+    if (style.textTransform === 'uppercase') displayText = text.toUpperCase()
+    else if (style.textTransform === 'lowercase') displayText = text.toLowerCase()
+
+    const fontStyle = style.fontStyle === 'italic' ? 'italic ' : ''
+    ctx.font = `${fontStyle}${style.fontWeight} ${responsiveFontSize}px ${style.fontFamily}, sans-serif`
     ctx.textAlign = style.textAlign === 'center' ? 'center' : style.textAlign === 'left' ? 'left' : 'right'
     ctx.textBaseline = 'middle'
     ctx.letterSpacing = `${style.letterSpacing * scaleFactor}px`
@@ -330,8 +339,8 @@ export default function SubtitleEditor({
     const verticalSafePadding = canvas.height * SAFE_ZONE_PADDING
 
     const lines = style.displayMode === 'multiple-lines'
-      ? wrapText(ctx, text, canvas.width - (horizontalSafePadding * 2), style.maxLines)
-      : [text]
+      ? wrapText(ctx, displayText, canvas.width - (horizontalSafePadding * 2), style.maxLines)
+      : [displayText]
 
     let baseX = canvas.width / 2
     let baseY = canvas.height - (canvas.height * (style.verticalOffset / 100))
@@ -1407,13 +1416,13 @@ function StylePanel({
 
   const handlePresetSelect = (preset: SubtitlePreset) => {
     setCurrentPresetId(preset.id)
+    // Reset to defaults first so old properties (highlightColor, textShadow, etc.)
+    // don't leak from previous preset, then apply the new preset's full style.
     setStyle({
-      ...style,
+      ...DEFAULT_STYLE,
       ...preset.style,
-      // Ensure we keep the current displayMode if it's already set to something specific
-      displayMode: preset.category === 'WORD' ? 'word-by-word' :
-        preset.category === 'DYNAMIC' ? 'word-by-word' :
-          style.displayMode
+      // Preserve user's maxLines preference
+      maxLines: style.maxLines,
     })
   }
 
