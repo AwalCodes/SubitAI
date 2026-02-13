@@ -106,7 +106,7 @@ export default function Hero() {
                   href="/auth/signup"
                   className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-subit-600 hover:bg-subit-700 text-white font-semibold rounded-xl transition-all duration-300 shadow-glow hover:-translate-y-0.5"
                 >
-                  Start Creating Now — It's Free
+                  Start Creating Now — It&apos;s Free
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Link
