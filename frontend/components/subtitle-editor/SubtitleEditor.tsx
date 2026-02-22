@@ -561,6 +561,31 @@ export default function SubtitleEditor({
         activeWord = activeSeg.words.find(
           w => currentVideoTime >= w.start && currentVideoTime <= w.end
         )
+      } else if (style.displayMode === 'word-highlight' || style.displayMode === 'word-by-word' || style.displayMode === 'word-only') {
+        // Estimate active word based on evenly distributing time across the segment
+        const cleanText = activeSeg.text.trim();
+        if (cleanText) {
+          const words = cleanText.split(/\s+/);
+          const duration = activeSeg.end - activeSeg.start;
+          const timePerWord = duration / words.length;
+          const elapsedSeg = currentVideoTime - activeSeg.start;
+          const wordIndex = Math.floor(elapsedSeg / timePerWord);
+
+          if (wordIndex >= 0 && wordIndex < words.length) {
+            activeWord = {
+              start: activeSeg.start + (wordIndex * timePerWord),
+              end: activeSeg.start + ((wordIndex + 1) * timePerWord),
+              text: words[wordIndex]
+            }
+          } else if (wordIndex >= words.length) {
+            // Keep last word active if we are slightly past estimation but still in segment
+            activeWord = {
+              start: activeSeg.start + ((words.length - 1) * timePerWord),
+              end: activeSeg.end,
+              text: words[words.length - 1]
+            }
+          }
+        }
       }
 
       drawSubtitleOnCanvas(ctx, canvas, activeSeg.text, style, elapsed, activeWord)
@@ -698,6 +723,70 @@ export default function SubtitleEditor({
     }
   }, [onSave, editingSubtitles, style])
 
+  const preprocessSubtitlesForExport = (subtitles: Subtitle[], style: SubtitleStyle): Subtitle[] => {
+    if (style.displayMode === 'line-by-line' || style.displayMode === 'multiple-lines') {
+      return subtitles
+    }
+
+    const processed: Subtitle[] = []
+
+    subtitles.forEach((sub) => {
+      const text = sub.text.trim()
+      if (!text) return
+
+      const wordsStr = text.split(/\s+/)
+      const duration = sub.end - sub.start
+      const timePerWord = duration / wordsStr.length
+
+      // Use actual word timestamps if available, otherwise estimate
+      const wordTimestamps = sub.words?.length === wordsStr.length
+        ? sub.words
+        : wordsStr.map((w, i) => ({
+          text: w,
+          start: sub.start + (i * timePerWord),
+          end: sub.start + ((i + 1) * timePerWord)
+        }))
+
+      wordTimestamps.forEach((wt, wIdx) => {
+        if (style.displayMode === 'word-only') {
+          processed.push({
+            id: `${sub.id}-w${wIdx}`,
+            start: wt.start,
+            end: wt.end,
+            text: wt.text
+          })
+        } else if (style.displayMode === 'word-highlight') {
+          // Wrap active word in standard HTML <font> tag which ffmpeg/libass supports natively
+          const highlightHex = style.highlightColor || '#FFFF00'
+          const sentence = wordsStr.map((w, i) => {
+            if (i === wIdx) return `<font color="${highlightHex}">${w}</font>`
+            return w
+          }).join(' ')
+
+          processed.push({
+            id: `${sub.id}-w${wIdx}`,
+            start: wt.start,
+            end: wt.end,
+            text: sentence
+          })
+        } else if (style.displayMode === 'word-by-word' || style.displayMode === 'character-by-character') {
+          // Build-up effect
+          const sentence = wordsStr.slice(0, wIdx + 1).join(' ')
+          processed.push({
+            id: `${sub.id}-w${wIdx}`,
+            start: wt.start,
+            end: wt.end,
+            text: sentence
+          })
+        } else {
+          processed.push(sub)
+        }
+      })
+    })
+
+    return processed.length > 0 ? processed : subtitles
+  }
+
   const handleExportVideo = async () => {
     if (!videoUrl || isAudio) {
       toast.error('Video not available for export')
@@ -718,7 +807,9 @@ export default function SubtitleEditor({
       if (validSubtitles.length === 0) {
         throw new Error('No valid subtitles to export')
       }
-      formData.append('subtitles', JSON.stringify(validSubtitles))
+
+      const exportedSubtitles = preprocessSubtitlesForExport(validSubtitles, style)
+      formData.append('subtitles', JSON.stringify(exportedSubtitles))
 
       // Pass style
       formData.append('style', JSON.stringify(style))
